@@ -5,8 +5,7 @@
 #include <QListView>
 #include <QShortcut>
 #include <QVBoxLayout>
-
-#include "FileSystemModel.h"
+#include <QFileSystemModel>
 
 FileSystemWidget::FileSystemWidget(QWidget *parent)
     : QWidget(parent)
@@ -33,7 +32,8 @@ void FileSystemWidget::initUi()
 
     fileSystem_listView = new QListView(this);
     fileSystem_listView->setAlternatingRowColors(true);
-    model = new FileSystemModel(this);
+    model = new QFileSystemModel(this);
+    model->setFilter(QDir::AllEntries | QDir::NoDot);
     fileSystem_listView->setModel(model);
 
     auto main_vLay = new QVBoxLayout();
@@ -75,7 +75,13 @@ void FileSystemWidget::slot_goIn()
     {
         return;
     }
-    fileSystem_listView->setRootIndex(index);
+    const QString &newRootPath = model->fileInfo(index).filePath();
+    if (newRootPath.endsWith(".."))
+    {
+        slot_goUp();
+        return;
+    }
+    fileSystem_listView->setRootIndex(model->index(newRootPath));
     currentPath_label->setText(index.data(QFileSystemModel::FilePathRole).toString());
 }
 
