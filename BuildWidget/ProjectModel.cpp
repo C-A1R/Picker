@@ -4,27 +4,20 @@ ProjectModel::ProjectModel(QObject *parent) : QFileSystemModel(parent)
 {
 }
 
-//QModelIndex ProjectModel::index(int row, int column, const QModelIndex &parent) const
-//{
+Qt::ItemFlags ProjectModel::flags(const QModelIndex &index) const
+{
+    if (!index.isValid())
+    {
+        return Qt::ItemFlag::NoItemFlags;
+    }
+    return Qt::ItemIsEditable | QAbstractItemModel::flags(index)|Qt::ItemIsUserCheckable;
+}
 
-//}
-
-//QModelIndex ProjectModel::parent(const QModelIndex &child) const
-//{
-
-//}
-
-//int ProjectModel::rowCount(const QModelIndex &parent) const
-//{
-
-//}
-
-//int ProjectModel::columnCount(const QModelIndex &parent) const
-//{
-
-//}
-
-//QVariant ProjectModel::data(const QModelIndex &index, int role) const
-//{
-
-//}
+QVariant ProjectModel::data(const QModelIndex &index, int role) const
+{
+    if (role == Qt::CheckStateRole)
+    {
+        return Qt::CheckState::Unchecked;
+    }
+    return QFileSystemModel::data(index, role);
+}

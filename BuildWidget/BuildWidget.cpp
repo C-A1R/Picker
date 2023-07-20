@@ -3,6 +3,7 @@
 #include <QToolBar>
 #include <QLabel>
 #include <QTreeView>
+#include <QHeaderView>>
 #include <QVBoxLayout>
 #include <QFileDialog>
 
@@ -22,12 +23,26 @@ BuildWidget::~BuildWidget()
 
 void BuildWidget::initUi()
 {
+    actions_toolBar = new QToolBar(this);
     {
-        actions_toolBar = new QToolBar(this);
         auto act = new QAction(actions_toolBar);
         act->setToolTip("Указать путь к проекту");
         act->setIcon(QIcon(":/buildWidget/ico/suitcase.svg"));
         connect(act, &QAction::triggered, this, &BuildWidget::slot_changeProject);
+        actions_toolBar->addAction(act);
+    }
+    {
+        auto act = new QAction(actions_toolBar);
+        act->setToolTip("Сохранить список");
+        act->setIcon(QIcon(":/buildWidget/ico/save.svg"));
+        connect(act, &QAction::triggered, this, &BuildWidget::slot_saveList);
+        actions_toolBar->addAction(act);
+    }
+    {
+        auto act = new QAction(actions_toolBar);
+        act->setToolTip("Собрать");
+        act->setIcon(QIcon(":/buildWidget/ico/build.svg"));
+        connect(act, &QAction::triggered, this, &BuildWidget::slot_build);
         actions_toolBar->addAction(act);
     }
 
@@ -39,6 +54,7 @@ void BuildWidget::initUi()
     currentPath_label->setSizePolicy(QSizePolicy::Policy::Ignored, QSizePolicy::Policy::Fixed);
 
     project_treeView = new QTreeView(this);
+    project_treeView->header()->hide();
     project_model = new ProjectModel(this);
     project_treeView->setModel(project_model);
     for (int i = 1; i < project_model->columnCount(); ++i)
@@ -80,4 +96,14 @@ void BuildWidget::slot_changeProject()
         return;
     }
     changeProject(folderPath);
+}
+
+void BuildWidget::slot_saveList()
+{
+
+}
+
+void BuildWidget::slot_build()
+{
+
 }

@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/buildWidget">
         <file>ico/suitcase.svg</file>
+        <file>ico/save.svg</file>
+        <file>ico/build.svg</file>
     </qresource>
 </RCC>

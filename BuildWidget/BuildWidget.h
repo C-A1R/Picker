@@ -27,6 +27,8 @@ private:
 
 private slots:
     void slot_changeProject();
+    void slot_saveList();
+    void slot_build();
 };
 
 #endif // BUILDWIDGET_H
