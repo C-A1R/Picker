@@ -12,12 +12,13 @@ class FileSystemWidget : public QWidget
 {
     Q_OBJECT
 
-    QToolBar *drivePanel = nullptr;
+    QToolBar *drives_toolBar = nullptr;
     QLabel *currentPath_label = nullptr;
     QListView *fileSystem_listView = nullptr;
-    QFileSystemModel *model = nullptr;
+    QFileSystemModel *fileSystem_model = nullptr;
 public:
     FileSystemWidget(QWidget *parent = nullptr);
+    ~FileSystemWidget();
 
 private:
     void initUi();

@@ -1,10 +1,10 @@
 #include "MainWindow.h"
 
 #include <QSplitter>
-#include <QTreeView>
 #include <QVBoxLayout>
 
 #include "FileSystemWidget/FileSystemWidget.h"
+#include "BuildWidget/BuildWidget.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -23,8 +23,8 @@ void MainWindow::initUi()
     auto fileSystemWidget = new FileSystemWidget(splitter);
     splitter->addWidget(fileSystemWidget);
 
-    auto projectView = new QTreeView(splitter);
-    splitter->addWidget(projectView);
+    auto buildWidget = new BuildWidget(splitter);
+    splitter->addWidget(buildWidget);
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->addWidget(splitter);
