@@ -1,17 +1,21 @@
 #include "BuildWidget.h"
 
 #include <QToolBar>
+#include <QActionGroup>
 #include <QLabel>
 #include <QTreeView>
 #include <QHeaderView>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QFileDialog>
 
 #include "ProjectModel.h"
 #include "ProjectProxyModel.h"
 #include "Settings.h"
 
-BuildWidget::BuildWidget(QWidget *parent) : QWidget(parent)
+BuildWidget::BuildWidget(QWidget *parent)
+    : QWidget(parent),
+    saveOptions{SaveOpt::fromInt(Settings::instance()->value(SETTINGS_SAVE_OPTIONS, SaveOptions::SAVE_TO_FOLDERS).toInt())}
 {
     initUi();
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
@@ -20,6 +24,7 @@ BuildWidget::BuildWidget(QWidget *parent) : QWidget(parent)
 BuildWidget::~BuildWidget()
 {
     Settings::instance()->setValue(SETTINGS_BUILD_PATH, currentPath_label->text());
+    Settings::instance()->setValue(SETTINGS_SAVE_OPTIONS, saveOptions.toInt());
 }
 
 void BuildWidget::initUi()
@@ -47,6 +52,31 @@ void BuildWidget::initUi()
         actions_toolBar->addAction(act);
     }
 
+    saveOptions_toolBar = new QToolBar(this);
+    {
+        auto act = new QAction(saveOptions_toolBar);
+        act->setToolTip("Сохранить в каталогах");
+        act->setIcon(QIcon(":/buildWidget/ico/folders.svg"));
+        act->setCheckable(true);
+        act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_FOLDERS));
+        connect(act, &QAction::triggered, this, &BuildWidget::slot_saveToFoldersOptionChanged);
+        saveOptions_toolBar->addAction(act);
+    }
+    {
+        auto act = new QAction(saveOptions_toolBar);
+        act->setToolTip("Сохранить в указанный каталог");
+        act->setIcon(QIcon(":/buildWidget/ico/folder.svg"));
+        act->setCheckable(true);
+        act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_DEFENIT_FOLDER));
+        connect(act, &QAction::triggered, this, &BuildWidget::slot_saveToDefenitFolderOptionChanged);
+        saveOptions_toolBar->addAction(act);
+    }
+
+    auto tools_hLay = new QHBoxLayout();
+    tools_hLay->addWidget(actions_toolBar);
+    tools_hLay->addStretch();
+    tools_hLay->addWidget(saveOptions_toolBar);
+
     currentPath_label = new QLabel(this);
     QFont boldFont;
     boldFont.setBold(true);
@@ -69,7 +99,7 @@ void BuildWidget::initUi()
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);
     main_vLay->setSpacing(0);
-    main_vLay->addWidget(actions_toolBar);
+    main_vLay->addLayout(tools_hLay);
     main_vLay->addWidget(currentPath_label);
     main_vLay->addSpacing(3);
     main_vLay->addWidget(project_treeView);
@@ -110,4 +140,14 @@ void BuildWidget::slot_saveList()
 void BuildWidget::slot_build()
 {
 
+}
+
+void BuildWidget::slot_saveToFoldersOptionChanged(bool checked)
+{
+    saveOptions.setFlag(SaveOptions::SAVE_TO_FOLDERS, checked);
+}
+
+void BuildWidget::slot_saveToDefenitFolderOptionChanged(bool checked)
+{
+    saveOptions.setFlag(SaveOptions::SAVE_TO_DEFENIT_FOLDER, checked);
 }
