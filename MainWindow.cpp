@@ -26,6 +26,8 @@ void MainWindow::initUi()
     auto buildWidget = new BuildWidget(splitter);
     splitter->addWidget(buildWidget);
 
+    splitter->setSizes(QList<int>({INT_MAX, INT_MAX}));
+
     auto main_vLay = new QVBoxLayout();
     main_vLay->addWidget(splitter);
     centralWidget->setLayout(main_vLay);

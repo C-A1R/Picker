@@ -11,6 +11,7 @@ CONFIG += c++17
 SOURCES += \
     BuildWidget/BuildWidget.cpp \
     BuildWidget/ProjectModel.cpp \
+    BuildWidget/ProjectProxyModel.cpp \
     FileSystemWidget/FileSystemWidget.cpp \
     MainWindow.cpp \
     Settings.cpp \
@@ -19,6 +20,7 @@ SOURCES += \
 HEADERS += \
     BuildWidget/BuildWidget.h \
     BuildWidget/ProjectModel.h \
+    BuildWidget/ProjectProxyModel.h \
     FileSystemWidget/FileSystemWidget.h \
     MainWindow.h \
     Settings.h

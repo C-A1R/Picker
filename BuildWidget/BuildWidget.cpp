@@ -3,11 +3,12 @@
 #include <QToolBar>
 #include <QLabel>
 #include <QTreeView>
-#include <QHeaderView>>
+#include <QHeaderView>
 #include <QVBoxLayout>
 #include <QFileDialog>
 
 #include "ProjectModel.h"
+#include "ProjectProxyModel.h"
 #include "Settings.h"
 
 BuildWidget::BuildWidget(QWidget *parent) : QWidget(parent)
@@ -56,7 +57,10 @@ void BuildWidget::initUi()
     project_treeView = new QTreeView(this);
     project_treeView->header()->hide();
     project_model = new ProjectModel(this);
-    project_treeView->setModel(project_model);
+    project_model->setReadOnly(true);
+    proxy_model = new ProjectProxyModel();
+    proxy_model->setSourceModel(project_model);
+    project_treeView->setModel(proxy_model);
     for (int i = 1; i < project_model->columnCount(); ++i)
     {
         project_treeView->hideColumn(i);
@@ -80,7 +84,7 @@ void BuildWidget::changeProject(const QString &path)
     }
     currentPath_label->setText(path);
     project_model->setRootPath(path);
-    project_treeView->setRootIndex(project_model->index(path));
+    project_treeView->setRootIndex(proxy_model->mapFromSource(project_model->index(path)));
 }
 
 void BuildWidget::slot_changeProject()

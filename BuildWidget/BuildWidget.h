@@ -7,6 +7,7 @@ class QToolBar;
 class QLabel;
 class QTreeView;
 class ProjectModel;
+class ProjectProxyModel;
 
 class BuildWidget : public QWidget
 {
@@ -16,6 +17,7 @@ class BuildWidget : public QWidget
     QLabel *currentPath_label = nullptr;
     QTreeView *project_treeView = nullptr;
     ProjectModel *project_model = nullptr;
+    ProjectProxyModel *proxy_model = nullptr;
 
 public:
     BuildWidget(QWidget *parent = nullptr);
