@@ -130,17 +130,15 @@ void FileSystemWidget::slot_goIn()
         return;
     }
     fileSystem_listView->setRootIndex(fileSystem_model->index(newRootPath));
+    fileSystem_model->setRootPath(newRootPath);
     currentPath_label->setText(index.data(QFileSystemModel::FilePathRole).toString());
 }
 
 void FileSystemWidget::slot_goUp()
 {
-    if (fileSystem_listView->rootIndex().data(QFileSystemModel::FilePathRole) == fileSystem_model->rootPath())
-    {
-        return;
-    }
     const QModelIndex &parentIndex = fileSystem_listView->rootIndex().parent();
     fileSystem_listView->setRootIndex(parentIndex);
+    fileSystem_model->setRootPath(fileSystem_model->fileInfo(parentIndex).filePath());
     currentPath_label->setText(parentIndex.data(QFileSystemModel::FilePathRole).toString());
 }
 
