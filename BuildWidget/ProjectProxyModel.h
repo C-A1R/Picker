@@ -3,9 +3,6 @@
 
 #include <QSortFilterProxyModel>
 
-class QDir;
-class ProjectModel;
-
 class ProjectProxyModel : public QSortFilterProxyModel
 {
     Q_OBJECT
@@ -19,9 +16,11 @@ protected:
 
 signals:
     void signal_dropped(const quintptr, const QList<quintptr>);
+    void signal_setChecked(const QModelIndexList &selected, const bool checked);
 
 public slots:
     void slot_dropped(const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices);
+    void slot_setChecked(const QModelIndexList &selected, const bool checked);
 };
 
 #endif // PROJECTPROXYMODEL_H

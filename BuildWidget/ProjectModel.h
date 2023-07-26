@@ -12,6 +12,7 @@ class ProjectModel : public QFileSystemModel
     QHash<quintptr, Qt::CheckState> checkedItems;
     QSet<quintptr> hiddenIndexes;
     QList<quintptr> orders;
+
 public:
     ProjectModel(QObject *parent = nullptr);
     Qt::ItemFlags flags(const QModelIndex &index) const override;
@@ -31,6 +32,7 @@ signals:
 
 public slots:
     void slot_dropped(const quintptr droppedIndexId, const QList<quintptr> draggeddIndicesIds);
+    void slot_setChecked(const QModelIndexList &selected, const bool checked);
 
 protected slots:
     void slot_onItemChecked(const QModelIndex& index);

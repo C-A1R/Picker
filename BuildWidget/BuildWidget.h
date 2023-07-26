@@ -4,12 +4,14 @@
 #include <QWidget>
 #include <QBitArray>
 
+#include "ProjectModel.h"
+
 class QToolBar;
 class QLabel;
 class ProjectTreeView;
-class ProjectModel;
 class ProjectProxyModel;
 
+using model_type = ProjectModel;
 
 class BuildWidget : public QWidget
 {
@@ -27,7 +29,7 @@ class BuildWidget : public QWidget
     QToolBar *saveOptions_toolBar = nullptr;
     QLabel *currentPath_label = nullptr;
     ProjectTreeView *project_treeView = nullptr;
-    ProjectModel *project_model = nullptr;
+    model_type *project_model = nullptr;
     ProjectProxyModel *proxy_model = nullptr;
 
     SaveOpt saveOptions = SaveOptions::SAVE_TO_FOLDERS;

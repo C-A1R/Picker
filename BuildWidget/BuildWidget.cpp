@@ -9,7 +9,6 @@
 #include <QFileDialog>
 
 #include "ProjectTreeView.h"
-#include "ProjectModel.h"
 #include "ProjectProxyModel.h"
 #include "Settings.h"
 
@@ -20,7 +19,9 @@ BuildWidget::BuildWidget(QWidget *parent)
     initUi();
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
     connect(project_treeView, &ProjectTreeView::signal_dropped, proxy_model, &ProjectProxyModel::slot_dropped);
-    connect(proxy_model, &ProjectProxyModel::signal_dropped, project_model, &ProjectModel::slot_dropped);
+    connect(proxy_model, &ProjectProxyModel::signal_dropped, project_model, &model_type::slot_dropped);
+    connect(project_treeView, &ProjectTreeView::signal_setChecked, proxy_model, &ProjectProxyModel::slot_setChecked);
+    connect(proxy_model, &ProjectProxyModel::signal_setChecked, project_model, &model_type::slot_setChecked);
 }
 
 BuildWidget::~BuildWidget()
@@ -88,7 +89,7 @@ void BuildWidget::initUi()
 
     project_treeView = new ProjectTreeView(this);
     project_treeView->header()->hide();
-    project_model = new ProjectModel(this);
+    project_model = new model_type(this);
     project_model->setReadOnly(true);
     proxy_model = new ProjectProxyModel();
     proxy_model->setSourceModel(project_model);

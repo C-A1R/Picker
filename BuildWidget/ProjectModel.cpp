@@ -28,6 +28,14 @@ QVariant ProjectModel::data(const QModelIndex &index, int role) const
     {
         return QVariant(checkedItems.value(index.internalId(), Qt::Unchecked));
     }
+    if (role == Qt::BackgroundRole)
+    {
+        if (checkedItems.value(index.internalId()) == Qt::Checked)
+        {
+            return QColor(240, 178, 122);
+        }
+        return QColor(Qt::white);
+    }
     return QFileSystemModel::data(index, role);
 }
 
@@ -120,6 +128,18 @@ void ProjectModel::slot_dropped(const quintptr droppedIndexId, const QList<quint
     for (int j = draggeddIndicesIds.count() - 1; j >= 0; --j)
     {
         orders.insert(i, std::move(draggeddIndicesIds.at(j)));
+    }
+}
+
+void ProjectModel::slot_setChecked(const QModelIndexList &selected, const bool checked)
+{
+    if (selected.isEmpty())
+    {
+        return;
+    }
+    for (const QModelIndex &index : selected)
+    {
+        setData(index, checked ? Qt::CheckState::Checked : Qt::CheckState::Unchecked, Qt::CheckStateRole);
     }
 }
 
