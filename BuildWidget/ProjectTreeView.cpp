@@ -8,6 +8,11 @@ ProjectTreeView::ProjectTreeView(QWidget *parent) : QTreeView(parent)
 
 void ProjectTreeView::dragMoveEvent(QDragMoveEvent *event)
 {
+    if (!event)
+    {
+        return;
+    }
+
     const QModelIndex &droppedIndex = indexAt(event->position().toPoint());
     dropIndicatorPosition = getDropIndicatorPosition(event->position().toPoint(), visualRect(droppedIndex));
 
@@ -32,6 +37,10 @@ void ProjectTreeView::dragMoveEvent(QDragMoveEvent *event)
 
 void ProjectTreeView::dropEvent(QDropEvent *event)
 {
+    if (!event)
+    {
+        return;
+    }
     if (dropIndicatorPosition != QAbstractItemView::DropIndicatorPosition::AboveItem
         && dropIndicatorPosition != QAbstractItemView::DropIndicatorPosition::BelowItem)
     {

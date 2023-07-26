@@ -117,9 +117,9 @@ void ProjectModel::slot_dropped(const quintptr droppedIndexId, const QList<quint
         orders.removeOne(id);
     }
     auto i = droppedIndexId != 0 ? orders.indexOf(droppedIndexId) : orders.size()/*to the end*/;
-    for (const quintptr id : draggeddIndicesIds)
+    for (int j = draggeddIndicesIds.count() - 1; j >= 0; --j)
     {
-        orders.insert(i, std::move(id));
+        orders.insert(i, std::move(draggeddIndicesIds.at(j)));
     }
 }
 
