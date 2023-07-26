@@ -6,7 +6,7 @@
 
 class QToolBar;
 class QLabel;
-class QTreeView;
+class ProjectTreeView;
 class ProjectModel;
 class ProjectProxyModel;
 
@@ -26,7 +26,7 @@ class BuildWidget : public QWidget
     QToolBar *actions_toolBar = nullptr;
     QToolBar *saveOptions_toolBar = nullptr;
     QLabel *currentPath_label = nullptr;
-    QTreeView *project_treeView = nullptr;
+    ProjectTreeView *project_treeView = nullptr;
     ProjectModel *project_model = nullptr;
     ProjectProxyModel *proxy_model = nullptr;
 

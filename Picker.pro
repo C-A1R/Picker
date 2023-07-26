@@ -12,6 +12,7 @@ SOURCES += \
     BuildWidget/BuildWidget.cpp \
     BuildWidget/ProjectModel.cpp \
     BuildWidget/ProjectProxyModel.cpp \
+    BuildWidget/ProjectTreeView.cpp \
     FileSystemWidget/FileSystemWidget.cpp \
     MainWindow.cpp \
     Settings.cpp \
@@ -21,6 +22,7 @@ HEADERS += \
     BuildWidget/BuildWidget.h \
     BuildWidget/ProjectModel.h \
     BuildWidget/ProjectProxyModel.h \
+    BuildWidget/ProjectTreeView.h \
     FileSystemWidget/FileSystemWidget.h \
     MainWindow.h \
     Settings.h
@@ -32,3 +34,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 RESOURCES += \
     res.qrc
+
+RC_FILE = picker.rc

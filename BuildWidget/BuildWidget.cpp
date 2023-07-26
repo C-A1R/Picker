@@ -3,12 +3,12 @@
 #include <QToolBar>
 #include <QActionGroup>
 #include <QLabel>
-#include <QTreeView>
 #include <QHeaderView>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFileDialog>
 
+#include "ProjectTreeView.h"
 #include "ProjectModel.h"
 #include "ProjectProxyModel.h"
 #include "Settings.h"
@@ -19,6 +19,8 @@ BuildWidget::BuildWidget(QWidget *parent)
 {
     initUi();
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
+    connect(project_treeView, &ProjectTreeView::signal_dropped, proxy_model, &ProjectProxyModel::slot_dropped);
+    connect(proxy_model, &ProjectProxyModel::signal_dropped, project_model, &ProjectModel::slot_dropped);
 }
 
 BuildWidget::~BuildWidget()
@@ -84,13 +86,22 @@ void BuildWidget::initUi()
     currentPath_label->setIndent(5);
     currentPath_label->setSizePolicy(QSizePolicy::Policy::Ignored, QSizePolicy::Policy::Fixed);
 
-    project_treeView = new QTreeView(this);
+    project_treeView = new ProjectTreeView(this);
     project_treeView->header()->hide();
     project_model = new ProjectModel(this);
     project_model->setReadOnly(true);
     proxy_model = new ProjectProxyModel();
     proxy_model->setSourceModel(project_model);
+    proxy_model->setDynamicSortFilter(false);
     project_treeView->setModel(proxy_model);
+    project_treeView->setSortingEnabled(true);
+    project_treeView->sortByColumn(0, Qt::AscendingOrder);
+    project_treeView->setDragDropMode(QAbstractItemView::InternalMove);
+    project_treeView->setSelectionMode(QAbstractItemView::ContiguousSelection);
+    project_treeView->setDragEnabled(true);
+    project_treeView->setAcceptDrops(true);
+    project_treeView->setDropIndicatorShown(true);
+
     for (int i = 1; i < project_model->columnCount(); ++i)
     {
         project_treeView->hideColumn(i);

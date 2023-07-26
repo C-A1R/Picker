@@ -3,24 +3,34 @@
 
 #include <QFileSystemModel>
 
+class TreeNode;
+
 class ProjectModel : public QFileSystemModel
 {
     Q_OBJECT
 
-    QHash<qint64, Qt::CheckState> checkedItems;
-    QSet<qint64> hiddenIndexes;
+    QHash<quintptr, Qt::CheckState> checkedItems;
+    QSet<quintptr> hiddenIndexes;
+    QList<quintptr> orders;
 public:
     ProjectModel(QObject *parent = nullptr);
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
-    const QSet<qint64> &getHiddenIndexes() const;
+    Qt::DropActions supportedDropActions() const override;
+
+    const QSet<quintptr> &getHiddenIndexes() const;
+    const QList<quintptr> &getOrders() const;
 
 private:
-    void scanPdfItems(const QDir &dir);
+    void scanForHiddenItems(const QDir &dir);
+    void scanOrder(const QDir &dir);
 
 signals:
     void signal_itemChecked(const QModelIndex&);
+
+public slots:
+    void slot_dropped(const quintptr droppedIndexId, const QList<quintptr> draggeddIndicesIds);
 
 protected slots:
     void slot_onItemChecked(const QModelIndex& index);

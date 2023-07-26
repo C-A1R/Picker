@@ -1,9 +1,11 @@
 #include "ProjectModel.h"
 
+#include <QMimeData>
+
 ProjectModel::ProjectModel(QObject *parent) : QFileSystemModel(parent)
 {
     setNameFilterDisables(false);
-    setNameFilters(QStringList() << "*.pdf");
+    setNameFilters(QStringList{"*.pdf"});
     connect(this, &ProjectModel::signal_itemChecked, this, &ProjectModel::slot_onItemChecked);
     connect(this, &ProjectModel::rootPathChanged, this, &ProjectModel::slot_onRootPathChanged);
 }
@@ -14,7 +16,10 @@ Qt::ItemFlags ProjectModel::flags(const QModelIndex &index) const
     {
         return Qt::ItemFlag::NoItemFlags;
     }
-    return QAbstractItemModel::flags(index)| Qt::ItemIsUserCheckable;
+    return QAbstractItemModel::flags(index)
+           | Qt::ItemIsUserCheckable
+           | Qt::ItemIsDragEnabled
+           | Qt::ItemIsDropEnabled;
 }
 
 QVariant ProjectModel::data(const QModelIndex &index, int role) const
@@ -37,12 +42,22 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
     return QFileSystemModel::setData(index, value, role);
 }
 
-const QSet<qint64> &ProjectModel::getHiddenIndexes() const
+Qt::DropActions ProjectModel::supportedDropActions() const
+{
+    return Qt::MoveAction;
+}
+
+const QSet<quintptr> &ProjectModel::getHiddenIndexes() const
 {
     return hiddenIndexes;
 }
 
-void ProjectModel::scanPdfItems(const QDir &dir)
+const QList<quintptr> &ProjectModel::getOrders() const
+{
+    return orders;
+}
+
+void ProjectModel::scanForHiddenItems(const QDir &dir)
 {
     if (bool hasPdf = !dir.isEmpty(QDir::Files); !hasPdf)//pdf name filter has already turned on
     {
@@ -52,14 +67,59 @@ void ProjectModel::scanPdfItems(const QDir &dir)
             hiddenIndexes << index.internalId();
         }
     }
-    const auto dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
+    const auto &dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
     if (dirInfoList.isEmpty())
     {
         return;
     }
     for (const QFileInfo &dirInfo : dirInfoList)
     {
-        scanPdfItems(QDir(dirInfo.absoluteFilePath()));
+        scanForHiddenItems(QDir(dirInfo.absoluteFilePath()));
+    }
+}
+
+void ProjectModel::scanOrder(const QDir &dir)
+{
+    const QFileInfoList dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
+    if (dirInfoList.isEmpty())
+    {
+        return;
+    }
+    {
+        const QModelIndex &index = this->index(dir.absolutePath(), 0);
+        orders.emplace_back(index.internalId());
+    }
+    for (const QFileInfo &dirInfo : dirInfoList)
+    {
+        const QModelIndex &index = this->index(dirInfo.absoluteFilePath(), 0);
+        if (hiddenIndexes.contains(index.internalId()))
+        {
+            continue;
+        }
+        scanOrder(QDir(dirInfo.absoluteFilePath()));
+    }
+    const QFileInfoList pdfInfoList = dir.entryInfoList(QStringList{"*.pdf"}, QDir::Files);
+    for (const QFileInfo &pdfInfo : pdfInfoList)
+    {
+        const QModelIndex &index = this->index(pdfInfo.absoluteFilePath(), 0);
+        orders.emplace_back(index.internalId());
+    }
+}
+
+void ProjectModel::slot_dropped(const quintptr droppedIndexId, const QList<quintptr> draggeddIndicesIds)
+{
+    if (draggeddIndicesIds.isEmpty())
+    {
+        return;
+    }
+    for (const quintptr id : draggeddIndicesIds)
+    {
+        orders.removeOne(id);
+    }
+    auto i = droppedIndexId != 0 ? orders.indexOf(droppedIndexId) : orders.size()/*to the end*/;
+    for (const quintptr id : draggeddIndicesIds)
+    {
+        orders.insert(i, std::move(id));
     }
 }
 
@@ -126,5 +186,8 @@ void ProjectModel::slot_onItemChecked(const QModelIndex &index)
 
 void ProjectModel::slot_onRootPathChanged()
 {
-    scanPdfItems(rootDirectory());
+    hiddenIndexes.clear();
+    scanForHiddenItems(rootDirectory());
+    orders.clear();
+    scanOrder(rootDirectory());
 }
