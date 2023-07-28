@@ -30,7 +30,7 @@ void ProjectTreeView::dragMoveEvent(QDragMoveEvent *event)
         if (const QModelIndexList &draggedIndices = this->selectedIndexes();
             !draggedIndices.isEmpty())
         {
-            if (draggedIndices.first().parent().internalId() != droppedIndex.parent().internalId())
+            if (droppedIndex.isValid() && draggedIndices.first().parent().internalId() != droppedIndex.parent().internalId())
             {
                 event->ignore();
                 return;

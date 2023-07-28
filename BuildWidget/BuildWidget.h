@@ -15,6 +15,8 @@ using model_type = ProjectModel;
 
 class BuildWidget : public QWidget
 {
+    Q_OBJECT
+
     enum SaveOptions
     {
         SAVE_NONE = 0x0,
@@ -22,8 +24,6 @@ class BuildWidget : public QWidget
         SAVE_TO_DEFENIT_FOLDER = 0x2
     };
     Q_DECLARE_FLAGS(SaveOpt, SaveOptions);
-
-    Q_OBJECT
 
     QToolBar *actions_toolBar = nullptr;
     QToolBar *saveOptions_toolBar = nullptr;

@@ -11,6 +11,7 @@ class ProjectModel : public QFileSystemModel
 
     QHash<quintptr, Qt::CheckState> checkedItems;
     QSet<quintptr> hiddenIndexes;
+    QHash<quintptr, bool> visibility;
     QList<quintptr> orders;
 
 public:
@@ -24,7 +25,7 @@ public:
     const QList<quintptr> &getOrders() const;
 
 private:
-    void scanForHiddenItems(const QDir &dir);
+    [[maybe_unused]] bool scanForHiddenItems(const QDir &dir);
     void scanOrder(const QDir &dir);
 
 signals:

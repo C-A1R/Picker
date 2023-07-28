@@ -65,34 +65,45 @@ const QList<quintptr> &ProjectModel::getOrders() const
     return orders;
 }
 
-void ProjectModel::scanForHiddenItems(const QDir &dir)
+[[maybe_unused]] bool ProjectModel::scanForHiddenItems(const QDir &dir)
 {
-    if (bool hasPdf = !dir.isEmpty(QDir::Files); !hasPdf)//pdf name filter has already turned on
-    {
-        const QModelIndex &index = this->index(dir.absolutePath(), 0);
-        if (index.isValid())
-        {
-            hiddenIndexes << index.internalId();
-        }
-    }
     const auto &dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
+    const auto &pdfInfoList = dir.entryInfoList(QStringList() << "*.pdf", QDir::Files);
+    const bool hasPdf = !pdfInfoList.isEmpty();
     if (dirInfoList.isEmpty())
     {
-        return;
+        return hasPdf;
     }
+
+    bool foundPdf = false;
     for (const QFileInfo &dirInfo : dirInfoList)
     {
-        scanForHiddenItems(QDir(dirInfo.absoluteFilePath()));
+        if (const QString &path{dirInfo.absoluteFilePath()}; !scanForHiddenItems(QDir(path)))
+        {
+            const QModelIndex &index = this->index(path, 0);
+            if (index.isValid())
+            {
+                hiddenIndexes << index.internalId();
+            }
+        }
+        else
+        {
+            foundPdf = true;
+        }
     }
+    return hasPdf || foundPdf;
 }
 
 void ProjectModel::scanOrder(const QDir &dir)
 {
-    const QFileInfoList dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
-    if (dirInfoList.isEmpty())
+    const QModelIndex &index = this->index(dir.absolutePath(), 0);
+    if (hiddenIndexes.contains(index.internalId()))
     {
         return;
     }
+
+    const QFileInfoList &dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
+    if (dir != this->rootDirectory())
     {
         const QModelIndex &index = this->index(dir.absolutePath(), 0);
         orders.emplace_back(index.internalId());
@@ -106,7 +117,7 @@ void ProjectModel::scanOrder(const QDir &dir)
         }
         scanOrder(QDir(dirInfo.absoluteFilePath()));
     }
-    const QFileInfoList pdfInfoList = dir.entryInfoList(QStringList{"*.pdf"}, QDir::Files);
+    const QFileInfoList pdfInfoList = dir.entryInfoList(QStringList{"*.pdf"}, QDir::Files, QDir::NoSort);
     for (const QFileInfo &pdfInfo : pdfInfoList)
     {
         const QModelIndex &index = this->index(pdfInfo.absoluteFilePath(), 0);
@@ -207,7 +218,7 @@ void ProjectModel::slot_onItemChecked(const QModelIndex &index)
 void ProjectModel::slot_onRootPathChanged()
 {
     hiddenIndexes.clear();
-    scanForHiddenItems(rootDirectory());
     orders.clear();
+    scanForHiddenItems(rootDirectory());
     scanOrder(rootDirectory());
 }
