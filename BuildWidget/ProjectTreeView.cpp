@@ -61,6 +61,14 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
         droppedIndex = model()->index(droppedIndex.row() + 1, droppedIndex.column(), droppedIndex.parent());
     }
     const QModelIndexList &draggedIndices = this->selectedIndexes();
+    if (draggedIndices.isEmpty())
+    {
+        return;
+    }
+    if (droppedIndex.isValid() && droppedIndex == draggedIndices.first())
+    {
+        return;
+    }
     emit signal_dropped(droppedIndex, draggedIndices);
     this->sortByColumn(0, Qt::AscendingOrder);
     event->accept();
