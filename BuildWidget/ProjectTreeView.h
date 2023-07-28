@@ -1,11 +1,19 @@
 #ifndef PROJECTTREEVIEW_H
 #define PROJECTTREEVIEW_H
 
+#include <QProxyStyle>
 #include <QTreeView>
 
 class ProjectTreeView : public QTreeView
 {
     Q_OBJECT
+
+    class ProjectTreeViewStyle: public QProxyStyle
+    {
+    public:
+        ProjectTreeViewStyle(QStyle *style = nullptr) : QProxyStyle(style) {}
+        void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget = nullptr) const override;
+    };
 
     QAction *setChecked_action = nullptr;
     QMenu *contextMenu = nullptr;

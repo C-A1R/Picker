@@ -2,9 +2,11 @@
 
 #include <QDropEvent>
 #include <QMenu>
+#include <QPainter>
 
 ProjectTreeView::ProjectTreeView(QWidget *parent) : QTreeView(parent)
 {
+    setStyle(new ProjectTreeViewStyle(style()));
     {
         setChecked_action = new QAction("Отметить", this);
         setChecked_action->setCheckable(true);
@@ -115,4 +117,22 @@ void ProjectTreeView::contextMenuEvent(QContextMenuEvent *event)
 void ProjectTreeView::slot_setChecked(const bool checked)
 {
     emit signal_setChecked(selectedIndexes(), checked);
+}
+
+void ProjectTreeView::ProjectTreeViewStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget) const
+{
+    if (element == QStyle::PE_IndicatorItemViewItemDrop && !option->rect.isNull())
+    {
+        QRect rect(option->rect);
+        rect.setLeft(0);
+        rect.setHeight(3);
+        painter->save();
+        painter->setRenderHint(QPainter::Antialiasing);
+        painter->setBrush(QBrush(QColor(44, 62, 80)));
+        painter->setPen(Qt::NoPen);
+        painter->drawRoundedRect(rect, 1.5, 1.5);
+        painter->restore();
+        return;
+    }
+    QProxyStyle::drawPrimitive(element, option, painter, widget);
 }
