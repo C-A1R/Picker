@@ -8,6 +8,8 @@ CONFIG += c++17
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+LIBS += -L$$PWD/lib/ -lPDFWriter
+
 SOURCES += \
     BuildWidget/BuildWidget.cpp \
     BuildWidget/ProjectModel.cpp \
@@ -15,6 +17,7 @@ SOURCES += \
     BuildWidget/ProjectTreeView.cpp \
     FileSystemWidget/FileSystemWidget.cpp \
     MainWindow.cpp \
+    PdfBuilder/ToFoldersPdfBuilder.cpp \
     Settings.cpp \
     main.cpp
 
@@ -25,6 +28,8 @@ HEADERS += \
     BuildWidget/ProjectTreeView.h \
     FileSystemWidget/FileSystemWidget.h \
     MainWindow.h \
+    PdfBuilder/IPdfBuilder.h \
+    PdfBuilder/ToFoldersPdfBuilder.h \
     Settings.h
 
 # Default rules for deployment.

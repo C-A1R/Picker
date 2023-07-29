@@ -7,10 +7,13 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFileDialog>
+#include <QMessageBox>
+#include <QSharedPointer>
 
 #include "ProjectTreeView.h"
 #include "ProjectProxyModel.h"
 #include "Settings.h"
+#include "PdfBuilder/ToFoldersPdfBuilder.h"
 
 BuildWidget::BuildWidget(QWidget *parent)
     : QWidget(parent),
@@ -151,7 +154,29 @@ void BuildWidget::slot_saveList()
 
 void BuildWidget::slot_build()
 {
-
+    if (saveOptions == SaveOptions::SAVE_NONE)
+    {
+        QMessageBox::warning(this, "Внимание", "Не выбраны опции сохранения");
+        return;
+    }
+    QList<QSharedPointer<const IPdfBuilder>> builders;
+    if (saveOptions.testFlag(SaveOptions::SAVE_TO_FOLDERS))
+    {
+        builders.emplace_back(new ToFoldersPdfBuilder());
+    }
+//    if (saveOptions.testFlag(SaveOptions::SAVE_TO_DEFENIT_FOLDER))
+//    {
+//        builders.emplace_back(new ToFoldersPdfBuilder());
+//    }
+    if (builders.isEmpty())
+    {
+        QMessageBox::critical(this, "Ошибка", "Не могу выполнить сборку");
+        return;
+    }
+    for (const auto &builder : builders)
+    {
+        builder->build(project_model->getOrders());
+    }
 }
 
 void BuildWidget::slot_saveToFoldersOptionChanged(bool checked)
