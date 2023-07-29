@@ -11,8 +11,8 @@ class ProjectModel : public QFileSystemModel
 
     QHash<quintptr, Qt::CheckState> checkedItems;
     QSet<quintptr> hiddenIndexes;
-    QHash<quintptr, bool> visibility;
     QList<quintptr> orders;
+    QHash<quintptr, QString> pdfPaths;
 
 public:
     ProjectModel(QObject *parent = nullptr);
@@ -23,10 +23,12 @@ public:
 
     const QSet<quintptr> &getHiddenIndexes() const;
     const QList<quintptr> &getOrders() const;
+    const QStringList getCheckedPdfPaths() const;
 
 private:
     [[maybe_unused]] bool scanForHiddenItems(const QDir &dir);
     void scanOrder(const QDir &dir);
+    void cleanup();
 
 signals:
     void signal_itemChecked(const QModelIndex&);

@@ -1,6 +1,11 @@
 #include "ToFoldersPdfBuilder.h"
 
-void ToFoldersPdfBuilder::build(const QList<quintptr> &/*orders*/) const
-{
+#include <QDebug>
 
+void ToFoldersPdfBuilder::exec(const QStringList &paths) const
+{
+    for (const QString &path : paths)
+    {
+        qDebug() << "#" << path;
+    }
 }

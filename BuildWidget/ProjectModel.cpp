@@ -65,6 +65,25 @@ const QList<quintptr> &ProjectModel::getOrders() const
     return orders;
 }
 
+const QStringList ProjectModel::getCheckedPdfPaths() const
+{
+    QStringList result;
+    QString tmp;
+    for (const quintptr indexId : orders)
+    {
+        if (checkedItems.value(indexId, Qt::Unchecked) == Qt::Unchecked)
+        {
+            continue;
+        }
+        tmp = pdfPaths.value(indexId, QString());
+        if (!tmp.isEmpty())
+        {
+            result.emplace_back(std::move(tmp));
+        }
+    }
+    return result;
+}
+
 [[maybe_unused]] bool ProjectModel::scanForHiddenItems(const QDir &dir)
 {
     const auto &dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
@@ -122,7 +141,16 @@ void ProjectModel::scanOrder(const QDir &dir)
     {
         const QModelIndex &index = this->index(pdfInfo.absoluteFilePath(), 0);
         orders.emplace_back(index.internalId());
+        pdfPaths.emplace(index.internalId(), this->filePath(index));
     }
+}
+
+void ProjectModel::cleanup()
+{
+    checkedItems.clear();
+    hiddenIndexes.clear();
+    orders.clear();
+    pdfPaths.clear();
 }
 
 void ProjectModel::slot_dropped(const quintptr droppedIndexId, const QList<quintptr> draggeddIndicesIds)
@@ -217,8 +245,7 @@ void ProjectModel::slot_onItemChecked(const QModelIndex &index)
 
 void ProjectModel::slot_onRootPathChanged()
 {
-    hiddenIndexes.clear();
-    orders.clear();
+    cleanup();
     scanForHiddenItems(rootDirectory());
     scanOrder(rootDirectory());
 }

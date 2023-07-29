@@ -173,9 +173,16 @@ void BuildWidget::slot_build()
         QMessageBox::critical(this, "Ошибка", "Не могу выполнить сборку");
         return;
     }
+
+    const auto checkedPdf = project_model->getCheckedPdfPaths();
+    if (checkedPdf.isEmpty())
+    {
+        QMessageBox::warning(this, "Внимание", "Не выбраны файлы для сохранения");
+        return;
+    }
     for (const auto &builder : builders)
     {
-        builder->build(project_model->getOrders());
+        builder->exec(checkedPdf);
     }
 }
 
