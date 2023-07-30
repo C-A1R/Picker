@@ -182,7 +182,7 @@ void BuildWidget::slot_build()
     }
     for (const auto &builder : builders)
     {
-        builder->exec(checkedPdf);
+        builder->exec("D:/myFile.pdf", checkedPdf);
     }
 }
 

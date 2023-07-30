@@ -10,7 +10,7 @@ public:
     ~ToFoldersPdfBuilder() override = default;
 
 protected:
-    void exec(const QStringList &paths) const override;
+    void exec(const QString &filename, const QStringList &paths) const override;
 };
 
 #endif // TOFOLDERSPDFBUILDER_H
