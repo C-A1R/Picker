@@ -100,7 +100,7 @@ void BuildWidget::initUi()
     project_treeView->setSortingEnabled(true);
     project_treeView->sortByColumn(0, Qt::AscendingOrder);
     project_treeView->setDragDropMode(QAbstractItemView::InternalMove);
-    project_treeView->setSelectionMode(QAbstractItemView::ContiguousSelection);
+    project_treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     project_treeView->setDragEnabled(true);
     project_treeView->setAcceptDrops(true);
     project_treeView->setDropIndicatorShown(true);
@@ -155,14 +155,17 @@ void BuildWidget::slot_build()
 {
     if (saveOptions == SaveOptions::SAVE_NONE)
     {
-        QMessageBox::warning(this, "Внимание", "Не выбраны опции сохранения");
+        QMessageBox::warning(this, windowTitle(), "Не выбраны опции сохранения");
         return;
     }
 
     builders.clear();
     if (saveOptions.testFlag(SaveOptions::SAVE_TO_FOLDERS))
     {
-        builders.emplace_back(new ToFoldersPdfBuilder(project_model->rootPath()));
+        QSharedPointer<IPdfBuilder> toFoldersPdfBuilder{new ToFoldersPdfBuilder(project_model->rootPath())};
+        connect(toFoldersPdfBuilder.get(), &IPdfBuilder::signal_finished, this, &BuildWidget::slot_buildFinished);
+        connect(toFoldersPdfBuilder.get(), &IPdfBuilder::signal_cancelled, this, &BuildWidget::slot_buildCancelled);
+        builders.emplace_back(toFoldersPdfBuilder);
     }
 //    if (saveOptions.testFlag(SaveOptions::SAVE_TO_DEFENIT_FOLDER))
 //    {
@@ -170,14 +173,14 @@ void BuildWidget::slot_build()
 //    }
     if (builders.isEmpty())
     {
-        QMessageBox::critical(this, "Ошибка", "Не могу выполнить сборку");
+        QMessageBox::critical(this, windowTitle(), "Не могу выполнить сборку");
         return;
     }
 
     const auto checkedPdf = project_model->getCheckedPdfPaths();
     if (checkedPdf.isEmpty())
     {
-        QMessageBox::warning(this, "Внимание", "Не выбраны файлы для сохранения");
+        QMessageBox::warning(this, windowTitle(), "Не выбраны файлы для сохранения");
         return;
     }
     for (const auto &builder : builders)
@@ -194,4 +197,14 @@ void BuildWidget::slot_saveToFoldersOptionChanged(bool checked)
 void BuildWidget::slot_saveToDefenitFolderOptionChanged(bool checked)
 {
     saveOptions.setFlag(SaveOptions::SAVE_TO_DEFENIT_FOLDER, checked);
+}
+
+void BuildWidget::slot_buildFinished()
+{
+    QMessageBox::information(this, windowTitle(), "Сборка завершена");
+}
+
+void BuildWidget::slot_buildCancelled()
+{
+    QMessageBox::information(this, windowTitle(), "Сборка отменена пользователем");
 }

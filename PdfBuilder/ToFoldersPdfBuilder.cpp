@@ -2,6 +2,8 @@
 #include "PDFWriter/PDFWriter.h"
 
 #include <QDir>
+#include <QProgressDialog>
+#include <QThread>
 
 #include <thread>
 #include <iostream>
@@ -9,10 +11,24 @@
 ToFoldersPdfBuilder::ToFoldersPdfBuilder(const QString &rootPath)
     : rootPath{rootPath}
 {
-    threads.reserve(THREAD_COUNT);
-    for (int i = 0 ; i < THREAD_COUNT; ++i)
+    const unsigned int threads_count = 4/*std::thread::hardware_concurrency() - 1*/;
+    threads.reserve(threads_count);
+    for (unsigned int i = 0 ; i < threads_count; ++i)
     {
         threads.emplace_back(&ToFoldersPdfBuilder::loop, this);
+    }
+    progress.reset(new QProgressDialog("Сборка...", "Отмена", currentProgress, 0));
+    progress->setWindowModality(Qt::ApplicationModal);
+    connect(progress.get(), &QProgressDialog::canceled, this, &ToFoldersPdfBuilder::slot_cancelled);
+    connect(this, &ToFoldersPdfBuilder::signal_fileProcessed, this, &ToFoldersPdfBuilder::slot_fileProcessed);
+}
+
+ToFoldersPdfBuilder::~ToFoldersPdfBuilder()
+{
+    stop();
+    for (auto &t : threads)
+    {
+        t.join();
     }
 }
 
@@ -29,7 +45,9 @@ void ToFoldersPdfBuilder::exec(const QStringList &paths)
         const QString firstLevelPath = path.left(path.indexOf('/', rootPath.size() + 1));
         structure[firstLevelPath == path ? rootPath : firstLevelPath] << path;
     }
-
+    expectedProgress = paths.count();
+    progress->setMaximum(paths.count());
+    progress->show();
     QHashIterator<QString, QStringList> iter(structure);
     while(iter.hasNext())
     {
@@ -41,8 +59,8 @@ void ToFoldersPdfBuilder::exec(const QStringList &paths)
             continue;
         }
         {
-            std::unique_lock lock(m);
-            tasks.emplace([pdfFilePaths, resultPath]() -> void
+            std::unique_lock lock(taskMutex);
+            tasks.emplace([pdfFilePaths, resultPath, this]() -> void
                           {
                               QDir dir{resultPath};
                               if (dir.exists())
@@ -55,6 +73,11 @@ void ToFoldersPdfBuilder::exec(const QStringList &paths)
                               for (const QString &path : pdfFilePaths)
                               {
                                   pdfWriter.AppendPDFPagesFromPDF(path.toUtf8().toStdString(), PDFPageRange());
+                                  if (std::unique_lock lock(taskMutex); stopped)
+                                  {
+                                      return;
+                                  }
+                                  emit signal_fileProcessed();
                               }
                               pdfWriter.EndPDF();
                           });
@@ -69,11 +92,19 @@ void ToFoldersPdfBuilder::loop()
     while(true)
     {
         {
-            std::unique_lock lock(m);
+            std::unique_lock lock(taskMutex);
             cv.wait(lock, [this]() -> bool
                     {
+                        if (stopped)
+                        {
+                            return true;
+                        }
                         return !tasks.empty();
                     });
+            if (stopped)
+            {
+                return;
+            }
             if (!tasks.empty())
             {
                 fn = tasks.front();
@@ -93,6 +124,15 @@ void ToFoldersPdfBuilder::loop()
             std::cerr << "unknown exception" << std::endl;
         }
     }
+}
+
+void ToFoldersPdfBuilder::stop()
+{
+    {
+        std::unique_lock lk(taskMutex);
+        stopped = true;
+    }
+    cv.notify_all();
 }
 
 QString ToFoldersPdfBuilder::resultFilePath(const QString &firstLevelPath)
@@ -124,4 +164,19 @@ QString ToFoldersPdfBuilder::resultFilePath(const QString &firstLevelPath)
                  + ".pdf";
     }
     return result;
+}
+
+void ToFoldersPdfBuilder::slot_fileProcessed()
+{
+    progress->setValue(++currentProgress);
+    if (currentProgress == expectedProgress)
+    {
+        emit signal_finished();
+    }
+}
+
+void ToFoldersPdfBuilder::slot_cancelled()
+{
+    stop();
+    emit signal_cancelled();
 }

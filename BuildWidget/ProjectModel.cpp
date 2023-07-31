@@ -87,7 +87,7 @@ const QStringList ProjectModel::getCheckedPdfPaths() const
 [[maybe_unused]] bool ProjectModel::scanForHiddenItems(const QDir &dir)
 {
     const auto &dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
-    const auto &pdfInfoList = dir.entryInfoList(QStringList() << "*.pdf", QDir::Files);
+    const auto &pdfInfoList = dir.entryInfoList(QStringList{"*.pdf"}, QDir::Files);
     const bool hasPdf = !pdfInfoList.isEmpty();
     if (dirInfoList.isEmpty())
     {

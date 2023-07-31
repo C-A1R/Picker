@@ -8,6 +8,7 @@
 
 class QToolBar;
 class QLabel;
+class QProgressDialog;
 class ProjectTreeView;
 class ProjectProxyModel;
 class IPdfBuilder;
@@ -34,7 +35,6 @@ class BuildWidget : public QWidget
     ProjectProxyModel *proxy_model = nullptr;
 
     SaveOpt saveOptions = SaveOptions::SAVE_TO_FOLDERS;
-
     QList<QSharedPointer<IPdfBuilder>> builders;
 
 public:
@@ -51,6 +51,8 @@ private slots:
     void slot_build();
     void slot_saveToFoldersOptionChanged(bool checked);
     void slot_saveToDefenitFolderOptionChanged(bool checked);
+    void slot_buildFinished();
+    void slot_buildCancelled();
 };
 
 #endif // BUILDWIDGET_H
