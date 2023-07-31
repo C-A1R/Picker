@@ -9,7 +9,7 @@ public:
     IPdfBuilder() = default;
     virtual ~IPdfBuilder() = default;
 
-    virtual void exec(const QString &filename, const QStringList &paths) const = 0;
+    virtual void exec(const QStringList &paths) = 0;
 };
 
 #endif // IPDFBUILDER_H

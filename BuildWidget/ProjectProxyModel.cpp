@@ -1,8 +1,7 @@
 #include "ProjectProxyModel.h"
+#include "BuildWidget.h"
 
 #include <QFileSystemModel>
-
-#include "BuildWidget.h"
 
 ProjectProxyModel::ProjectProxyModel(QObject *parent)
     : QSortFilterProxyModel(parent)

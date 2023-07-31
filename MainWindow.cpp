@@ -1,10 +1,9 @@
 #include "MainWindow.h"
+#include "FileSystemWidget/FileSystemWidget.h"
+#include "BuildWidget/BuildWidget.h"
 
 #include <QSplitter>
 #include <QVBoxLayout>
-
-#include "FileSystemWidget/FileSystemWidget.h"
-#include "BuildWidget/BuildWidget.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)

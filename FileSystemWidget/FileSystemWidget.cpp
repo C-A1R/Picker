@@ -1,4 +1,5 @@
 #include "FileSystemWidget.h"
+#include "Settings.h"
 
 #include <QToolBar>
 #include <QLabel>
@@ -6,8 +7,6 @@
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QFileSystemModel>
-
-#include "Settings.h"
 
 FileSystemWidget::FileSystemWidget(QWidget *parent)
     : QWidget(parent)

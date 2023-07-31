@@ -10,6 +10,7 @@ class QToolBar;
 class QLabel;
 class ProjectTreeView;
 class ProjectProxyModel;
+class IPdfBuilder;
 
 using model_type = ProjectModel;
 
@@ -33,6 +34,8 @@ class BuildWidget : public QWidget
     ProjectProxyModel *proxy_model = nullptr;
 
     SaveOpt saveOptions = SaveOptions::SAVE_TO_FOLDERS;
+
+    QList<QSharedPointer<IPdfBuilder>> builders;
 
 public:
     BuildWidget(QWidget *parent = nullptr);

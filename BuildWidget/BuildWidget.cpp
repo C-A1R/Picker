@@ -1,4 +1,8 @@
 #include "BuildWidget.h"
+#include "ProjectTreeView.h"
+#include "ProjectProxyModel.h"
+#include "Settings.h"
+#include "PdfBuilder/ToFoldersPdfBuilder.h"
 
 #include <QToolBar>
 #include <QActionGroup>
@@ -9,11 +13,6 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QSharedPointer>
-
-#include "ProjectTreeView.h"
-#include "ProjectProxyModel.h"
-#include "Settings.h"
-#include "PdfBuilder/ToFoldersPdfBuilder.h"
 
 BuildWidget::BuildWidget(QWidget *parent)
     : QWidget(parent),
@@ -159,10 +158,11 @@ void BuildWidget::slot_build()
         QMessageBox::warning(this, "Внимание", "Не выбраны опции сохранения");
         return;
     }
-    QList<QSharedPointer<const IPdfBuilder>> builders;
+
+    builders.clear();
     if (saveOptions.testFlag(SaveOptions::SAVE_TO_FOLDERS))
     {
-        builders.emplace_back(new ToFoldersPdfBuilder());
+        builders.emplace_back(new ToFoldersPdfBuilder(project_model->rootPath()));
     }
 //    if (saveOptions.testFlag(SaveOptions::SAVE_TO_DEFENIT_FOLDER))
 //    {
@@ -182,7 +182,7 @@ void BuildWidget::slot_build()
     }
     for (const auto &builder : builders)
     {
-        builder->exec("D:/myFile.pdf", checkedPdf);
+        builder->exec(checkedPdf);
     }
 }
 
