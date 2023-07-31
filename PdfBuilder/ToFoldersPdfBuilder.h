@@ -28,6 +28,7 @@ protected:
 
 private:
     void loop();
+    QString resultFilePath(const QString &firstLevelPath);
 };
 
 #endif // TOFOLDERSPDFBUILDER_H
