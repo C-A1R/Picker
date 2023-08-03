@@ -1,6 +1,5 @@
 #include "AbstractPdfBuilder.h"
 #include "PDFWriter/PDFWriter.h"
-#include "Settings.h"
 
 #include <QDir>
 #include <QProgressDialog>
@@ -142,7 +141,7 @@ void AbstractPdfBuilder::slot_fileProcessed()
     progress->setValue(++currentProgress);
     if (currentProgress == expectedProgress)
     {
-        emit signal_finished();
+        emit signal_allFilesProcessed();
     }
 }
 

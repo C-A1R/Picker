@@ -22,9 +22,10 @@ class AbstractPdfBuilder : public IPdfBuilder
     std::queue<std::function<void()>> tasks;
     bool stopped = false;
 
-    QScopedPointer<QProgressDialog> progress;
     uint expectedProgress = 0;
     uint currentProgress = 0;
+protected:
+    QScopedPointer<QProgressDialog> progress;
 
 public:
     AbstractPdfBuilder(const QString &rootPath);
@@ -40,6 +41,7 @@ private:
 
 signals:
     void signal_fileProcessed();
+    void signal_allFilesProcessed();
 
 private slots:
     void slot_fileProcessed();

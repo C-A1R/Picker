@@ -13,6 +13,8 @@ public:
 protected:
     void exec(const QStringList &paths) override;
     QString destinationFilePath(const QString &parentPath) override;
+private slots:
+    void slot_allFilesProcessed();
 };
 
 #endif // TOPARENTANDDEFENITFOLDERPDFBUILDER_H

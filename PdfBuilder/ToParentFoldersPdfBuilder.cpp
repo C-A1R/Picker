@@ -3,6 +3,7 @@
 ToParentFoldersPdfBuilder::ToParentFoldersPdfBuilder(const QString &rootPath)
     : AbstractPdfBuilder{rootPath}
 {
+    connect(this, &AbstractPdfBuilder::signal_allFilesProcessed, this, &IPdfBuilder::signal_finished);
 }
 
 QString ToParentFoldersPdfBuilder::destinationFilePath(const QString &parentPath)

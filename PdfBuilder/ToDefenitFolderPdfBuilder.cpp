@@ -3,6 +3,7 @@
 ToDefenitFolderPdfBuilder::ToDefenitFolderPdfBuilder(const QString &rootPath, QString &&defenitFolder)
     : AbstractPdfBuilder(rootPath), defenitFolder{std::move(defenitFolder)}
 {
+    connect(this, &AbstractPdfBuilder::signal_allFilesProcessed, this, &IPdfBuilder::signal_finished);
 }
 
 QString ToDefenitFolderPdfBuilder::destinationFilePath(const QString &parentPath)
