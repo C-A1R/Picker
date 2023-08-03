@@ -6,6 +6,7 @@
 #define SETTINGS_FILESYSTEM_PATH  "filesystem_path"
 #define SETTINGS_BUILD_PATH  "build_path"
 #define SETTINGS_SAVE_OPTIONS  "save_options"
+#define SETTINGS_DEFENIT_PATH  "defenit_path"
 
 class Settings
 {

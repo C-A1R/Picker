@@ -22,7 +22,7 @@ class BuildWidget : public QWidget
     enum SaveOptions
     {
         SAVE_NONE = 0x0,
-        SAVE_TO_FOLDERS = 0x1,
+        SAVE_TO_PARENT_FOLDERS = 0x1,
         SAVE_TO_DEFENIT_FOLDER = 0x2
     };
     Q_DECLARE_FLAGS(SaveOpt, SaveOptions);
@@ -34,8 +34,8 @@ class BuildWidget : public QWidget
     model_type *project_model = nullptr;
     ProjectProxyModel *proxy_model = nullptr;
 
-    SaveOpt saveOptions = SaveOptions::SAVE_TO_FOLDERS;
-    QList<QSharedPointer<IPdfBuilder>> builders;
+    SaveOpt saveOptions = SaveOptions::SAVE_TO_PARENT_FOLDERS;
+    QScopedPointer<IPdfBuilder> builder;
 
 public:
     BuildWidget(QWidget *parent = nullptr);
@@ -44,6 +44,7 @@ public:
 private:
     void initUi();
     void changeProject(const QString &path);
+    QString getDefenitFolder() const;
 
 private slots:
     void slot_changeProject();

@@ -2,7 +2,9 @@
 #include "ProjectTreeView.h"
 #include "ProjectProxyModel.h"
 #include "Settings.h"
-#include "PdfBuilder/ToFoldersPdfBuilder.h"
+#include "PdfBuilder/ToParentFoldersPdfBuilder.h"
+#include "PdfBuilder/ToDefenitFolderPdfBuilder.h"
+#include "PdfBuilder/ToParentAndDefenitFolderPdfBuilder.h"
 
 #include <QToolBar>
 #include <QActionGroup>
@@ -16,7 +18,7 @@
 
 BuildWidget::BuildWidget(QWidget *parent)
     : QWidget(parent),
-    saveOptions{SaveOpt::fromInt(Settings::instance()->value(SETTINGS_SAVE_OPTIONS, SaveOptions::SAVE_TO_FOLDERS).toInt())}
+    saveOptions{SaveOpt::fromInt(Settings::instance()->value(SETTINGS_SAVE_OPTIONS, SaveOptions::SAVE_TO_PARENT_FOLDERS).toInt())}
 {
     initUi();
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
@@ -63,7 +65,7 @@ void BuildWidget::initUi()
         act->setToolTip("Сохранить в каталогах");
         act->setIcon(QIcon(":/buildWidget/ico/folders.svg"));
         act->setCheckable(true);
-        act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_FOLDERS));
+        act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_PARENT_FOLDERS));
         connect(act, &QAction::triggered, this, &BuildWidget::slot_saveToFoldersOptionChanged);
         saveOptions_toolBar->addAction(act);
     }
@@ -131,6 +133,27 @@ void BuildWidget::changeProject(const QString &path)
     project_treeView->setRootIndex(proxy_model->mapFromSource(project_model->index(path)));
 }
 
+QString BuildWidget::getDefenitFolder() const
+{
+    QString defenitFolder{Settings::instance()->value(SETTINGS_DEFENIT_PATH).toString()};
+    auto currentPath = defenitFolder;
+    if (currentPath.isEmpty())
+    {
+        currentPath = QDir::homePath();
+    }
+    defenitFolder = QFileDialog::getExistingDirectory(nullptr, QStringLiteral("Укажите путь для сохранения файлов"), currentPath);
+    if (defenitFolder.isEmpty())
+    {
+        return defenitFolder;
+    }
+    if (!defenitFolder.endsWith('/'))
+    {
+        defenitFolder += '/';
+    }
+    Settings::instance()->setValue(SETTINGS_DEFENIT_PATH, defenitFolder);
+    return defenitFolder;
+}
+
 void BuildWidget::slot_changeProject()
 {
     auto currentPath = currentPath_label->text();
@@ -159,39 +182,52 @@ void BuildWidget::slot_build()
         return;
     }
 
-    builders.clear();
-    if (saveOptions.testFlag(SaveOptions::SAVE_TO_FOLDERS))
+    if (saveOptions == SaveOptions::SAVE_TO_PARENT_FOLDERS)
     {
-        QSharedPointer<IPdfBuilder> toFoldersPdfBuilder{new ToFoldersPdfBuilder(project_model->rootPath())};
-        connect(toFoldersPdfBuilder.get(), &IPdfBuilder::signal_finished, this, &BuildWidget::slot_buildFinished);
-        connect(toFoldersPdfBuilder.get(), &IPdfBuilder::signal_cancelled, this, &BuildWidget::slot_buildCancelled);
-        builders.emplace_back(toFoldersPdfBuilder);
+        builder.reset(new ToParentFoldersPdfBuilder(project_model->rootPath()));
     }
-//    if (saveOptions.testFlag(SaveOptions::SAVE_TO_DEFENIT_FOLDER))
-//    {
-//        builders.emplace_back(new ToFoldersPdfBuilder());
-//    }
-    if (builders.isEmpty())
+    else if (saveOptions == SaveOptions::SAVE_TO_DEFENIT_FOLDER)
+    {
+        QString defenitFolder = getDefenitFolder();
+        if (defenitFolder.isEmpty())
+        {
+            return;
+        }
+        builder.reset(new ToDefenitFolderPdfBuilder(project_model->rootPath(), std::move(defenitFolder)));
+    }
+    else if (saveOptions.testFlag(SaveOptions::SAVE_TO_PARENT_FOLDERS)
+               && saveOptions.testFlag(SaveOptions::SAVE_TO_DEFENIT_FOLDER))
+    {
+        QString defenitFolder = getDefenitFolder();
+        if (defenitFolder.isEmpty())
+        {
+            return;
+        }
+        builder.reset(new ToParentAndDefenitFolderPdfBuilder(project_model->rootPath(),  std::move(defenitFolder)));
+    }
+    else
+    {
+        builder.reset(nullptr);
+    }
+    if (builder.isNull())
     {
         QMessageBox::critical(this, windowTitle(), "Не могу выполнить сборку");
         return;
     }
-
+    connect(builder.get(), &IPdfBuilder::signal_finished, this, &BuildWidget::slot_buildFinished);
+    connect(builder.get(), &IPdfBuilder::signal_cancelled, this, &BuildWidget::slot_buildCancelled);
     const auto checkedPdf = project_model->getCheckedPdfPaths();
     if (checkedPdf.isEmpty())
     {
         QMessageBox::warning(this, windowTitle(), "Не выбраны файлы для сохранения");
         return;
     }
-    for (const auto &builder : builders)
-    {
-        builder->exec(checkedPdf);
-    }
+    builder->exec(checkedPdf);
 }
 
 void BuildWidget::slot_saveToFoldersOptionChanged(bool checked)
 {
-    saveOptions.setFlag(SaveOptions::SAVE_TO_FOLDERS, checked);
+    saveOptions.setFlag(SaveOptions::SAVE_TO_PARENT_FOLDERS, checked);
 }
 
 void BuildWidget::slot_saveToDefenitFolderOptionChanged(bool checked)

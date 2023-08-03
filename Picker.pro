@@ -16,7 +16,10 @@ SOURCES += \
     BuildWidget/ProjectTreeView.cpp \
     FileSystemWidget/FileSystemWidget.cpp \
     MainWindow.cpp \
-    PdfBuilder/ToFoldersPdfBuilder.cpp \
+    PdfBuilder/AbstractPdfBuilder.cpp \
+    PdfBuilder/ToDefenitFolderPdfBuilder.cpp \
+    PdfBuilder/ToParentAndDefenitFolderPdfBuilder.cpp \
+    PdfBuilder/ToParentFoldersPdfBuilder.cpp \
     Settings.cpp \
     main.cpp
 
@@ -27,8 +30,11 @@ HEADERS += \
     BuildWidget/ProjectTreeView.h \
     FileSystemWidget/FileSystemWidget.h \
     MainWindow.h \
+    PdfBuilder/AbstractPdfBuilder.h \
     PdfBuilder/IPdfBuilder.h \
-    PdfBuilder/ToFoldersPdfBuilder.h \
+    PdfBuilder/ToDefenitFolderPdfBuilder.h \
+    PdfBuilder/ToParentAndDefenitFolderPdfBuilder.h \
+    PdfBuilder/ToParentFoldersPdfBuilder.h \
     Settings.h
 
 # Default rules for deployment.

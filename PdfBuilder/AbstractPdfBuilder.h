@@ -1,5 +1,5 @@
-#ifndef TOFOLDERSPDFBUILDER_H
-#define TOFOLDERSPDFBUILDER_H
+#ifndef ABSTRACTPDFBUILDER_H
+#define ABSTRACTPDFBUILDER_H
 
 #include "IPdfBuilder.h"
 
@@ -11,7 +11,7 @@
 #include <queue>
 #include <functional>
 
-class ToFoldersPdfBuilder : public IPdfBuilder
+class AbstractPdfBuilder : public IPdfBuilder
 {
     Q_OBJECT
 
@@ -27,8 +27,8 @@ class ToFoldersPdfBuilder : public IPdfBuilder
     uint currentProgress = 0;
 
 public:
-    ToFoldersPdfBuilder(const QString &rootPath);
-    ~ToFoldersPdfBuilder() override;
+    AbstractPdfBuilder(const QString &rootPath);
+    ~AbstractPdfBuilder() override;
 
 protected:
     void exec(const QStringList &paths) override;
@@ -36,7 +36,7 @@ protected:
 private:
     void loop();
     void stop();
-    QString resultFilePath(const QString &destinationPath);
+    void initProgressDlg();
 
 signals:
     void signal_fileProcessed();
@@ -44,6 +44,11 @@ signals:
 private slots:
     void slot_fileProcessed();
     void slot_cancelled();
+
+protected:
+    virtual QString destinationFilePath(const QString &parentPath) = 0;
+    QString findTitleFileName(const QString &parentPath) const;
 };
 
-#endif // TOFOLDERSPDFBUILDER_H
+
+#endif // ABSTRACTPDFBUILDER_H

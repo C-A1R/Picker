@@ -1,29 +1,31 @@
-#include "ToFoldersPdfBuilder.h"
+#include "AbstractPdfBuilder.h"
 #include "PDFWriter/PDFWriter.h"
+#include "Settings.h"
 
 #include <QDir>
 #include <QProgressDialog>
 #include <QThread>
+#include <QFileDialog>
 
 #include <thread>
 #include <iostream>
 
-ToFoldersPdfBuilder::ToFoldersPdfBuilder(const QString &rootPath)
+AbstractPdfBuilder::AbstractPdfBuilder(const QString &rootPath)
     : rootPath{rootPath}
 {
     const unsigned int threads_count = 4/*std::thread::hardware_concurrency() - 1*/;
     threads.reserve(threads_count);
     for (unsigned int i = 0 ; i < threads_count; ++i)
     {
-        threads.emplace_back(&ToFoldersPdfBuilder::loop, this);
+        threads.emplace_back(&AbstractPdfBuilder::loop, this);
     }
     progress.reset(new QProgressDialog("Сборка...", "Отмена", currentProgress, 0));
     progress->setWindowModality(Qt::ApplicationModal);
-    connect(progress.get(), &QProgressDialog::canceled, this, &ToFoldersPdfBuilder::slot_cancelled);
-    connect(this, &ToFoldersPdfBuilder::signal_fileProcessed, this, &ToFoldersPdfBuilder::slot_fileProcessed);
+    connect(progress.get(), &QProgressDialog::canceled, this, &AbstractPdfBuilder::slot_cancelled);
+    connect(this, &AbstractPdfBuilder::signal_fileProcessed, this, &AbstractPdfBuilder::slot_fileProcessed);
 }
 
-ToFoldersPdfBuilder::~ToFoldersPdfBuilder()
+AbstractPdfBuilder::~AbstractPdfBuilder()
 {
     stop();
     for (auto &t : threads)
@@ -32,44 +34,44 @@ ToFoldersPdfBuilder::~ToFoldersPdfBuilder()
     }
 }
 
-void ToFoldersPdfBuilder::exec(const QStringList &paths)
+void AbstractPdfBuilder::exec(const QStringList &paths)
 {
     if (rootPath.isEmpty() || paths.isEmpty())
     {
         return;
     }
 
-    QHash<QString, QStringList> structure;
+    QHash<QString, QStringList> structureByParents;
     for (const QString &path : paths)
     {
         const QString parentPath = path.left(path.lastIndexOf('/'));
-        structure[parentPath == path ? rootPath : parentPath] << path;
+        structureByParents[parentPath] << path;
     }
     expectedProgress = paths.count();
     progress->setMaximum(paths.count());
     progress->show();
-    QHashIterator<QString, QStringList> iter(structure);
+    QHashIterator<QString, QStringList> iter(structureByParents);
     while(iter.hasNext())
     {
         iter.next();
         const QStringList pdfFilePaths = iter.value();
-        const QString destinationPath = resultFilePath(iter.key());
-        if (destinationPath.isEmpty())
+        const QString destinationPdfPath = destinationFilePath(iter.key());
+        if (destinationPdfPath.isEmpty())
         {
             continue;
         }
         {
             std::unique_lock lock(taskMutex);
-            tasks.emplace([pdfFilePaths, destinationPath, this]() -> void
+            tasks.emplace([pdfFilePaths, destinationPdfPath, this]() -> void
                           {
-                              QDir dir{destinationPath};
+                              QDir dir{destinationPdfPath};
                               if (dir.exists())
                               {
-                                  dir.remove(destinationPath);
+                                  dir.remove(destinationPdfPath);
                               }
 
                               PDFWriter pdfWriter;
-                              pdfWriter.StartPDF(destinationPath.toUtf8().toStdString(), ePDFVersionMax);
+                              pdfWriter.StartPDF(destinationPdfPath.toUtf8().toStdString(), ePDFVersionMax);
                               for (const QString &path : pdfFilePaths)
                               {
                                   pdfWriter.AppendPDFPagesFromPDF(path.toUtf8().toStdString(), PDFPageRange());
@@ -86,7 +88,7 @@ void ToFoldersPdfBuilder::exec(const QStringList &paths)
     }
 }
 
-void ToFoldersPdfBuilder::loop()
+void AbstractPdfBuilder::loop()
 {
     std::function<void()> fn;
     while(true)
@@ -126,7 +128,7 @@ void ToFoldersPdfBuilder::loop()
     }
 }
 
-void ToFoldersPdfBuilder::stop()
+void AbstractPdfBuilder::stop()
 {
     {
         std::unique_lock lk(taskMutex);
@@ -135,14 +137,29 @@ void ToFoldersPdfBuilder::stop()
     cv.notify_all();
 }
 
-QString ToFoldersPdfBuilder::resultFilePath(const QString &destinationPath)
+void AbstractPdfBuilder::slot_fileProcessed()
 {
-    const QDir dir(destinationPath);
-    if (!dir.exists())
+    progress->setValue(++currentProgress);
+    if (currentProgress == expectedProgress)
+    {
+        emit signal_finished();
+    }
+}
+
+void AbstractPdfBuilder::slot_cancelled()
+{
+    stop();
+    emit signal_cancelled();
+}
+
+QString AbstractPdfBuilder::findTitleFileName(const QString &parentPath) const
+{
+    const QDir parentDir(parentPath);
+    if (!parentDir.exists())
     {
         return QString();
     }
-    const QFileInfoList pdfFiles = dir.entryInfoList(QStringList{"*.pdf"}, QDir::Files, QDir::Name);
+    const QFileInfoList pdfFiles = parentDir.entryInfoList(QStringList{"*.pdf"}, QDir::Files, QDir::Name);
     if (pdfFiles.isEmpty())
     {
         return QString();
@@ -152,31 +169,9 @@ QString ToFoldersPdfBuilder::resultFilePath(const QString &destinationPath)
                            {
                                return info.fileName().startsWith("Титул ");
                            });
-    QString result;
-    if (it != pdfFiles.cend())
+    if (it == pdfFiles.cend())
     {
-        result = destinationPath + '/' + (*it).fileName().remove("Титул ");
+        return QString();
     }
-    else
-    {
-        result = destinationPath
-                 + destinationPath.right(destinationPath.size() - destinationPath.lastIndexOf('/'))
-                 + ".pdf";
-    }
-    return result;
-}
-
-void ToFoldersPdfBuilder::slot_fileProcessed()
-{
-    progress->setValue(++currentProgress);
-    if (currentProgress == expectedProgress)
-    {
-        emit signal_finished();
-    }
-}
-
-void ToFoldersPdfBuilder::slot_cancelled()
-{
-    stop();
-    emit signal_cancelled();
+    return (*it).fileName();
 }
