@@ -36,7 +36,7 @@ protected:
 private:
     void loop();
     void stop();
-    QString resultFilePath(const QString &firstLevelPath);
+    QString resultFilePath(const QString &destinationPath);
 
 signals:
     void signal_fileProcessed();

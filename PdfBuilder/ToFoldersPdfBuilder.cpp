@@ -42,8 +42,8 @@ void ToFoldersPdfBuilder::exec(const QStringList &paths)
     QHash<QString, QStringList> structure;
     for (const QString &path : paths)
     {
-        const QString firstLevelPath = path.left(path.indexOf('/', rootPath.size() + 1));
-        structure[firstLevelPath == path ? rootPath : firstLevelPath] << path;
+        const QString parentPath = path.left(path.lastIndexOf('/'));
+        structure[parentPath == path ? rootPath : parentPath] << path;
     }
     expectedProgress = paths.count();
     progress->setMaximum(paths.count());
@@ -51,25 +51,25 @@ void ToFoldersPdfBuilder::exec(const QStringList &paths)
     QHashIterator<QString, QStringList> iter(structure);
     while(iter.hasNext())
     {
-        iter.next();       
+        iter.next();
         const QStringList pdfFilePaths = iter.value();
-        const QString resultPath = resultFilePath(iter.key());
-        if (resultPath.isEmpty())
+        const QString destinationPath = resultFilePath(iter.key());
+        if (destinationPath.isEmpty())
         {
             continue;
         }
         {
             std::unique_lock lock(taskMutex);
-            tasks.emplace([pdfFilePaths, resultPath, this]() -> void
+            tasks.emplace([pdfFilePaths, destinationPath, this]() -> void
                           {
-                              QDir dir{resultPath};
+                              QDir dir{destinationPath};
                               if (dir.exists())
                               {
-                                  dir.remove(resultPath);
+                                  dir.remove(destinationPath);
                               }
 
                               PDFWriter pdfWriter;
-                              pdfWriter.StartPDF(resultPath.toUtf8().toStdString(), ePDFVersionMax);
+                              pdfWriter.StartPDF(destinationPath.toUtf8().toStdString(), ePDFVersionMax);
                               for (const QString &path : pdfFilePaths)
                               {
                                   pdfWriter.AppendPDFPagesFromPDF(path.toUtf8().toStdString(), PDFPageRange());
@@ -135,9 +135,9 @@ void ToFoldersPdfBuilder::stop()
     cv.notify_all();
 }
 
-QString ToFoldersPdfBuilder::resultFilePath(const QString &firstLevelPath)
+QString ToFoldersPdfBuilder::resultFilePath(const QString &destinationPath)
 {
-    const QDir dir(firstLevelPath);
+    const QDir dir(destinationPath);
     if (!dir.exists())
     {
         return QString();
@@ -155,12 +155,12 @@ QString ToFoldersPdfBuilder::resultFilePath(const QString &firstLevelPath)
     QString result;
     if (it != pdfFiles.cend())
     {
-        result = firstLevelPath + '/' + (*it).fileName().remove("Титул ");
+        result = destinationPath + '/' + (*it).fileName().remove("Титул ");
     }
     else
     {
-        result = firstLevelPath
-                 + firstLevelPath.right(firstLevelPath.size() - firstLevelPath.lastIndexOf('/'))
+        result = destinationPath
+                 + destinationPath.right(destinationPath.size() - destinationPath.lastIndexOf('/'))
                  + ".pdf";
     }
     return result;
