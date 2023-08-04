@@ -20,9 +20,18 @@ QString ToDefenitFolderPdfBuilder::destinationFilePath(const QString &parentPath
     }
     else
     {
-        destination = defenitFolder
-                      + parentPath.right(parentPath.size() - parentPath.lastIndexOf('/') - 1)
-                      + ".pdf";
+        if (parentPath.endsWith(':'))
+        {
+            destination = defenitFolder
+                          + parentPath.left(parentPath.size() - parentPath.lastIndexOf(':'))
+                          + ".pdf";
+        }
+        else
+        {
+            destination = defenitFolder
+                          + parentPath.right(parentPath.size() - parentPath.lastIndexOf('/') - 1)
+                          + ".pdf";
+        }
     }
     return destination;
 }
