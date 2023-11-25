@@ -3,6 +3,7 @@
 
 #include "ToParentFoldersPdfBuilder.h"
 
+/// сохраняет в указанный каталог + каталоги проекта
 class ToParentAndDefenitFolderPdfBuilder : public ToParentFoldersPdfBuilder
 {
     QString defenitFolder;

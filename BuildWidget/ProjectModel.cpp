@@ -126,6 +126,7 @@ void ProjectModel::scanOrder(const QDir &dir)
     {
         const QModelIndex &index = this->index(dir.absolutePath(), 0);
         orders.emplace_back(index.internalId());
+        sorders.emplaceBack(dir.absolutePath());
     }
     for (const QFileInfo &dirInfo : dirInfoList)
     {
@@ -141,6 +142,7 @@ void ProjectModel::scanOrder(const QDir &dir)
     {
         const QModelIndex &index = this->index(pdfInfo.absoluteFilePath(), 0);
         orders.emplace_back(index.internalId());
+        sorders.emplaceBack(pdfInfo.absoluteFilePath());
         pdfPaths.emplace(index.internalId(), this->filePath(index));
     }
 }
@@ -150,6 +152,7 @@ void ProjectModel::cleanup()
     checkedItems.clear();
     hiddenIndexes.clear();
     orders.clear();
+    sorders.clear();
     pdfPaths.clear();
 }
 

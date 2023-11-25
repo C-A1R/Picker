@@ -12,6 +12,7 @@ class ProjectModel : public QFileSystemModel
     QHash<quintptr, Qt::CheckState> checkedItems;
     QSet<quintptr> hiddenIndexes;
     QList<quintptr> orders;
+    QStringList sorders;///< absolute filenames for first sorting
     QHash<quintptr, QString> pdfPaths;
 
 public:

@@ -3,6 +3,7 @@
 
 #include "AbstractPdfBuilder.h"
 
+/// сохраняет в указанный каталог
 class ToDefenitFolderPdfBuilder : public AbstractPdfBuilder
 {
     const QString defenitFolder;

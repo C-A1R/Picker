@@ -45,6 +45,7 @@ private:
     void initUi();
     void changeProject(const QString &path);
     QString getDefenitFolder() const;
+    void saveTree(const QModelIndex &index, QTextStream &stream) const;
 
 private slots:
     void slot_changeProject();

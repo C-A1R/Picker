@@ -154,6 +154,27 @@ QString BuildWidget::getDefenitFolder() const
     return defenitFolder;
 }
 
+/// работает с индексами прокси-модели
+void BuildWidget::saveTree(const QModelIndex &rootIndex, QTextStream &stream) const
+{
+    if (!rootIndex.isValid())
+    {
+        return;
+    }
+    const int rows = proxy_model->rowCount(rootIndex);
+    if (!rows)
+    {
+        return;
+    }
+    for (int i = 0; i < rows; ++i)
+    {
+        const QModelIndex &childIndex = proxy_model->index(i, 0, rootIndex);
+        const QFileInfo &info = project_model->fileInfo(proxy_model->mapToSource(childIndex));
+        stream << info.absoluteFilePath() << "\r\n";
+        saveTree(childIndex, stream);
+    }
+}
+
 void BuildWidget::slot_changeProject()
 {
     auto currentPath = currentPath_label->text();
@@ -171,7 +192,21 @@ void BuildWidget::slot_changeProject()
 
 void BuildWidget::slot_saveList()
 {
+    const auto pickerFilePath = currentPath_label->text() + QDir::separator() + "сборка_" + project_model->rootDirectory().dirName() + ".txt";
+    if (QFile::exists(pickerFilePath))
+    {
+        QFile::remove(pickerFilePath);
+    }
+    QFile file(pickerFilePath);
+    if (!file.open(QFile::WriteOnly))
+    {
+        QMessageBox::critical(this, "Ошибка", "Не могу записать файл");
+        return;
+    }
 
+    QTextStream stream(&file);
+    saveTree(proxy_model->mapFromSource(project_model->index(project_model->rootPath())), stream);
+    file.close();
 }
 
 void BuildWidget::slot_build()
