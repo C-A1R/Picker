@@ -191,9 +191,11 @@ bool ProjectModel::readOrderFromListFile()
     QTextStream stream(&file);
     while (!stream.atEnd())
     {
-        const QModelIndex index = this->index(stream.readLine());
+        const QString path = stream.readLine();
+        const QModelIndex index = this->index(path);
         if (!index.isValid())
         {
+            qDebug() << "invalid index:" << path;
             continue;
         }
         orders.emplace_back(index.internalId());

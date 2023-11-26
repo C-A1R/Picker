@@ -3,10 +3,14 @@
 
 #include <QMainWindow>
 
+class QSplitter;
+
 class MainWindow : public QMainWindow
 {
+    QSplitter *splitter {nullptr};
 public:
     MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
 private:
     void initUi();
 };

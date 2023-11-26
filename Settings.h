@@ -3,14 +3,17 @@
 
 #include <QSettings>
 
-#define SETTINGS_FILESYSTEM_PATH  "filesystem_path"
-#define SETTINGS_BUILD_PATH  "build_path"
-#define SETTINGS_SAVE_OPTIONS  "save_options"
-#define SETTINGS_DEFENIT_PATH  "defenit_path"
+#define SETTINGS_FILESYSTEM_PATH "filesystem_path"
+#define SETTINGS_BUILD_PATH "build_path"
+#define SETTINGS_SAVE_OPTIONS "save_options"
+#define SETTINGS_DEFENIT_PATH "defenit_path"
+#define SETTINGS_WIDTH "width"
+#define SETTINGS_HEIGHT "height"
+#define SETTINGS_SPLIT_SIZES "split_sizes"
 
 class Settings
 {
-    const QString settingsFilename = QStringLiteral("settings.conf");
+    const QString settingsFilename = QStringLiteral("settings.ini");
     QScopedPointer<QSettings> settings {new QSettings(settingsFilename, QSettings::IniFormat)};
     Settings() = default;
 public:
