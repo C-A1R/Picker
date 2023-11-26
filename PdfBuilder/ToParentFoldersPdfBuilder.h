@@ -3,7 +3,7 @@
 
 #include "AbstractPdfBuilder.h"
 
-/// сохраняет в каталогах
+/// сохраняет в каталоги проекта
 class ToParentFoldersPdfBuilder : public AbstractPdfBuilder
 {
 public:

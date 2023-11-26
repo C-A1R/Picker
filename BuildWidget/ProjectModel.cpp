@@ -55,9 +55,9 @@ Qt::DropActions ProjectModel::supportedDropActions() const
     return Qt::MoveAction;
 }
 
-const QSet<quintptr> &ProjectModel::getHiddenIndexes() const
+const QSet<quintptr> &ProjectModel::getHiddenIndices() const
 {
-    return hiddenIndexes;
+    return hiddenIndices;
 }
 
 const QList<quintptr> &ProjectModel::getOrders() const
@@ -84,6 +84,12 @@ const QStringList ProjectModel::getCheckedPdfPaths() const
     return result;
 }
 
+/// имя файла для сохранения списка (порядка сортировки)
+QString ProjectModel::listFilePath() const
+{
+    return rootDirectory().absolutePath() + QDir::separator() + "сборка_" + rootDirectory().dirName() + ".txt";
+}
+
 [[maybe_unused]] bool ProjectModel::scanForHiddenItems(const QDir &dir)
 {
     const auto &dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
@@ -102,7 +108,7 @@ const QStringList ProjectModel::getCheckedPdfPaths() const
             const QModelIndex &index = this->index(path, 0);
             if (index.isValid())
             {
-                hiddenIndexes << index.internalId();
+                hiddenIndices << index.internalId();
             }
         }
         else
@@ -113,10 +119,10 @@ const QStringList ProjectModel::getCheckedPdfPaths() const
     return hasPdf || foundPdf;
 }
 
-void ProjectModel::scanOrder(const QDir &dir)
+void ProjectModel::scanDefaultOrder(const QDir &dir)
 {
     const QModelIndex &index = this->index(dir.absolutePath(), 0);
-    if (hiddenIndexes.contains(index.internalId()))
+    if (hiddenIndices.contains(index.internalId()))
     {
         return;
     }
@@ -126,33 +132,63 @@ void ProjectModel::scanOrder(const QDir &dir)
     {
         const QModelIndex &index = this->index(dir.absolutePath(), 0);
         orders.emplace_back(index.internalId());
-        sorders.emplaceBack(dir.absolutePath());
     }
     for (const QFileInfo &dirInfo : dirInfoList)
     {
         const QModelIndex &index = this->index(dirInfo.absoluteFilePath(), 0);
-        if (hiddenIndexes.contains(index.internalId()))
+        if (hiddenIndices.contains(index.internalId()))
         {
             continue;
         }
-        scanOrder(QDir(dirInfo.absoluteFilePath()));
+        scanDefaultOrder(QDir(dirInfo.absoluteFilePath()));
     }
     const QFileInfoList pdfInfoList = dir.entryInfoList(QStringList{"*.pdf"}, QDir::Files, QDir::NoSort);
     for (const QFileInfo &pdfInfo : pdfInfoList)
     {
         const QModelIndex &index = this->index(pdfInfo.absoluteFilePath(), 0);
         orders.emplace_back(index.internalId());
-        sorders.emplaceBack(pdfInfo.absoluteFilePath());
         pdfPaths.emplace(index.internalId(), this->filePath(index));
     }
+}
+
+/// читаем порядок из файла
+bool ProjectModel::readOrderFromListFile()
+{
+    const QString listFile = listFilePath();
+    if (!QFile::exists(listFile))
+    {
+        return false;
+    }
+
+    QFile file(listFile);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        qDebug("Can`t read primary order");
+        return false;
+    }
+    QTextStream stream(&file);
+    while (!stream.atEnd())
+    {
+        const QModelIndex index = this->index(stream.readLine());
+        if (!index.isValid())
+        {
+            continue;
+        }
+        orders.emplace_back(index.internalId());
+        if (const QFileInfo &info = fileInfo(index); info.suffix() == "pdf")
+        {
+            pdfPaths.emplace(index.internalId(), this->filePath(index));
+        }
+    }
+    file.close();
+    return true;
 }
 
 void ProjectModel::cleanup()
 {
     checkedItems.clear();
-    hiddenIndexes.clear();
+    hiddenIndices.clear();
     orders.clear();
-    sorders.clear();
     pdfPaths.clear();
 }
 
@@ -193,7 +229,7 @@ void ProjectModel::slot_onItemChecked(const QModelIndex &index)
         for (int i = 0; i < rowCount(index); ++i)
         {
             const QModelIndex &child = this->index(i, 0, index);
-            if (hiddenIndexes.contains(child.internalId()))
+            if (hiddenIndices.contains(child.internalId()))
             {
                 continue;
             }
@@ -210,7 +246,7 @@ void ProjectModel::slot_onItemChecked(const QModelIndex &index)
     for (int i = 0; i < rowCount(parent); i++)
     {
         const QModelIndex &child = this->index(i, 0, parent);
-        if (hiddenIndexes.contains(child.internalId()))
+        if (hiddenIndices.contains(child.internalId()))
         {
             continue;
         }
@@ -250,5 +286,8 @@ void ProjectModel::slot_onRootPathChanged()
 {
     cleanup();
     scanForHiddenItems(rootDirectory());
-    scanOrder(rootDirectory());
+    if (!readOrderFromListFile())
+    {
+        scanDefaultOrder(rootDirectory());
+    }
 }

@@ -192,12 +192,12 @@ void BuildWidget::slot_changeProject()
 
 void BuildWidget::slot_saveList()
 {
-    const auto pickerFilePath = currentPath_label->text() + QDir::separator() + "сборка_" + project_model->rootDirectory().dirName() + ".txt";
-    if (QFile::exists(pickerFilePath))
+    const QString listFile = project_model->listFilePath();
+    if (QFile::exists(listFile))
     {
-        QFile::remove(pickerFilePath);
+        QFile::remove(listFile);
     }
-    QFile file(pickerFilePath);
+    QFile file(listFile);
     if (!file.open(QFile::WriteOnly))
     {
         QMessageBox::critical(this, "Ошибка", "Не могу записать файл");

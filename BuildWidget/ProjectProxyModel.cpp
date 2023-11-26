@@ -12,7 +12,7 @@ bool ProjectProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourc
 {
     const model_type *source = static_cast<model_type *>(sourceModel());
     const QModelIndex &index = source->index(sourceRow, 0, sourceParent);
-    return !source->getHiddenIndexes().contains(index.internalId());
+    return !source->getHiddenIndices().contains(index.internalId());
 }
 
 bool ProjectProxyModel::lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const

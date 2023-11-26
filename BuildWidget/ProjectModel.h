@@ -10,9 +10,8 @@ class ProjectModel : public QFileSystemModel
     Q_OBJECT
 
     QHash<quintptr, Qt::CheckState> checkedItems;
-    QSet<quintptr> hiddenIndexes;
+    QSet<quintptr> hiddenIndices;
     QList<quintptr> orders;
-    QStringList sorders;///< absolute filenames for first sorting
     QHash<quintptr, QString> pdfPaths;
 
 public:
@@ -22,13 +21,15 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
     Qt::DropActions supportedDropActions() const override;
 
-    const QSet<quintptr> &getHiddenIndexes() const;
+    const QSet<quintptr> &getHiddenIndices() const;
     const QList<quintptr> &getOrders() const;
     const QStringList getCheckedPdfPaths() const;
+    QString listFilePath() const;
 
 private:
     [[maybe_unused]] bool scanForHiddenItems(const QDir &dir);
-    void scanOrder(const QDir &dir);
+    void scanDefaultOrder(const QDir &dir);
+    bool readOrderFromListFile();
     void cleanup();
 
 signals:
