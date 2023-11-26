@@ -3,13 +3,16 @@
 
 #include <QSettings>
 
+//General
 #define SETTINGS_FILESYSTEM_PATH "filesystem_path"
 #define SETTINGS_BUILD_PATH "build_path"
 #define SETTINGS_SAVE_OPTIONS "save_options"
 #define SETTINGS_DEFENIT_PATH "defenit_path"
-#define SETTINGS_WIDTH "width"
-#define SETTINGS_HEIGHT "height"
-#define SETTINGS_SPLIT_SIZES "split_sizes"
+//Size
+#define SETTINGS_MAXIMAZED "Size/maximized"
+#define SETTINGS_WIDTH "Size/width"
+#define SETTINGS_HEIGHT "Size/height"
+#define SETTINGS_SPLIT_SIZES "Size/split_sizes"
 
 class Settings
 {
