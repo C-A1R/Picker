@@ -30,11 +30,24 @@ QVariant ProjectModel::data(const QModelIndex &index, int role) const
     }
     if (role == Qt::BackgroundRole)
     {
-        if (checkedItems.value(index.internalId()) == Qt::Checked)
+        switch (data(index, ProjectItemRoles::StatusRole).toInt())
         {
-            return QColor(240, 178, 122);
+        case Statuses::NOT_LISTED:
+        {
+            return checkedItems.value(index.internalId()) == Qt::Checked ? QColor(255, 167, 38) //QColor(255, 237, 204)
+                                                                         : QColor(Qt::white);
         }
-        return QColor(Qt::white);
+        case Statuses::LISTED:
+        {
+            return QColor(156, 204, 101);
+        }
+        default:
+            return QColor(Qt::white);
+        }
+    }
+    if (role == ProjectItemRoles::StatusRole)
+    {
+        return QVariant(itemStatuses.value(index.internalId(), Statuses::DEFAULT));
     }
     return QFileSystemModel::data(index, role);
 }
@@ -45,6 +58,11 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
     {
         checkedItems[index.internalId()] = static_cast<Qt::CheckState>(value.toInt());
         emit signal_itemChecked(index);
+        return true;
+    }
+    if (role == ProjectItemRoles::StatusRole)
+    {
+        itemStatuses[index.internalId()] = static_cast<Statuses>(value.toInt());
         return true;
     }
     return QFileSystemModel::setData(index, value, role);
@@ -132,6 +150,8 @@ void ProjectModel::scanDefaultOrder(const QDir &dir)
     {
         const QModelIndex &index = this->index(dir.absolutePath(), 0);
         orders.emplace_back(index.internalId());
+        checkedItems[index.internalId()] = Qt::Checked;
+        setData(index, Statuses::NOT_LISTED, ProjectItemRoles::StatusRole);
     }
     for (const QFileInfo &dirInfo : dirInfoList)
     {
@@ -147,6 +167,8 @@ void ProjectModel::scanDefaultOrder(const QDir &dir)
     {
         const QModelIndex &index = this->index(pdfInfo.absoluteFilePath(), 0);
         orders.emplace_back(index.internalId());
+        checkedItems[index.internalId()] = Qt::Checked;
+        setData(index, Statuses::NOT_LISTED, ProjectItemRoles::StatusRole);
         pdfPaths.emplace(index.internalId(), this->filePath(index));
     }
 }
@@ -175,6 +197,8 @@ bool ProjectModel::readOrderFromListFile()
             continue;
         }
         orders.emplace_back(index.internalId());
+        checkedItems[index.internalId()] = Qt::Checked;
+        setData(index, Statuses::LISTED, ProjectItemRoles::StatusRole);
         if (const QFileInfo &info = fileInfo(index); info.suffix() == "pdf")
         {
             pdfPaths.emplace(index.internalId(), this->filePath(index));

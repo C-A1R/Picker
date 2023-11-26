@@ -9,7 +9,20 @@ class ProjectModel : public QFileSystemModel
 {
     Q_OBJECT
 
+    enum ProjectItemRoles
+    {
+        StatusRole = Qt::UserRole
+    };
+
+    enum Statuses
+    {
+        DEFAULT = 0,
+        LISTED,
+        NOT_LISTED
+    };
+
     QHash<quintptr, Qt::CheckState> checkedItems;
+    QHash<quintptr, Statuses> itemStatuses;
     QSet<quintptr> hiddenIndices;
     QList<quintptr> orders;
     QHash<quintptr, QString> pdfPaths;
