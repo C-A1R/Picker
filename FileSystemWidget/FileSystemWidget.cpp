@@ -1,4 +1,5 @@
 #include "FileSystemWidget.h"
+#include "FileSystemModel.h"
 #include "Settings.h"
 
 #include <QToolBar>
@@ -17,6 +18,8 @@ FileSystemWidget::FileSystemWidget(QWidget *parent)
     new QShortcut(QKeySequence(Qt::Key_Return), this, SLOT(slot_goIn()));
     new QShortcut(QKeySequence(Qt::Key_Enter), this, SLOT(slot_goIn()));
     new QShortcut(QKeySequence(Qt::Key_Backspace), this, SLOT(slot_goUp()));
+    new QShortcut(QKeySequence(Qt::Key_Space), this, SLOT(slot_selectItem()));
+    connect(this, &FileSystemWidget::signal_select, fileSystem_model, &FileSystemModel::slot_selectItem);
 }
 
 FileSystemWidget::~FileSystemWidget()
@@ -38,7 +41,7 @@ void FileSystemWidget::initUi()
 
     fileSystem_listView = new QListView(this);
     fileSystem_listView->setAlternatingRowColors(true);
-    fileSystem_model = new QFileSystemModel(this);
+    fileSystem_model = new FileSystemModel(this);
     fileSystem_model->setFilter(QDir::AllEntries | QDir::NoDot);
     fileSystem_listView->setModel(fileSystem_model);
 
@@ -131,14 +134,17 @@ void FileSystemWidget::slot_goIn()
     fileSystem_listView->setRootIndex(fileSystem_model->index(newRootPath));
     fileSystem_model->setRootPath(newRootPath);
     currentPath_label->setText(index.data(QFileSystemModel::FilePathRole).toString());
+    fileSystem_listView->setCurrentIndex(QModelIndex());
 }
 
 void FileSystemWidget::slot_goUp()
 {
     const QModelIndex &parentIndex = fileSystem_listView->rootIndex().parent();
     fileSystem_listView->setRootIndex(parentIndex);
+    const QString prevRootPath = fileSystem_model->rootPath();
     fileSystem_model->setRootPath(fileSystem_model->fileInfo(parentIndex).filePath());
     currentPath_label->setText(parentIndex.data(QFileSystemModel::FilePathRole).toString());
+    fileSystem_listView->setCurrentIndex(fileSystem_model->index(prevRootPath));
 }
 
 void FileSystemWidget::slot_changeDrive()
@@ -152,4 +158,11 @@ void FileSystemWidget::slot_changeDrive()
     fileSystem_model->setRootPath(act->text());
     fileSystem_listView->setRootIndex(fileSystem_model->index(act->text()));
     currentPath_label->setText(fileSystem_model->rootPath());
+}
+
+void FileSystemWidget::slot_selectItem()
+{
+    const QModelIndex &curr = fileSystem_listView->currentIndex();
+    emit signal_select(curr);
+    fileSystem_listView->update(curr);
 }

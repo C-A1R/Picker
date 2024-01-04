@@ -14,6 +14,7 @@ SOURCES += \
     BuildWidget/ProjectModel.cpp \
     BuildWidget/ProjectProxyModel.cpp \
     BuildWidget/ProjectTreeView.cpp \
+    FileSystemWidget/FileSystemModel.cpp \
     FileSystemWidget/FileSystemWidget.cpp \
     MainWindow.cpp \
     PdfBuilder/AbstractPdfBuilder.cpp \
@@ -28,6 +29,7 @@ HEADERS += \
     BuildWidget/ProjectModel.h \
     BuildWidget/ProjectProxyModel.h \
     BuildWidget/ProjectTreeView.h \
+    FileSystemWidget/FileSystemModel.h \
     FileSystemWidget/FileSystemWidget.h \
     MainWindow.h \
     PdfBuilder/AbstractPdfBuilder.h \
