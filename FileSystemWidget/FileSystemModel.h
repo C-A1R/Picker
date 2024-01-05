@@ -3,19 +3,18 @@
 
 #include <QFileSystemModel>
 
+class FileSystemListView;
+
 class FileSystemModel : public QFileSystemModel
 {
     Q_OBJECT
 
-    QList<QModelIndex> selected;
+    const FileSystemListView * const view;
 
 public:
-    FileSystemModel(QObject *parent = nullptr);
+    FileSystemModel(const FileSystemListView * const view, QObject *parent = nullptr);
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-
-public slots:
-    void slot_selectItem(const QModelIndex &index);
 };
 
 #endif // FILESYSTEMMODEL_H

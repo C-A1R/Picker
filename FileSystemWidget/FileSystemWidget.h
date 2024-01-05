@@ -5,7 +5,7 @@
 
 class QToolBar;
 class QLabel;
-class QListView;
+class FileSystemListView;
 class FileSystemModel;
 
 class FileSystemWidget : public QWidget
@@ -14,7 +14,7 @@ class FileSystemWidget : public QWidget
 
     QToolBar *drives_toolBar = nullptr;
     QLabel *currentPath_label = nullptr;
-    QListView *fileSystem_listView = nullptr;
+    FileSystemListView *fileSystem_listView = nullptr;
     FileSystemModel *fileSystem_model = nullptr;
 
 public:
@@ -25,14 +25,10 @@ private:
     void initUi();
     void initDriveActions();
 
-signals:
-    void signal_select(const QModelIndex &index);
-
 private slots:
     void slot_goIn();
     void slot_goUp();
     void slot_changeDrive();
-    void slot_selectItem();
 };
 
 #endif // FILESYSTEMWIDGET_H

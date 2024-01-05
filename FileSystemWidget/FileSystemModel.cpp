@@ -1,7 +1,9 @@
 #include "FileSystemModel.h"
 
-FileSystemModel::FileSystemModel(QObject *parent)
-    : QFileSystemModel(parent)
+#include "FileSystemListView.h"
+
+FileSystemModel::FileSystemModel(const FileSystemListView * const view, QObject *parent)
+    : QFileSystemModel(parent), view{view}
 {
 }
 
@@ -9,17 +11,9 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::ForegroundRole)
     {
-        if (selected.contains(index))
+        if (view->getSelected().contains(index.internalId()))
             return QColor(Qt::red);
         return QColor(Qt::black);
     }
     return QFileSystemModel::data(index, role);
-}
-
-void FileSystemModel::slot_selectItem(const QModelIndex &index)
-{
-    if (!selected.removeOne(index))
-    {
-        selected.emplaceBack(index);
-    }
 }
