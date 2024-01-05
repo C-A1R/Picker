@@ -1,5 +1,7 @@
 #include "FileSystemListView.h"
 
+#include "FileSystemModel.h"
+
 #include <QApplication>
 #include <QMouseEvent>
 #include <QDrag>
@@ -12,7 +14,7 @@ FileSystemListView::FileSystemListView(QWidget *parent)
     new QShortcut(QKeySequence(Qt::Key_Space), this, SLOT(slot_selectItem()));
 }
 
-const QSet<qintptr> &FileSystemListView::getSelected() const
+const QSet<QModelIndex> &FileSystemListView::getSelected() const
 {
     return selected;
 }
@@ -26,11 +28,11 @@ void FileSystemListView::selectItem(const QModelIndex &index)
 
     if (selectInstruction == SelectInstructions::do_select)
     {
-        selected.insert(index.internalId());
+        selected.insert(index);
     }
     else
     {
-        selected.remove(index.internalId());
+        selected.remove(index);
     }
     update(index);
 }
@@ -44,8 +46,8 @@ void FileSystemListView::mousePressEvent(QMouseEvent *event)
     if (event->buttons() & Qt::RightButton)
     {
         const QModelIndex &curr = indexAt(event->pos());
-        selectInstruction = selected.contains(curr.internalId()) ? SelectInstructions::do_unselect
-                                                                 : SelectInstructions::do_select;
+        selectInstruction = selected.contains(curr) ? SelectInstructions::do_unselect
+                                                    : SelectInstructions::do_select;
         selectItem(curr);
     }
     QListView::mousePressEvent(event);
@@ -78,9 +80,23 @@ void FileSystemListView::mouseMoveEvent(QMouseEvent *event)
     }
     if (event->buttons() & Qt::LeftButton)
     {
+        selectInstruction = SelectInstructions::do_select;
+        selectItem(currentIndex());
+
+        const FileSystemModel *fsModel = static_cast<fs_model_type *>(model());
+        QStringList paths;
+        for (const QModelIndex &ind : std::as_const(selected))
+        {
+            paths.emplace_back(fsModel->filePath(ind));
+        }
+        if (paths.empty())
+        {
+            event->ignore();
+            return;
+        }
         QDrag *drag = new QDrag(this);
         QMimeData *mimeData = new QMimeData;
-        mimeData->setText("test");
+        mimeData->setText(paths.join('*'));
         drag->setMimeData(mimeData);
         drag->exec();
     }
@@ -103,8 +119,8 @@ void FileSystemListView::mouseDoubleClickEvent(QMouseEvent *event)
 void FileSystemListView::slot_selectItem()
 {
     const QModelIndex &currIndex = currentIndex();
-    selectInstruction = selected.contains(currIndex.internalId()) ? SelectInstructions::do_unselect
-                                                                  : SelectInstructions::do_select;
+    selectInstruction = selected.contains(currIndex) ? SelectInstructions::do_unselect
+                                                     : SelectInstructions::do_select;
     selectItem(currIndex);
     setCurrentIndex(currIndex.sibling(currIndex.row() + 1, currIndex.column()));
 }

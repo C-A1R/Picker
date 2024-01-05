@@ -23,6 +23,7 @@ public:
     ProjectTreeView(QWidget *parent = nullptr);
 
 private:
+    void dragEnterEvent(QDragEnterEvent *event) override;
     void dragMoveEvent(QDragMoveEvent *event) override;
     void dropEvent(QDropEvent *event) override;
 
@@ -33,6 +34,7 @@ protected:
 
 signals:
     void signal_dropped(const QModelIndex &, const QModelIndexList &);
+    void signal_added(const QModelIndex &, const QString &);
     void signal_setChecked(const QModelIndexList &selected, const bool checked);
 
 private slots:

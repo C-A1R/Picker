@@ -4,6 +4,10 @@
 #include <QListView>
 #include <QSet>
 
+class FileSystemModel;
+
+using fs_model_type = FileSystemModel;
+
 class FileSystemListView : public QListView
 {
     Q_OBJECT
@@ -15,12 +19,12 @@ class FileSystemListView : public QListView
         do_unselect
     };
 
-    QSet<qintptr> selected;
+    QSet<QModelIndex> selected;
     SelectInstructions selectInstruction = SelectInstructions::do_nothing;
 
 public:
     FileSystemListView(QWidget *parent = nullptr);
-    const QSet<qintptr> &getSelected() const;
+    const QSet<QModelIndex> &getSelected() const;
 
 private:
     void selectItem(const QModelIndex &index);

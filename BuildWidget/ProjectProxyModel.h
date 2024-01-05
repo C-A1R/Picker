@@ -12,14 +12,16 @@ public:
 
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
-    virtual bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const override;
+    bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const override;
 
 signals:
-    void signal_dropped(const quintptr, const QList<quintptr>);
+    void signal_dropped(const quintptr, const QList<quintptr> &);
+    void signal_added(const quintptr, const QString &);
     void signal_setChecked(const QModelIndexList &selected, const bool checked);
 
 public slots:
     void slot_dropped(const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices);
+    void slot_added(const QModelIndex &droppedIndex, const QString &fullPaths);
     void slot_setChecked(const QModelIndexList &selected, const bool checked);
 };
 

@@ -33,6 +33,7 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
     Qt::DropActions supportedDropActions() const override;
+    bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
 
     const QSet<quintptr> &getHiddenIndices() const;
     const QList<quintptr> &getOrders() const;
@@ -43,13 +44,15 @@ private:
     [[maybe_unused]] bool scanForHiddenItems(const QDir &dir);
     void scanDefaultOrder(const QDir &dir);
     bool readOrderFromListFile();
+    void scanFilesystem(const QDir &dir, QModelIndexList &additionItems);
     void cleanup();
 
 signals:
     void signal_itemChecked(const QModelIndex&);
 
 public slots:
-    void slot_dropped(const quintptr droppedIndexId, const QList<quintptr> draggeddIndicesIds);
+    void slot_dropped(const quintptr droppedIndexId, const QList<quintptr> &draggeddIndicesIds);
+    void slot_added(const quintptr droppedIndexId, const QString &fullPaths);
     void slot_setChecked(const QModelIndexList &selected, const bool checked);
 
 protected slots:

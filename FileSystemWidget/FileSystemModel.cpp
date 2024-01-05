@@ -11,7 +11,7 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::ForegroundRole)
     {
-        if (view->getSelected().contains(index.internalId()))
+        if (view->getSelected().contains(index))
             return QColor(Qt::red);
         return QColor(Qt::black);
     }

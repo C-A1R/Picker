@@ -3,6 +3,7 @@
 #include <QDropEvent>
 #include <QMenu>
 #include <QPainter>
+#include <QMimeData>
 
 ProjectTreeView::ProjectTreeView(QWidget *parent) : QTreeView(parent)
 {
@@ -16,13 +17,43 @@ ProjectTreeView::ProjectTreeView(QWidget *parent) : QTreeView(parent)
     contextMenu->addAction(setChecked_action);
 }
 
+void ProjectTreeView::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (!event)
+    {
+        return;
+    }
+    if (event->mimeData()->hasFormat("text/uri-list")) // from this
+    {
+        if (event->source() != this)
+        {
+            event->ignore();
+            return;
+        }
+        event->accept();
+    }
+    else if (event->mimeData()->hasFormat("text/plain")) // from left panel
+    {
+        if (event->source() == this)
+        {
+            event->ignore();
+            return;
+        }
+        event->acceptProposedAction();
+    }
+    else
+    {
+        event->ignore();
+        return;
+    }
+}
+
 void ProjectTreeView::dragMoveEvent(QDragMoveEvent *event)
 {
     if (!event)
     {
         return;
     }
-
     const QModelIndex &droppedIndex = indexAt(event->position().toPoint());
     dropIndicatorPosition = getDropIndicatorPosition(event->position().toPoint(), visualRect(droppedIndex));
 
@@ -62,16 +93,24 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
     {
         droppedIndex = model()->index(droppedIndex.row() + 1, droppedIndex.column(), droppedIndex.parent());
     }
-    const QModelIndexList &draggedIndices = this->selectedIndexes();
-    if (draggedIndices.isEmpty())
+
+    if (event->source() == this && event->mimeData()->hasFormat("text/uri-list")) // from this
     {
-        return;
+        const QModelIndexList &draggedIndices = this->selectedIndexes();
+        if (draggedIndices.isEmpty())
+        {
+            return;
+        }
+        if (droppedIndex.isValid() && droppedIndex == draggedIndices.first())
+        {
+            return;
+        }
+        emit signal_dropped(droppedIndex, draggedIndices);
     }
-    if (droppedIndex.isValid() && droppedIndex == draggedIndices.first())
+    else if (event->mimeData()->hasFormat("text/plain")) // from left panel
     {
-        return;
+        emit signal_added(droppedIndex, event->mimeData()->text());
     }
-    emit signal_dropped(droppedIndex, draggedIndices);
     this->sortByColumn(0, Qt::AscendingOrder);
     event->accept();
 }

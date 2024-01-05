@@ -23,9 +23,11 @@ BuildWidget::BuildWidget(QWidget *parent)
     initUi();
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
     connect(project_treeView, &ProjectTreeView::signal_dropped, proxy_model, &ProjectProxyModel::slot_dropped);
-    connect(proxy_model, &ProjectProxyModel::signal_dropped, project_model, &model_type::slot_dropped);
+    connect(proxy_model, &ProjectProxyModel::signal_dropped, project_model, &p_model_type::slot_dropped);
+    connect(project_treeView, &ProjectTreeView::signal_added, proxy_model, &ProjectProxyModel::slot_added);
+    connect(proxy_model, &ProjectProxyModel::signal_added, project_model, &p_model_type::slot_added);
     connect(project_treeView, &ProjectTreeView::signal_setChecked, proxy_model, &ProjectProxyModel::slot_setChecked);
-    connect(proxy_model, &ProjectProxyModel::signal_setChecked, project_model, &model_type::slot_setChecked);
+    connect(proxy_model, &ProjectProxyModel::signal_setChecked, project_model, &p_model_type::slot_setChecked);
 }
 
 BuildWidget::~BuildWidget()
@@ -93,7 +95,7 @@ void BuildWidget::initUi()
 
     project_treeView = new ProjectTreeView(this);
     project_treeView->header()->hide();
-    project_model = new model_type(this);
+    project_model = new p_model_type(this);
     project_model->setReadOnly(true);
     proxy_model = new ProjectProxyModel();
     proxy_model->setSourceModel(project_model);
@@ -101,10 +103,10 @@ void BuildWidget::initUi()
     project_treeView->setModel(proxy_model);
     project_treeView->setSortingEnabled(true);
     project_treeView->sortByColumn(0, Qt::AscendingOrder);
-    project_treeView->setDragDropMode(QAbstractItemView::InternalMove);
     project_treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    project_treeView->setDragDropMode(QAbstractItemView::DragDrop);
     project_treeView->setDragEnabled(true);
-    project_treeView->setAcceptDrops(true);
+    project_treeView->viewport()->setAcceptDrops(true);
     project_treeView->setDropIndicatorShown(true);
 
     for (int i = 1; i < project_model->columnCount(); ++i)

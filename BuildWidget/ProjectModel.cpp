@@ -34,12 +34,12 @@ QVariant ProjectModel::data(const QModelIndex &index, int role) const
         {
         case Statuses::NOT_LISTED:
         {
-            return checkedItems.value(index.internalId()) == Qt::Checked ? QColor(255, 167, 38) //QColor(255, 237, 204)
+            return checkedItems.value(index.internalId()) == Qt::Checked ? QColor(255, 237, 204, 200)
                                                                          : QColor(Qt::white);
         }
         case Statuses::LISTED:
         {
-            return QColor(156, 204, 101);
+            return QColor(100, 221, 23, 50);
         }
         default:
             return QColor(Qt::white);
@@ -71,6 +71,12 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
 Qt::DropActions ProjectModel::supportedDropActions() const
 {
     return Qt::MoveAction;
+}
+
+bool ProjectModel::insertRows(int row, int count, const QModelIndex &parent)
+{
+
+    return true;
 }
 
 const QSet<quintptr> &ProjectModel::getHiddenIndices() const
@@ -192,10 +198,15 @@ bool ProjectModel::readOrderFromListFile()
     while (!stream.atEnd())
     {
         const QString path = stream.readLine();
+        if (path.isEmpty())
+        {
+            continue;
+        }
         const QModelIndex index = this->index(path);
         if (!index.isValid())
         {
-            qDebug() << "invalid index:" << path;
+            //файл из списка был удален
+            qDebug() << "listed element was removed:" << path;
             continue;
         }
         orders.emplace_back(index.internalId());
@@ -207,7 +218,56 @@ bool ProjectModel::readOrderFromListFile()
         }
     }
     file.close();
+    QModelIndexList additionItems;
+    scanFilesystem(rootDirectory(), additionItems);
+    for (const QModelIndex &ind : std::as_const(additionItems))
+    {
+        slot_onItemChecked(ind);
+    }
     return true;
+}
+
+/// читаем файловую систему, ищем файлы, которых нет в списке
+void ProjectModel::scanFilesystem(const QDir &dir, QModelIndexList &additionItems)
+{
+    const QModelIndex &index = this->index(dir.absolutePath(), 0);
+    if (hiddenIndices.contains(index.internalId()))
+    {
+        return;
+    }
+
+    const QFileInfoList &dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
+    if (dir != this->rootDirectory())
+    {
+        const QModelIndex &index = this->index(dir.absolutePath(), 0);
+        if (!orders.contains(index.internalId()))
+        {
+            additionItems.emplace_back(index);
+            orders.emplace_back(index.internalId());
+            setData(index, Statuses::NOT_LISTED, ProjectItemRoles::StatusRole);
+        }
+    }
+    for (const QFileInfo &dirInfo : dirInfoList)
+    {
+        const QModelIndex &index = this->index(dirInfo.absoluteFilePath(), 0);
+        if (hiddenIndices.contains(index.internalId()))
+        {
+            continue;
+        }
+        scanFilesystem(QDir(dirInfo.absoluteFilePath()), additionItems);
+    }
+    const QFileInfoList pdfInfoList = dir.entryInfoList(QStringList{"*.pdf"}, QDir::Files, QDir::NoSort);
+    for (const QFileInfo &pdfInfo : pdfInfoList)
+    {
+        const QModelIndex &index = this->index(pdfInfo.absoluteFilePath(), 0);
+        if (!orders.contains(index.internalId()))
+        {
+            additionItems.emplace_back(index);
+            orders.emplace_back(index.internalId());
+            setData(index, Statuses::NOT_LISTED, ProjectItemRoles::StatusRole);
+            pdfPaths.emplace(index.internalId(), this->filePath(index));
+        }
+    }
 }
 
 void ProjectModel::cleanup()
@@ -218,7 +278,7 @@ void ProjectModel::cleanup()
     pdfPaths.clear();
 }
 
-void ProjectModel::slot_dropped(const quintptr droppedIndexId, const QList<quintptr> draggeddIndicesIds)
+void ProjectModel::slot_dropped(const quintptr droppedIndexId, const QList<quintptr> &draggeddIndicesIds)
 {
     if (draggeddIndicesIds.isEmpty())
     {
@@ -228,10 +288,30 @@ void ProjectModel::slot_dropped(const quintptr droppedIndexId, const QList<quint
     {
         orders.removeOne(id);
     }
-    auto i = droppedIndexId != 0 ? orders.indexOf(droppedIndexId) : orders.size()/*to the end*/;
+    const auto i = droppedIndexId != 0 ? orders.indexOf(droppedIndexId) : orders.size()/*to the end*/;
     for (int j = draggeddIndicesIds.count() - 1; j >= 0; --j)
     {
         orders.insert(i, std::move(draggeddIndicesIds.at(j)));
+    }
+}
+
+void ProjectModel::slot_added(const quintptr droppedIndexId, const QString &fullPaths)
+{
+    qDebug() << "slot_added:" << fullPaths;
+    if (fullPaths.isEmpty())
+    {
+        return;
+    }
+
+    const QStringList paths = fullPaths.split('*');
+    const auto i = droppedIndexId != 0 ? orders.indexOf(droppedIndexId) : orders.size()/*to the end*/;
+    const QModelIndex parent = index(rootPath());
+    for (int j = paths.count() - 1; j >= 0; --j)
+    {
+        const int row = rowCount(parent) - 1;
+        qDebug() << "insert:" << insertRow(row, parent);
+        const QModelIndex &inserted = index(row, 0, parent);
+        orders.insert(i, inserted.internalId());
     }
 }
 

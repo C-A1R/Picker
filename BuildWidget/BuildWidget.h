@@ -13,7 +13,7 @@ class ProjectTreeView;
 class ProjectProxyModel;
 class IPdfBuilder;
 
-using model_type = ProjectModel;
+using p_model_type = ProjectModel;
 
 class BuildWidget : public QWidget
 {
@@ -31,7 +31,7 @@ class BuildWidget : public QWidget
     QToolBar *saveOptions_toolBar = nullptr;
     QLabel *currentPath_label = nullptr;
     ProjectTreeView *project_treeView = nullptr;
-    model_type *project_model = nullptr;
+    p_model_type *project_model = nullptr;
     ProjectProxyModel *proxy_model = nullptr;
 
     SaveOpt saveOptions = SaveOptions::SAVE_TO_PARENT_FOLDERS;
