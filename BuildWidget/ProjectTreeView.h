@@ -39,6 +39,9 @@ signals:
 
 private slots:
     void slot_setChecked(const bool checked);
+
+public slots:
+    void slot_expand(const QModelIndexList &indices);
 };
 
 #endif // PROJECTTREEVIEW_H

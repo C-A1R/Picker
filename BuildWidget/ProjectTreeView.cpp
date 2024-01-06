@@ -158,6 +158,14 @@ void ProjectTreeView::slot_setChecked(const bool checked)
     emit signal_setChecked(selectedIndexes(), checked);
 }
 
+void ProjectTreeView::slot_expand(const QModelIndexList &indices)
+{
+    for (const QModelIndex &ind : indices)
+    {
+        expand(ind);
+    }
+}
+
 void ProjectTreeView::ProjectTreeViewStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget) const
 {
     if (element == QStyle::PE_IndicatorItemViewItemDrop && !option->rect.isNull())

@@ -17,6 +17,7 @@ public:
             static constexpr char const * const id{"id"};
             static constexpr char const * const printCheckstate{"print_checkstate"};
             static constexpr char const * const resultHolder{"result_holder"};
+            static constexpr char const * const expanded{"expanded"};
             static constexpr char const * const path{"path"};
         };
     };
@@ -24,20 +25,20 @@ public:
     SqlMgr(const QString &dbFilename);
     ~SqlMgr();
 
-    bool open();
+    [[nodiscard]] bool open();
     void close();
 
-    bool transaction();
-    bool commit();
-    bool rollback();
+    [[nodiscard]] bool transaction();
+    [[nodiscard]] bool commit();
+    [[nodiscard]] bool rollback();
 
-    bool createPickerDb();
-    bool insertProjectElement(const Qt::CheckState print, const QString &path);
-    bool readProjectElements(QList<QSqlRecord> &result);
+    [[nodiscard]] bool createPickerDb();
+    [[nodiscard]] bool insertProjectElement(const Qt::CheckState print, const bool expanded, const QString &path);
+    [[nodiscard]] bool readProjectElements(QList<QSqlRecord> &result);
 
 private:
-    bool exec(const QString &sql);
-    bool table(const QString &sql, QList<QSqlRecord> &result);
+    [[nodiscard]] bool exec(const QString &sql);
+    [[nodiscard]] bool table(const QString &sql, QList<QSqlRecord> &result);
 
 };
 

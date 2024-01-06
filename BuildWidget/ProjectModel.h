@@ -49,6 +49,7 @@ private:
 
 signals:
     void signal_itemChecked(const QModelIndex&);
+    void signal_expand(const QModelIndexList &);
 
 public slots:
     void slot_dropped(const quintptr droppedIndexId, const QList<quintptr> &draggeddIndicesIds);

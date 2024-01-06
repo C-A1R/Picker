@@ -18,17 +18,27 @@
 #include <QSharedPointer>
 
 BuildWidget::BuildWidget(QWidget *parent)
-    : QWidget(parent),
-    saveOptions{SaveOpt::fromInt(Settings::instance()->value(SETTINGS_SAVE_OPTIONS, SaveOptions::SAVE_TO_PARENT_FOLDERS).toInt())}
+    : QWidget(parent)
+    , saveOptions{SaveOpt::fromInt(Settings::instance()->value(SETTINGS_SAVE_OPTIONS, SaveOptions::SAVE_TO_PARENT_FOLDERS).toInt())}
 {
     initUi();
+    {
+        connect(project_model, &p_model_type::signal_expand, proxy_model, &ProjectProxyModel::slot_expand);
+        connect(proxy_model, &ProjectProxyModel::signal_expand, project_treeView, &ProjectTreeView::slot_expand);
+    }
+    {
+        connect(project_treeView, &ProjectTreeView::signal_dropped, proxy_model, &ProjectProxyModel::slot_dropped);
+        connect(proxy_model, &ProjectProxyModel::signal_dropped, project_model, &p_model_type::slot_dropped);
+    }
+    {
+        connect(project_treeView, &ProjectTreeView::signal_added, proxy_model, &ProjectProxyModel::slot_added);
+        connect(proxy_model, &ProjectProxyModel::signal_added, project_model, &p_model_type::slot_added);
+    }
+    {
+        connect(project_treeView, &ProjectTreeView::signal_setChecked, proxy_model, &ProjectProxyModel::slot_setChecked);
+        connect(proxy_model, &ProjectProxyModel::signal_setChecked, project_model, &p_model_type::slot_setChecked);
+    }
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
-    connect(project_treeView, &ProjectTreeView::signal_dropped, proxy_model, &ProjectProxyModel::slot_dropped);
-    connect(proxy_model, &ProjectProxyModel::signal_dropped, project_model, &p_model_type::slot_dropped);
-    connect(project_treeView, &ProjectTreeView::signal_added, proxy_model, &ProjectProxyModel::slot_added);
-    connect(proxy_model, &ProjectProxyModel::signal_added, project_model, &p_model_type::slot_added);
-    connect(project_treeView, &ProjectTreeView::signal_setChecked, proxy_model, &ProjectProxyModel::slot_setChecked);
-    connect(proxy_model, &ProjectProxyModel::signal_setChecked, project_model, &p_model_type::slot_setChecked);
 }
 
 BuildWidget::~BuildWidget()
@@ -175,7 +185,12 @@ void BuildWidget::saveTree(const QModelIndex &rootIndex, SqlMgr &sqlMgr) const
         const QModelIndex &childIndex = proxy_model->index(i, 0, rootIndex);
         const QModelIndex &sourceChildIndex = proxy_model->mapToSource(childIndex);
         const QFileInfo &info = project_model->fileInfo(sourceChildIndex);
-        sqlMgr.insertProjectElement(project_model->data(sourceChildIndex, Qt::CheckStateRole).value<Qt::CheckState>(), info.absoluteFilePath());
+        if (!sqlMgr.insertProjectElement(project_model->data(sourceChildIndex, Qt::CheckStateRole).value<Qt::CheckState>(),
+                                         project_treeView->isExpanded(childIndex),
+                                         info.absoluteFilePath()))
+        {
+            qDebug() << "insertion failed: " << info.absoluteFilePath();
+        }
         saveTree(childIndex, sqlMgr);
     }
 }

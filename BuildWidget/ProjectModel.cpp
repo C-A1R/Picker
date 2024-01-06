@@ -3,7 +3,7 @@
 #include "SqlMgr.h"
 
 #include <QMimeData>
-#include <QSqlRecord>>
+#include <QSqlRecord>
 
 ProjectModel::ProjectModel(QObject *parent) : QFileSystemModel(parent)
 {
@@ -78,7 +78,7 @@ Qt::DropActions ProjectModel::supportedDropActions() const
 
 bool ProjectModel::insertRows(int row, int count, const QModelIndex &parent)
 {
-
+    /// @todo
     return true;
 }
 
@@ -114,6 +114,7 @@ const QStringList ProjectModel::getCheckedPdfPaths() const
 /// имя файла для сохранения списка (порядка сортировки)
 QString ProjectModel::listFilePath() const
 {
+
     return rootDirectory().absolutePath() + QDir::separator() + "picker.sqlite";
 }
 
@@ -208,6 +209,7 @@ bool ProjectModel::readOrderFromListFile()
         return true;
     }
 
+    QModelIndexList expanded;
     for (const QSqlRecord &rec : std::as_const(recs))
     {
         const QString path = rec.value(SqlMgr::ProjectFilesystemTable::columns::path).toString();
@@ -230,7 +232,12 @@ bool ProjectModel::readOrderFromListFile()
         {
             pdfPaths.emplace(index.internalId(), this->filePath(index));
         }
+        if (rec.value(SqlMgr::ProjectFilesystemTable::columns::expanded).toBool())
+        {
+            expanded << index;
+        }
     }
+    emit signal_expand(expanded);
 
     QModelIndexList additionItems;
     scanFilesystem(rootDirectory(), additionItems);

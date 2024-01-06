@@ -70,3 +70,14 @@ void ProjectProxyModel::slot_setChecked(const QModelIndexList &selected, const b
                     });
     emit signal_setChecked(sourceIndices, checked);
 }
+
+void ProjectProxyModel::slot_expand(const QModelIndexList &expanded) const
+{
+    QModelIndexList proxyIndices;
+    std::transform(expanded.cbegin(), expanded.cend(), std::back_inserter(proxyIndices),
+                   [this](const QModelIndex &ind) -> QModelIndex
+                   {
+                       return mapFromSource(ind);
+                   });
+    emit signal_expand(proxyIndices);
+}

@@ -17,12 +17,14 @@ protected:
 signals:
     void signal_dropped(const quintptr, const QList<quintptr> &);
     void signal_added(const quintptr, const QString &);
-    void signal_setChecked(const QModelIndexList &selected, const bool checked);
+    void signal_setChecked(const QModelIndexList &, const bool);
+    void signal_expand(const QModelIndexList &) const;
 
 public slots:
     void slot_dropped(const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices);
     void slot_added(const QModelIndex &droppedIndex, const QString &fullPaths);
     void slot_setChecked(const QModelIndexList &selected, const bool checked);
+    void slot_expand(const QModelIndexList &expanded) const;
 };
 
 #endif // PROJECTPROXYMODEL_H
