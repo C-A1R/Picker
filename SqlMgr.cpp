@@ -110,8 +110,8 @@ bool SqlMgr::insertProjectElement(const Qt::CheckState print, const bool expande
 
 bool SqlMgr::readProjectElements(QList<QSqlRecord> &result)
 {
-    const QString sql = QStringLiteral("SELECT * FROM %1");
-    return table(sql.arg(ProjectFilesystemTable::tableName), result);
+    const QString sql = QStringLiteral("SELECT * FROM %1 ORDER BY %2");
+    return table(sql.arg(ProjectFilesystemTable::tableName, ProjectFilesystemTable::columns::id), result);
 }
 
 bool SqlMgr::table(const QString &sql, QList<QSqlRecord> &result)
