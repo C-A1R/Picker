@@ -1,6 +1,9 @@
 #include "ProjectModel.h"
 
+#include "SqlMgr.h"
+
 #include <QMimeData>
+#include <QSqlRecord>>
 
 ProjectModel::ProjectModel(QObject *parent) : QFileSystemModel(parent)
 {
@@ -111,7 +114,7 @@ const QStringList ProjectModel::getCheckedPdfPaths() const
 /// имя файла для сохранения списка (порядка сортировки)
 QString ProjectModel::listFilePath() const
 {
-    return rootDirectory().absolutePath() + QDir::separator() + "сборка_" + rootDirectory().dirName() + ".txt";
+    return rootDirectory().absolutePath() + QDir::separator() + "picker.sqlite";
 }
 
 [[maybe_unused]] bool ProjectModel::scanForHiddenItems(const QDir &dir)
@@ -182,22 +185,33 @@ void ProjectModel::scanDefaultOrder(const QDir &dir)
 /// читаем порядок из файла
 bool ProjectModel::readOrderFromListFile()
 {
-    const QString listFile = listFilePath();
-    if (!QFile::exists(listFile))
+    const QString dbFilename = listFilePath();
+    if (!QFile::exists(dbFilename))
     {
         return false;
     }
 
-    QFile file(listFile);
-    if (!file.open(QIODevice::ReadOnly))
+    SqlMgr sqlMgr(dbFilename);
+    if (!sqlMgr.open())
     {
-        qDebug("Can`t read primary order");
+        qDebug("Can`t read primary order: file is busy");
         return false;
     }
-    QTextStream stream(&file);
-    while (!stream.atEnd())
+
+    QList<QSqlRecord> recs;
+    if (!sqlMgr.readProjectElements(recs))
     {
-        const QString path = stream.readLine();
+        qDebug("Can`t read primary order");
+    }
+    if (recs.empty())
+    {
+        return true;
+    }
+
+    for (const QSqlRecord &rec : std::as_const(recs))
+    {
+        const QString path = rec.value(SqlMgr::ProjectFilesystemTable::columns::path).toString();
+        const int printCheckState = rec.value(SqlMgr::ProjectFilesystemTable::columns::printCheckstate).toInt();
         if (path.isEmpty())
         {
             continue;
@@ -210,19 +224,19 @@ bool ProjectModel::readOrderFromListFile()
             continue;
         }
         orders.emplace_back(index.internalId());
-        checkedItems[index.internalId()] = Qt::Checked;
+        checkedItems[index.internalId()] = printCheckState == 0 ? Qt::Unchecked : (printCheckState == 1 ? Qt::PartiallyChecked : Qt::Checked);
         setData(index, Statuses::LISTED, ProjectItemRoles::StatusRole);
         if (const QFileInfo &info = fileInfo(index); info.suffix() == "pdf")
         {
             pdfPaths.emplace(index.internalId(), this->filePath(index));
         }
     }
-    file.close();
+
     QModelIndexList additionItems;
     scanFilesystem(rootDirectory(), additionItems);
     for (const QModelIndex &ind : std::as_const(additionItems))
     {
-        slot_onItemChecked(ind);
+        slot_onItemChecked(ind);//перепростановка галочек
     }
     return true;
 }

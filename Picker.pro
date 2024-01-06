@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -23,6 +23,7 @@ SOURCES += \
     PdfBuilder/ToParentAndDefenitFolderPdfBuilder.cpp \
     PdfBuilder/ToParentFoldersPdfBuilder.cpp \
     Settings.cpp \
+    SqlMgr.cpp \
     main.cpp
 
 HEADERS += \
@@ -39,7 +40,8 @@ HEADERS += \
     PdfBuilder/ToDefenitFolderPdfBuilder.h \
     PdfBuilder/ToParentAndDefenitFolderPdfBuilder.h \
     PdfBuilder/ToParentFoldersPdfBuilder.h \
-    Settings.h
+    Settings.h \
+    SqlMgr.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

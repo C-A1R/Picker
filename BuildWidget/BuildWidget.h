@@ -12,6 +12,7 @@ class QProgressDialog;
 class ProjectTreeView;
 class ProjectProxyModel;
 class IPdfBuilder;
+class SqlMgr;
 
 using p_model_type = ProjectModel;
 
@@ -45,7 +46,7 @@ private:
     void initUi();
     void changeProject(const QString &path);
     QString getDefenitFolder() const;
-    void saveTree(const QModelIndex &index, QTextStream &stream) const;
+    void saveTree(const QModelIndex &rootIndex, SqlMgr &sqlMgr) const;
 
 private slots:
     void slot_changeProject();

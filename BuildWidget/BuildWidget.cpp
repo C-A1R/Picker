@@ -2,6 +2,7 @@
 #include "ProjectTreeView.h"
 #include "ProjectProxyModel.h"
 #include "Settings.h"
+#include "SqlMgr.h"
 #include "PdfBuilder/ToParentFoldersPdfBuilder.h"
 #include "PdfBuilder/ToDefenitFolderPdfBuilder.h"
 #include "PdfBuilder/ToParentAndDefenitFolderPdfBuilder.h"
@@ -157,7 +158,7 @@ QString BuildWidget::getDefenitFolder() const
 }
 
 /// работает с индексами прокси-модели
-void BuildWidget::saveTree(const QModelIndex &rootIndex, QTextStream &stream) const
+void BuildWidget::saveTree(const QModelIndex &rootIndex, SqlMgr &sqlMgr) const
 {
     if (!rootIndex.isValid())
     {
@@ -168,12 +169,14 @@ void BuildWidget::saveTree(const QModelIndex &rootIndex, QTextStream &stream) co
     {
         return;
     }
+
     for (int i = 0; i < rows; ++i)
     {
         const QModelIndex &childIndex = proxy_model->index(i, 0, rootIndex);
-        const QFileInfo &info = project_model->fileInfo(proxy_model->mapToSource(childIndex));
-        stream << info.absoluteFilePath() << "\r\n";
-        saveTree(childIndex, stream);
+        const QModelIndex &sourceChildIndex = proxy_model->mapToSource(childIndex);
+        const QFileInfo &info = project_model->fileInfo(sourceChildIndex);
+        sqlMgr.insertProjectElement(project_model->data(sourceChildIndex, Qt::CheckStateRole).value<Qt::CheckState>(), info.absoluteFilePath());
+        saveTree(childIndex, sqlMgr);
     }
 }
 
@@ -194,21 +197,35 @@ void BuildWidget::slot_changeProject()
 
 void BuildWidget::slot_saveList()
 {
-    const QString listFile = project_model->listFilePath();
-    if (QFile::exists(listFile))
+    const QString dbFilename = project_model->listFilePath();
+    if (QFile::exists(dbFilename))
     {
-        QFile::remove(listFile);
+        QFile::remove(dbFilename);
     }
-    QFile file(listFile);
-    if (!file.open(QFile::WriteOnly))
+
+    SqlMgr sqlMgr(dbFilename);
+    if (!sqlMgr.open())
     {
-        QMessageBox::critical(this, "Ошибка", "Не могу записать файл");
+        qDebug("can`t open db");
+        return;
+    }
+    if (!sqlMgr.createPickerDb())
+    {
+        qDebug("can`t create db");
         return;
     }
 
-    QTextStream stream(&file);
-    saveTree(proxy_model->mapFromSource(project_model->index(project_model->rootPath())), stream);
-    file.close();
+    if (!sqlMgr.transaction())
+    {
+        qDebug("can`t start transaction");
+        return;
+    }
+    saveTree(proxy_model->mapFromSource(project_model->index(project_model->rootPath())), sqlMgr);
+    if (!sqlMgr.commit())
+    {
+        qDebug("can`t commit transaction");
+        return;
+    }
 }
 
 void BuildWidget::slot_build()
