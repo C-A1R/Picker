@@ -19,9 +19,9 @@ SOURCES += \
     FileSystemWidget/FileSystemWidget.cpp \
     MainWindow.cpp \
     PdfBuilder/AbstractPdfBuilder.cpp \
-    PdfBuilder/ToDefenitFolderPdfBuilder.cpp \
-    PdfBuilder/ToParentAndDefenitFolderPdfBuilder.cpp \
-    PdfBuilder/ToParentFoldersPdfBuilder.cpp \
+    PdfBuilder/ToProjectAndSeparateDirectoriesPdfBuilder.cpp \
+    PdfBuilder/ToProjectDirectoriesPdfBuilder.cpp \
+    PdfBuilder/ToSeparateDirectoryPdfBuilder.cpp \
     Settings.cpp \
     SqlMgr.cpp \
     main.cpp
@@ -37,9 +37,9 @@ HEADERS += \
     MainWindow.h \
     PdfBuilder/AbstractPdfBuilder.h \
     PdfBuilder/IPdfBuilder.h \
-    PdfBuilder/ToDefenitFolderPdfBuilder.h \
-    PdfBuilder/ToParentAndDefenitFolderPdfBuilder.h \
-    PdfBuilder/ToParentFoldersPdfBuilder.h \
+    PdfBuilder/ToProjectAndSeparateDirectoriesPdfBuilder.h \
+    PdfBuilder/ToProjectDirectoriesPdfBuilder.h \
+    PdfBuilder/ToSeparateDirectoryPdfBuilder.h \
     Settings.h \
     SqlMgr.h
 

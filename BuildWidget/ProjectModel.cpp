@@ -110,6 +110,63 @@ const QList<quintptr> &ProjectModel::getOrders() const
     return orders;
 }
 
+// const QHash<QString, QStringList> ProjectModel::getBuildStructure() const
+// {
+//     QStringList resultHolders;
+//     QStringList checked;
+//     QString tmp;
+//     for (const quintptr indexId : orders)
+//     {
+//         tmp = pdfPaths.value(indexId, QString());
+//         if (tmp.isEmpty())
+//         {
+//             continue;
+//         }
+
+//         if (checkedItems.value(indexId, Qt::Unchecked) != Qt::Unchecked)
+//         {
+//             checked << tmp;
+//         }
+//         if (resultHolderCheckstates.value(indexId, Qt::Unchecked) != Qt::Unchecked)
+//         {
+//             resultHolders << tmp;
+//         }
+//     }
+
+//     QHash<QString, QStringList> result;
+//     for (const auto &ch : checked)
+//     {
+//         for (const auto &holder : resultHolders)
+//         {
+//             if (ch.contains(holder))
+//             {
+//                 result[holder] << ch;
+//                 break;
+//             }
+//         }
+//     }
+//     return result;
+// }
+
+QStringList ProjectModel::getResultHolders() const
+{
+    QStringList result;
+    QString tmp;
+    for (const quintptr indexId : orders)
+    {
+        if (resultHolderCheckstates.value(indexId, Qt::Unchecked) == Qt::Unchecked)
+        {
+            continue;
+        }
+        tmp = pathsById.value(indexId, QString());
+        if (!tmp.isEmpty())
+        {
+            result.emplace_back(std::move(tmp));
+        }
+    }
+    return result;
+}
+
 const QStringList ProjectModel::getCheckedPdfPaths() const
 {
     QStringList result;
@@ -120,7 +177,7 @@ const QStringList ProjectModel::getCheckedPdfPaths() const
         {
             continue;
         }
-        tmp = pdfPaths.value(indexId, QString());
+        tmp = pathsById.value(indexId, QString());
         if (!tmp.isEmpty())
         {
             result.emplace_back(std::move(tmp));
@@ -179,6 +236,7 @@ void ProjectModel::scanDefaultOrder(const QDir &dir)
         orders.emplace_back(index.internalId());
         checkedItems[index.internalId()] = Qt::Checked;
         setData(index, Statuses::NOT_LISTED, ProjectItemRoles::StatusRole);
+        pathsById.emplace(index.internalId(), this->filePath(index));
     }
     for (const QFileInfo &dirInfo : dirInfoList)
     {
@@ -196,7 +254,7 @@ void ProjectModel::scanDefaultOrder(const QDir &dir)
         orders.emplace_back(index.internalId());
         checkedItems[index.internalId()] = Qt::Checked;
         setData(index, Statuses::NOT_LISTED, ProjectItemRoles::StatusRole);
-        pdfPaths.emplace(index.internalId(), this->filePath(index));
+        pathsById.emplace(index.internalId(), this->filePath(index));
     }
 }
 
@@ -247,10 +305,7 @@ bool ProjectModel::readOrderFromListFile()
         checkedItems[index.internalId()] = printCheckState == 0 ? Qt::Unchecked : (printCheckState == 1 ? Qt::PartiallyChecked : Qt::Checked);
         resultHolderCheckstates[index.siblingAtColumn(Columns::col_ResultHolder).internalId()] = resultHolder == 0 ? Qt::Unchecked : Qt::Checked;
         setData(index, Statuses::LISTED, ProjectItemRoles::StatusRole);
-        if (const QFileInfo &info = fileInfo(index); info.suffix() == "pdf")
-        {
-            pdfPaths.emplace(index.internalId(), this->filePath(index));
-        }
+        pathsById.emplace(index.internalId(), this->filePath(index));
         if (rec.value(SqlMgr::ProjectFilesystemTable::columns::expanded).toBool())
         {
             expanded << index;
@@ -305,17 +360,18 @@ void ProjectModel::scanFilesystem(const QDir &dir, QModelIndexList &additionItem
             additionItems.emplace_back(index);
             orders.emplace_back(index.internalId());
             setData(index, Statuses::NOT_LISTED, ProjectItemRoles::StatusRole);
-            pdfPaths.emplace(index.internalId(), this->filePath(index));
+            pathsById.emplace(index.internalId(), this->filePath(index));
         }
     }
 }
 
 void ProjectModel::cleanup()
 {
+    resultHolderCheckstates.clear();
     checkedItems.clear();
     hiddenIndices.clear();
     orders.clear();
-    pdfPaths.clear();
+    pathsById.clear();
 }
 
 void ProjectModel::slot_dropped(const quintptr droppedIndexId, const QList<quintptr> &draggeddIndicesIds)

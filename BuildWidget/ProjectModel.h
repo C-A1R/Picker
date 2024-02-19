@@ -9,6 +9,7 @@ class ProjectModel : public QFileSystemModel
 {
     Q_OBJECT
 
+
     enum ProjectItemRoles
     {
         StatusRole = Qt::UserRole
@@ -21,12 +22,12 @@ class ProjectModel : public QFileSystemModel
         NOT_LISTED
     };
 
+    QHash<quintptr, Qt::CheckState>     resultHolderCheckstates;
     QHash<quintptr, Qt::CheckState>     checkedItems;
     QHash<quintptr, Statuses>           itemStatuses;
     QSet<quintptr>                      hiddenIndices;
     QList<quintptr>                     orders;
-    QHash<quintptr, QString>            pdfPaths;
-    QHash<quintptr, Qt::CheckState>     resultHolderCheckstates;
+    QHash<quintptr, QString>            pathsById;
 
 public:
     enum Columns
@@ -50,6 +51,8 @@ public:
 
     const QSet<quintptr> &getHiddenIndices() const;
     const QList<quintptr> &getOrders() const;
+    // const QHash<QString, QStringList> getBuildStructure() const;
+    QStringList getResultHolders() const;
     const QStringList getCheckedPdfPaths() const;
     QString listFilePath() const;
 

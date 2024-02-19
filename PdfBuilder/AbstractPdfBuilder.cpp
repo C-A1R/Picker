@@ -9,8 +9,8 @@
 #include <thread>
 #include <iostream>
 
-AbstractPdfBuilder::AbstractPdfBuilder(const QString &rootPath)
-    : rootPath{rootPath}
+AbstractPdfBuilder::AbstractPdfBuilder(QStringList &&resultHolderPaths)
+    : resultHolderPaths{std::move(resultHolderPaths)}
 {
     const unsigned int threads_count = 4/*std::thread::hardware_concurrency() - 1*/;
     threads.reserve(threads_count);
@@ -35,25 +35,37 @@ AbstractPdfBuilder::~AbstractPdfBuilder()
 
 void AbstractPdfBuilder::exec(const QStringList &paths)
 {
-    if (rootPath.isEmpty() || paths.isEmpty())
+    if (resultHolderPaths.isEmpty() || paths.isEmpty())
     {
         return;
     }
 
-    QHash<QString, QStringList> structureByParents;
-    for (const QString &path : paths)
+    expectedProgress = 0;
+    QHash<QString, QStringList> structure;
+    for (const auto &pdf : paths)
     {
-        const QString parentPath = path.left(path.lastIndexOf('/'));
-        structureByParents[parentPath] << path;
+        for (const auto &holder : resultHolderPaths)
+        {
+            if (pdf.contains(holder))
+            {
+                structure[holder] << pdf;
+                ++expectedProgress;
+                break;
+            }
+        }
     }
-    expectedProgress = paths.count();
+
     progress->setMaximum(paths.count());
     progress->show();
-    QHashIterator<QString, QStringList> iter(structureByParents);
+    QHashIterator<QString, QStringList> iter(structure);
     while(iter.hasNext())
     {
         iter.next();
         const QStringList pdfFilePaths = iter.value();
+        if (pdfFilePaths.isEmpty())
+        {
+            continue;
+        }
         const QString destinationPdfPath = destinationFilePath(iter.key());
         if (destinationPdfPath.isEmpty())
         {
@@ -142,6 +154,7 @@ void AbstractPdfBuilder::slot_fileProcessed()
     if (currentProgress == expectedProgress)
     {
         emit signal_allFilesProcessed();
+        progress->accept();
     }
 }
 

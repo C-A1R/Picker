@@ -15,7 +15,7 @@ class AbstractPdfBuilder : public IPdfBuilder
 {
     Q_OBJECT
 
-    const QString rootPath;
+    const QStringList resultHolderPaths;
     std::mutex taskMutex;
     std::condition_variable cv;
     std::vector<std::thread> threads;
@@ -28,7 +28,7 @@ protected:
     QScopedPointer<QProgressDialog> progress;
 
 public:
-    AbstractPdfBuilder(const QString &rootPath);
+    AbstractPdfBuilder(QStringList &&resultHolderPaths);
     ~AbstractPdfBuilder() override;
 
 protected:

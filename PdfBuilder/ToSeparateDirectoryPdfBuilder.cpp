@@ -1,14 +1,15 @@
-#include "ToDefenitFolderPdfBuilder.h"
+#include "ToSeparateDirectoryPdfBuilder.h"
 
-ToDefenitFolderPdfBuilder::ToDefenitFolderPdfBuilder(const QString &rootPath, QString &&defenitFolder)
-    : AbstractPdfBuilder(rootPath), defenitFolder{std::move(defenitFolder)}
+ToSeparateDirectoryPdfBuilder::ToSeparateDirectoryPdfBuilder(QStringList &&resultHolderPaths, QString &&defenitFolder)
+    : AbstractPdfBuilder{std::move(resultHolderPaths)}
+    , separateDirectory{std::move(defenitFolder)}
 {
     connect(this, &AbstractPdfBuilder::signal_allFilesProcessed, this, &IPdfBuilder::signal_finished);
 }
 
-QString ToDefenitFolderPdfBuilder::destinationFilePath(const QString &parentPath)
+QString ToSeparateDirectoryPdfBuilder::destinationFilePath(const QString &parentPath)
 {
-    if (defenitFolder.isEmpty())
+    if (separateDirectory.isEmpty())
     {
         return QString();
     }
@@ -16,19 +17,19 @@ QString ToDefenitFolderPdfBuilder::destinationFilePath(const QString &parentPath
     QString destination;
     if (!titleFileName.isEmpty())
     {
-        destination = defenitFolder + titleFileName.remove("Титул ");
+        destination = separateDirectory + titleFileName.remove("Титул ");
     }
     else
     {
         if (parentPath.endsWith(':'))
         {
-            destination = defenitFolder
+            destination = separateDirectory
                           + parentPath.left(parentPath.size() - parentPath.lastIndexOf(':'))
                           + ".pdf";
         }
         else
         {
-            destination = defenitFolder
+            destination = separateDirectory
                           + parentPath.right(parentPath.size() - parentPath.lastIndexOf('/') - 1)
                           + ".pdf";
         }

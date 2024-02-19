@@ -1,12 +1,12 @@
-#include "ToParentFoldersPdfBuilder.h"
+#include "ToProjectDirectoriesPdfBuilder.h"
 
-ToParentFoldersPdfBuilder::ToParentFoldersPdfBuilder(const QString &rootPath)
-    : AbstractPdfBuilder{rootPath}
+ToProjectDirectoriesPdfBuilder::ToProjectDirectoriesPdfBuilder(QStringList &&resultHolderPaths)
+    : AbstractPdfBuilder{std::move(resultHolderPaths)}
 {
     connect(this, &AbstractPdfBuilder::signal_allFilesProcessed, this, &IPdfBuilder::signal_finished);
 }
 
-QString ToParentFoldersPdfBuilder::destinationFilePath(const QString &parentPath)
+QString ToProjectDirectoriesPdfBuilder::destinationFilePath(const QString &parentPath)
 {
     QString titleFileName = AbstractPdfBuilder::findTitleFileName(parentPath);
     QString destination;

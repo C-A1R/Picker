@@ -3,9 +3,9 @@
 #include "ProjectProxyModel.h"
 #include "Settings.h"
 #include "SqlMgr.h"
-#include "PdfBuilder/ToParentFoldersPdfBuilder.h"
-#include "PdfBuilder/ToDefenitFolderPdfBuilder.h"
-#include "PdfBuilder/ToParentAndDefenitFolderPdfBuilder.h"
+#include "PdfBuilder/ToProjectDirectoriesPdfBuilder.h"
+#include "PdfBuilder/ToSeparateDirectoryPdfBuilder.h"
+#include "PdfBuilder/ToProjectAndSeparateDirectoriesPdfBuilder.h"
 
 #include <QToolBar>
 #include <QActionGroup>
@@ -19,7 +19,7 @@
 
 BuildWidget::BuildWidget(QWidget *parent)
     : QWidget(parent)
-    , saveOptions{SaveOpt::fromInt(Settings::instance()->value(SETTINGS_SAVE_OPTIONS, SaveOptions::SAVE_TO_PARENT_FOLDERS).toInt())}
+    , saveOptions{SaveOpt::fromInt(Settings::instance()->value(SETTINGS_SAVE_OPTIONS, SaveOptions::SAVE_TO_PROJECT_DIRECTORIES).toInt())}
 {
     initUi();
     {
@@ -78,7 +78,7 @@ void BuildWidget::initUi()
         act->setToolTip("Сохранить в каталогах");
         act->setIcon(QIcon(":/buildWidget/ico/folders.svg"));
         act->setCheckable(true);
-        act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_PARENT_FOLDERS));
+        act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_PROJECT_DIRECTORIES));
         connect(act, &QAction::triggered, this, &BuildWidget::slot_saveToFoldersOptionChanged);
         saveOptions_toolBar->addAction(act);
     }
@@ -87,7 +87,7 @@ void BuildWidget::initUi()
         act->setToolTip("Сохранить в указанный каталог");
         act->setIcon(QIcon(":/buildWidget/ico/folder.svg"));
         act->setCheckable(true);
-        act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_DEFENIT_FOLDER));
+        act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_SEPARATE_DIRECTORY));
         connect(act, &QAction::triggered, this, &BuildWidget::slot_saveToDefenitFolderOptionChanged);
         saveOptions_toolBar->addAction(act);
     }
@@ -256,28 +256,28 @@ void BuildWidget::slot_build()
         return;
     }
 
-    if (saveOptions == SaveOptions::SAVE_TO_PARENT_FOLDERS)
+    if (saveOptions == SaveOptions::SAVE_TO_PROJECT_DIRECTORIES)
     {
-        builder.reset(new ToParentFoldersPdfBuilder(project_model->rootPath()));
+        builder.reset(new ToProjectDirectoriesPdfBuilder(project_model->getResultHolders()));
     }
-    else if (saveOptions == SaveOptions::SAVE_TO_DEFENIT_FOLDER)
+    else if (saveOptions == SaveOptions::SAVE_TO_SEPARATE_DIRECTORY)
     {
         QString defenitFolder = getDefenitFolder();
         if (defenitFolder.isEmpty())
         {
             return;
         }
-        builder.reset(new ToDefenitFolderPdfBuilder(project_model->rootPath(), std::move(defenitFolder)));
+        builder.reset(new ToSeparateDirectoryPdfBuilder(project_model->getResultHolders(), std::move(defenitFolder)));
     }
-    else if (saveOptions.testFlag(SaveOptions::SAVE_TO_PARENT_FOLDERS)
-               && saveOptions.testFlag(SaveOptions::SAVE_TO_DEFENIT_FOLDER))
+    else if (saveOptions.testFlag(SaveOptions::SAVE_TO_PROJECT_DIRECTORIES)
+               && saveOptions.testFlag(SaveOptions::SAVE_TO_SEPARATE_DIRECTORY))
     {
         QString defenitFolder = getDefenitFolder();
         if (defenitFolder.isEmpty())
         {
             return;
         }
-        builder.reset(new ToParentAndDefenitFolderPdfBuilder(project_model->rootPath(),  std::move(defenitFolder)));
+        builder.reset(new ToProjectAndSeparateDirectoryPdfBuilder(project_model->getResultHolders(),  std::move(defenitFolder)));
     }
     else
     {
@@ -301,12 +301,12 @@ void BuildWidget::slot_build()
 
 void BuildWidget::slot_saveToFoldersOptionChanged(bool checked)
 {
-    saveOptions.setFlag(SaveOptions::SAVE_TO_PARENT_FOLDERS, checked);
+    saveOptions.setFlag(SaveOptions::SAVE_TO_PROJECT_DIRECTORIES, checked);
 }
 
 void BuildWidget::slot_saveToDefenitFolderOptionChanged(bool checked)
 {
-    saveOptions.setFlag(SaveOptions::SAVE_TO_DEFENIT_FOLDER, checked);
+    saveOptions.setFlag(SaveOptions::SAVE_TO_SEPARATE_DIRECTORY, checked);
 }
 
 void BuildWidget::slot_buildFinished()
