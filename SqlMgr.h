@@ -5,8 +5,8 @@
 
 class SqlMgr
 {
-    const QString dbFilename;
-    QSqlDatabase *db{nullptr};
+    const QString   dbFilename;
+    QSqlDatabase    *db {nullptr};
 
 public:
     struct ProjectFilesystemTable
@@ -33,7 +33,7 @@ public:
     [[nodiscard]] bool rollback();
 
     [[nodiscard]] bool createPickerDb();
-    [[nodiscard]] bool insertProjectElement(const Qt::CheckState print, const bool expanded, const QString &path);
+    [[nodiscard]] bool insertProjectElement(const Qt::CheckState print, const Qt::CheckState resultHolder, const bool expanded, const QString &path);
     [[nodiscard]] bool readProjectElements(QList<QSqlRecord> &result);
 
 private:

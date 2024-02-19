@@ -15,8 +15,9 @@ class ProjectTreeView : public QTreeView
         void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget = nullptr) const override;
     };
 
-    QAction *setChecked_action = nullptr;
-    QMenu *contextMenu = nullptr;
+    QAction     *setChecked_action {nullptr};
+    QMenu       *contextMenu {nullptr};
+
     QAbstractItemView::DropIndicatorPosition dropIndicatorPosition;
 
 public:
@@ -39,6 +40,7 @@ signals:
 
 private slots:
     void slot_setChecked(const bool checked);
+    void slot_clicked(const QModelIndex &index);
 
 public slots:
     void slot_expand(const QModelIndexList &indices);

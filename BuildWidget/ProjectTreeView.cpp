@@ -15,6 +15,7 @@ ProjectTreeView::ProjectTreeView(QWidget *parent) : QTreeView(parent)
     }
     contextMenu = new QMenu(this);
     contextMenu->addAction(setChecked_action);
+    connect(this, &ProjectTreeView::clicked, this, &ProjectTreeView::slot_clicked);
 }
 
 void ProjectTreeView::dragEnterEvent(QDragEnterEvent *event)
@@ -155,7 +156,17 @@ void ProjectTreeView::contextMenuEvent(QContextMenuEvent *event)
 
 void ProjectTreeView::slot_setChecked(const bool checked)
 {
+    qDebug() << "slot_setChecked";
     emit signal_setChecked(selectedIndexes(), checked);
+}
+
+void ProjectTreeView::slot_clicked(const QModelIndex &index)
+{
+    // QPoint pos = QCursor::pos();
+    // if ()
+    // {
+    //     emit signal_setChecked(selectedIndexes(), !index.data(Qt::CheckStateRole).toBool());
+    // }
 }
 
 void ProjectTreeView::slot_expand(const QModelIndexList &indices)

@@ -16,8 +16,8 @@
 
 class Settings
 {
-    const QString settingsFilename = QStringLiteral("settings.ini");
-    QScopedPointer<QSettings> settings {new QSettings(settingsFilename, QSettings::IniFormat)};
+    const QString               settingsFilename = QStringLiteral("settings.ini");
+    QScopedPointer<QSettings>   settings {new QSettings(settingsFilename, QSettings::IniFormat)};
     Settings() = default;
 public:
     static Settings *instance();

@@ -11,7 +11,7 @@ ProjectProxyModel::ProjectProxyModel(QObject *parent)
 bool ProjectProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
     const p_model_type *source = static_cast<p_model_type *>(sourceModel());
-    const QModelIndex &index = source->index(sourceRow, 0, sourceParent);
+    const QModelIndex &index = source->index(sourceRow, p_model_type::Columns::col_Name, sourceParent);
     return !source->getHiddenIndices().contains(index.internalId());
 }
 
@@ -73,6 +73,10 @@ void ProjectProxyModel::slot_setChecked(const QModelIndexList &selected, const b
 
 void ProjectProxyModel::slot_expand(const QModelIndexList &expanded) const
 {
+    if (expanded.isEmpty())
+    {
+        return;
+    }
     QModelIndexList proxyIndices;
     std::transform(expanded.cbegin(), expanded.cend(), std::back_inserter(proxyIndices),
                    [this](const QModelIndex &ind) -> QModelIndex

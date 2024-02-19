@@ -28,14 +28,14 @@ class BuildWidget : public QWidget
     };
     Q_DECLARE_FLAGS(SaveOpt, SaveOptions);
 
-    QToolBar *actions_toolBar = nullptr;
-    QToolBar *saveOptions_toolBar = nullptr;
-    QLabel *currentPath_label = nullptr;
-    ProjectTreeView *project_treeView = nullptr;
-    p_model_type *project_model = nullptr;
-    ProjectProxyModel *proxy_model = nullptr;
+    QToolBar            *actions_toolBar {nullptr};
+    QToolBar            *saveOptions_toolBar {nullptr};
+    QLabel              *currentPath_label {nullptr};
+    ProjectTreeView     *project_treeView {nullptr};
+    p_model_type        *project_model {nullptr};
+    ProjectProxyModel   *proxy_model {nullptr};
 
-    SaveOpt saveOptions = SaveOptions::SAVE_TO_PARENT_FOLDERS;
+    SaveOpt                     saveOptions{SaveOptions::SAVE_TO_PARENT_FOLDERS};
     QScopedPointer<IPdfBuilder> builder;
 
 public:

@@ -113,17 +113,20 @@ void BuildWidget::initUi()
     proxy_model->setDynamicSortFilter(false);
     project_treeView->setModel(proxy_model);
     project_treeView->setSortingEnabled(true);
-    project_treeView->sortByColumn(0, Qt::AscendingOrder);
+    project_treeView->sortByColumn(p_model_type::col_Name, Qt::AscendingOrder);
     project_treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     project_treeView->setDragDropMode(QAbstractItemView::DragDrop);
     project_treeView->setDragEnabled(true);
     project_treeView->viewport()->setAcceptDrops(true);
     project_treeView->setDropIndicatorShown(true);
 
-    for (int i = 1; i < project_model->columnCount(); ++i)
-    {
-        project_treeView->hideColumn(i);
-    }
+    project_treeView->hideColumn(p_model_type::Columns::col_Size);
+    project_treeView->hideColumn(p_model_type::Columns::col_Type);
+    project_treeView->hideColumn(p_model_type::Columns::col_DateModified);
+    project_treeView->header()->setSectionResizeMode(p_model_type::Columns::col_Name, QHeaderView::Stretch);
+    project_treeView->header()->setSectionResizeMode(p_model_type::Columns::col_ResultHolder, QHeaderView::Fixed);
+    project_treeView->header()->setStretchLastSection(false);
+    project_treeView->header()->resizeSection(p_model_type::Columns::col_ResultHolder, 0);
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);
@@ -182,10 +185,12 @@ void BuildWidget::saveTree(const QModelIndex &rootIndex, SqlMgr &sqlMgr) const
 
     for (int i = 0; i < rows; ++i)
     {
-        const QModelIndex &childIndex = proxy_model->index(i, 0, rootIndex);
+        const QModelIndex &childIndex = proxy_model->index(i, p_model_type::col_Name, rootIndex);
         const QModelIndex &sourceChildIndex = proxy_model->mapToSource(childIndex);
+        const QModelIndex &sourceChildIndex_resultHolderCol = sourceChildIndex.siblingAtColumn(p_model_type::col_ResultHolder);
         const QFileInfo &info = project_model->fileInfo(sourceChildIndex);
         if (!sqlMgr.insertProjectElement(project_model->data(sourceChildIndex, Qt::CheckStateRole).value<Qt::CheckState>(),
+                                         project_model->data(sourceChildIndex_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>(),
                                          project_treeView->isExpanded(childIndex),
                                          info.absoluteFilePath()))
         {

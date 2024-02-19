@@ -96,14 +96,16 @@ bool SqlMgr::createPickerDb()
                         , ProjectFilesystemTable::columns::path));
 }
 
-bool SqlMgr::insertProjectElement(const Qt::CheckState print, const bool expanded, const QString &path)
+bool SqlMgr::insertProjectElement(const Qt::CheckState print, const Qt::CheckState resultHolder, const bool expanded, const QString &path)
 {
-    const QString sql = QStringLiteral("INSERT INTO %1 (%2,%3,%4) VALUES (%5,%6,'%7')");
+    const QString sql = QStringLiteral("INSERT INTO %1 (%2,%3,%4,%5) VALUES (%6,%7,%8,'%9')");
     return exec(sql.arg(ProjectFilesystemTable::tableName
                         , ProjectFilesystemTable::columns::printCheckstate
+                        , ProjectFilesystemTable::columns::resultHolder
                         , ProjectFilesystemTable::columns::expanded
                         , ProjectFilesystemTable::columns::path)
                     .arg(print == Qt::Unchecked ? 0 : (print == Qt::PartiallyChecked ? 1 : 2))
+                    .arg(resultHolder == Qt::Unchecked ? 0 : 1)
                     .arg(expanded)
                     .arg(path));
 }

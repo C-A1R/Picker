@@ -21,19 +21,32 @@ class ProjectModel : public QFileSystemModel
         NOT_LISTED
     };
 
-    QHash<quintptr, Qt::CheckState> checkedItems;
-    QHash<quintptr, Statuses> itemStatuses;
-    QSet<quintptr> hiddenIndices;
-    QList<quintptr> orders;
-    QHash<quintptr, QString> pdfPaths;
+    QHash<quintptr, Qt::CheckState>     checkedItems;
+    QHash<quintptr, Statuses>           itemStatuses;
+    QSet<quintptr>                      hiddenIndices;
+    QList<quintptr>                     orders;
+    QHash<quintptr, QString>            pdfPaths;
+    QHash<quintptr, Qt::CheckState>     resultHolderCheckstates;
 
 public:
+    enum Columns
+    {
+        col_Name,
+        col_Size,
+        col_Type,
+        col_DateModified,
+        col_ResultHolder,
+
+        col_Max
+    };
+
     ProjectModel(QObject *parent = nullptr);
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
     Qt::DropActions supportedDropActions() const override;
-    bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
+    // bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
     const QSet<quintptr> &getHiddenIndices() const;
     const QList<quintptr> &getOrders() const;

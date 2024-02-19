@@ -5,7 +5,8 @@
 #include <QMimeData>
 #include <QSqlRecord>
 
-ProjectModel::ProjectModel(QObject *parent) : QFileSystemModel(parent)
+ProjectModel::ProjectModel(QObject *parent)
+    : QFileSystemModel(parent)
 {
     setNameFilterDisables(false);
     setNameFilters(QStringList{"*.pdf"});
@@ -27,40 +28,52 @@ Qt::ItemFlags ProjectModel::flags(const QModelIndex &index) const
 
 QVariant ProjectModel::data(const QModelIndex &index, int role) const
 {
-    if (role == Qt::CheckStateRole && index.column() == 0)
+    switch (role)
     {
-        return QVariant(checkedItems.value(index.internalId(), Qt::Unchecked));
+    case Qt::CheckStateRole:
+    {
+        if (index.column() == Columns::col_Name) return QVariant(checkedItems.value(index.internalId(), Qt::Unchecked));
+        if (index.column() == Columns::col_ResultHolder) return QVariant(resultHolderCheckstates.value(index.internalId(), Qt::Unchecked));
+        break;
     }
-    if (role == Qt::BackgroundRole)
+    case Qt::DisplayRole:
+    {
+        if (index.column() == Columns::col_ResultHolder) return QVariant();
+        break;
+    }
+    case Qt::BackgroundRole:
     {
         switch (data(index, ProjectItemRoles::StatusRole).toInt())
         {
-        case Statuses::NOT_LISTED:
-        {
-            return checkedItems.value(index.internalId()) == Qt::Checked ? QColor(255, 237, 204, 200)
-                                                                         : QColor(Qt::white);
+        case Statuses::NOT_LISTED:  return checkedItems.value(index.internalId()) == Qt::Checked ? QColor(255, 237, 204, 200)
+                                                                                                 : QColor(Qt::white);
+        case Statuses::LISTED:      return QColor(100, 221, 23, 50);
+        default:                    return QColor(Qt::white);
         }
-        case Statuses::LISTED:
-        {
-            return QColor(100, 221, 23, 50);
-        }
-        default:
-            return QColor(Qt::white);
-        }
+        break;
     }
-    if (role == ProjectItemRoles::StatusRole)
+    case ProjectItemRoles::StatusRole:
     {
         return QVariant(itemStatuses.value(index.internalId(), Statuses::DEFAULT));
     }
+    default: break;
+    }
+
     return QFileSystemModel::data(index, role);
 }
 
 bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if (role == Qt::CheckStateRole && index.column() == 0)
+    if (role == Qt::CheckStateRole && index.column() == col_Name)
     {
         checkedItems[index.internalId()] = static_cast<Qt::CheckState>(value.toInt());
         emit signal_itemChecked(index);
+        return true;
+    }
+    if (role == Qt::CheckStateRole && index.column() == col_ResultHolder)
+    {
+        resultHolderCheckstates[index.internalId()] = static_cast<Qt::CheckState>(value.toInt());
+        // emit signal_itemChecked(index);
         return true;
     }
     if (role == ProjectItemRoles::StatusRole)
@@ -76,10 +89,15 @@ Qt::DropActions ProjectModel::supportedDropActions() const
     return Qt::MoveAction;
 }
 
-bool ProjectModel::insertRows(int row, int count, const QModelIndex &parent)
+// bool ProjectModel::insertRows(int row, int count, const QModelIndex &parent)
+// {
+//     /// @todo
+//     return true;
+// }
+
+int ProjectModel::columnCount(const QModelIndex &/*parent*/) const
 {
-    /// @todo
-    return true;
+    return Columns::col_Max;
 }
 
 const QSet<quintptr> &ProjectModel::getHiddenIndices() const
@@ -114,7 +132,6 @@ const QStringList ProjectModel::getCheckedPdfPaths() const
 /// имя файла для сохранения списка (порядка сортировки)
 QString ProjectModel::listFilePath() const
 {
-
     return rootDirectory().absolutePath() + QDir::separator() + "picker.sqlite";
 }
 
@@ -214,6 +231,7 @@ bool ProjectModel::readOrderFromListFile()
     {
         const QString path = rec.value(SqlMgr::ProjectFilesystemTable::columns::path).toString();
         const int printCheckState = rec.value(SqlMgr::ProjectFilesystemTable::columns::printCheckstate).toInt();
+        const int resultHolder = rec.value(SqlMgr::ProjectFilesystemTable::columns::resultHolder).toInt();
         if (path.isEmpty())
         {
             continue;
@@ -227,6 +245,7 @@ bool ProjectModel::readOrderFromListFile()
         }
         orders.emplace_back(index.internalId());
         checkedItems[index.internalId()] = printCheckState == 0 ? Qt::Unchecked : (printCheckState == 1 ? Qt::PartiallyChecked : Qt::Checked);
+        resultHolderCheckstates[index.siblingAtColumn(Columns::col_ResultHolder).internalId()] = resultHolder == 0 ? Qt::Unchecked : Qt::Checked;
         setData(index, Statuses::LISTED, ProjectItemRoles::StatusRole);
         if (const QFileInfo &info = fileInfo(index); info.suffix() == "pdf")
         {

@@ -19,8 +19,8 @@ class FileSystemListView : public QListView
         do_unselect
     };
 
-    QSet<QModelIndex> selected;
-    SelectInstructions selectInstruction = SelectInstructions::do_nothing;
+    QSet<QModelIndex>   selected;
+    SelectInstructions  selectInstruction = SelectInstructions::do_nothing;
 
 public:
     FileSystemListView(QWidget *parent = nullptr);
