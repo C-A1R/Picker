@@ -20,6 +20,10 @@ Qt::ItemFlags ProjectModel::flags(const QModelIndex &index) const
     {
         return Qt::ItemFlag::NoItemFlags;
     }
+    if (index.column() == Columns::col_ResultHolder && !isDir(index))
+    {
+        return QAbstractItemModel::flags(index) ^ Qt::ItemIsEnabled;
+    }
     return QAbstractItemModel::flags(index)
            | Qt::ItemIsUserCheckable
            | Qt::ItemIsDragEnabled
@@ -33,7 +37,7 @@ QVariant ProjectModel::data(const QModelIndex &index, int role) const
     case Qt::CheckStateRole:
     {
         if (index.column() == Columns::col_Name) return QVariant(checkedItems.value(index.internalId(), Qt::Unchecked));
-        if (index.column() == Columns::col_ResultHolder) return QVariant(resultHolderCheckstates.value(index.internalId(), Qt::Unchecked));
+        if (index.column() == Columns::col_ResultHolder && isDir(index)) return QVariant(resultHolderCheckstates.value(index.internalId(), Qt::Unchecked));
         break;
     }
     case Qt::DisplayRole:
@@ -72,8 +76,13 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
     }
     if (role == Qt::CheckStateRole && index.column() == col_ResultHolder)
     {
-        resultHolderCheckstates[index.internalId()] = static_cast<Qt::CheckState>(value.toInt());
-        // emit signal_itemChecked(index);
+        const Qt::CheckState state = static_cast<Qt::CheckState>(value.toInt());
+        if (state == Qt::Checked)
+        {
+            resetResultHolderCheckstates_Up(index);
+            resetResultHolderCheckstates_Down(index);
+        }
+        resultHolderCheckstates[index.internalId()] = state;
         return true;
     }
     if (role == ProjectItemRoles::StatusRole)
@@ -109,44 +118,6 @@ const QList<quintptr> &ProjectModel::getOrders() const
 {
     return orders;
 }
-
-// const QHash<QString, QStringList> ProjectModel::getBuildStructure() const
-// {
-//     QStringList resultHolders;
-//     QStringList checked;
-//     QString tmp;
-//     for (const quintptr indexId : orders)
-//     {
-//         tmp = pdfPaths.value(indexId, QString());
-//         if (tmp.isEmpty())
-//         {
-//             continue;
-//         }
-
-//         if (checkedItems.value(indexId, Qt::Unchecked) != Qt::Unchecked)
-//         {
-//             checked << tmp;
-//         }
-//         if (resultHolderCheckstates.value(indexId, Qt::Unchecked) != Qt::Unchecked)
-//         {
-//             resultHolders << tmp;
-//         }
-//     }
-
-//     QHash<QString, QStringList> result;
-//     for (const auto &ch : checked)
-//     {
-//         for (const auto &holder : resultHolders)
-//         {
-//             if (ch.contains(holder))
-//             {
-//                 result[holder] << ch;
-//                 break;
-//             }
-//         }
-//     }
-//     return result;
-// }
 
 QStringList ProjectModel::getResultHolders() const
 {
@@ -207,7 +178,7 @@ QString ProjectModel::listFilePath() const
     {
         if (const QString &path{dirInfo.absoluteFilePath()}; !scanForHiddenItems(QDir(path)))
         {
-            const QModelIndex &index = this->index(path, 0);
+            const QModelIndex &index = this->index(path, Columns::col_Name);
             if (index.isValid())
             {
                 hiddenIndices << index.internalId();
@@ -223,7 +194,7 @@ QString ProjectModel::listFilePath() const
 
 void ProjectModel::scanDefaultOrder(const QDir &dir)
 {
-    const QModelIndex &index = this->index(dir.absolutePath(), 0);
+    const QModelIndex &index = this->index(dir.absolutePath(), Columns::col_Name);
     if (hiddenIndices.contains(index.internalId()))
     {
         return;
@@ -232,7 +203,7 @@ void ProjectModel::scanDefaultOrder(const QDir &dir)
     const QFileInfoList &dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
     if (dir != this->rootDirectory())
     {
-        const QModelIndex &index = this->index(dir.absolutePath(), 0);
+        const QModelIndex &index = this->index(dir.absolutePath(), Columns::col_Name);
         orders.emplace_back(index.internalId());
         checkedItems[index.internalId()] = Qt::Checked;
         setData(index, Statuses::NOT_LISTED, ProjectItemRoles::StatusRole);
@@ -240,7 +211,7 @@ void ProjectModel::scanDefaultOrder(const QDir &dir)
     }
     for (const QFileInfo &dirInfo : dirInfoList)
     {
-        const QModelIndex &index = this->index(dirInfo.absoluteFilePath(), 0);
+        const QModelIndex &index = this->index(dirInfo.absoluteFilePath(), Columns::col_Name);
         if (hiddenIndices.contains(index.internalId()))
         {
             continue;
@@ -250,7 +221,7 @@ void ProjectModel::scanDefaultOrder(const QDir &dir)
     const QFileInfoList pdfInfoList = dir.entryInfoList(QStringList{"*.pdf"}, QDir::Files, QDir::NoSort);
     for (const QFileInfo &pdfInfo : pdfInfoList)
     {
-        const QModelIndex &index = this->index(pdfInfo.absoluteFilePath(), 0);
+        const QModelIndex &index = this->index(pdfInfo.absoluteFilePath(), Columns::col_Name);
         orders.emplace_back(index.internalId());
         checkedItems[index.internalId()] = Qt::Checked;
         setData(index, Statuses::NOT_LISTED, ProjectItemRoles::StatusRole);
@@ -325,7 +296,7 @@ bool ProjectModel::readOrderFromListFile()
 /// читаем файловую систему, ищем файлы, которых нет в списке
 void ProjectModel::scanFilesystem(const QDir &dir, QModelIndexList &additionItems)
 {
-    const QModelIndex &index = this->index(dir.absolutePath(), 0);
+    const QModelIndex &index = this->index(dir.absolutePath(), Columns::col_Name);
     if (hiddenIndices.contains(index.internalId()))
     {
         return;
@@ -334,7 +305,7 @@ void ProjectModel::scanFilesystem(const QDir &dir, QModelIndexList &additionItem
     const QFileInfoList &dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
     if (dir != this->rootDirectory())
     {
-        const QModelIndex &index = this->index(dir.absolutePath(), 0);
+        const QModelIndex &index = this->index(dir.absolutePath(), Columns::col_Name);
         if (!orders.contains(index.internalId()))
         {
             additionItems.emplace_back(index);
@@ -344,7 +315,7 @@ void ProjectModel::scanFilesystem(const QDir &dir, QModelIndexList &additionItem
     }
     for (const QFileInfo &dirInfo : dirInfoList)
     {
-        const QModelIndex &index = this->index(dirInfo.absoluteFilePath(), 0);
+        const QModelIndex &index = this->index(dirInfo.absoluteFilePath(), Columns::col_Name);
         if (hiddenIndices.contains(index.internalId()))
         {
             continue;
@@ -354,7 +325,7 @@ void ProjectModel::scanFilesystem(const QDir &dir, QModelIndexList &additionItem
     const QFileInfoList pdfInfoList = dir.entryInfoList(QStringList{"*.pdf"}, QDir::Files, QDir::NoSort);
     for (const QFileInfo &pdfInfo : pdfInfoList)
     {
-        const QModelIndex &index = this->index(pdfInfo.absoluteFilePath(), 0);
+        const QModelIndex &index = this->index(pdfInfo.absoluteFilePath(), Columns::col_Name);
         if (!orders.contains(index.internalId()))
         {
             additionItems.emplace_back(index);
@@ -372,6 +343,32 @@ void ProjectModel::cleanup()
     hiddenIndices.clear();
     orders.clear();
     pathsById.clear();
+}
+
+void ProjectModel::resetResultHolderCheckstates_Up(const QModelIndex &index)
+{
+    const QModelIndex &parent = index.parent();
+    if (!parent.isValid())
+    {
+        return;
+    }
+    const QModelIndex sibling = parent.siblingAtColumn(col_ResultHolder);
+    setData(sibling, Qt::Unchecked, Qt::CheckStateRole);
+    emit dataChanged(sibling, sibling);
+    resetResultHolderCheckstates_Up(sibling);
+}
+
+void ProjectModel::resetResultHolderCheckstates_Down(const QModelIndex &index)
+{
+    auto name_ind = index.siblingAtColumn(Columns::col_Name);
+    for (int i = 0; i < rowCount(name_ind); ++i)
+    {
+        const QModelIndex &name_child = this->index(i, Columns::col_Name, name_ind);
+        const QModelIndex &ch = name_child.siblingAtColumn(Columns::col_ResultHolder);
+        setData(ch, Qt::Unchecked, Qt::CheckStateRole);
+        emit dataChanged(ch, ch);
+        resetResultHolderCheckstates_Down(ch);
+    }
 }
 
 void ProjectModel::slot_dropped(const quintptr droppedIndexId, const QList<quintptr> &draggeddIndicesIds)
@@ -406,7 +403,7 @@ void ProjectModel::slot_added(const quintptr droppedIndexId, const QString &full
     {
         const int row = rowCount(parent) - 1;
         qDebug() << "insert:" << insertRow(row, parent);
-        const QModelIndex &inserted = index(row, 0, parent);
+        const QModelIndex &inserted = index(row, Columns::col_Name, parent);
         orders.insert(i, inserted.internalId());
     }
 }
@@ -430,7 +427,7 @@ void ProjectModel::slot_onItemChecked(const QModelIndex &index)
     {
         for (int i = 0; i < rowCount(index); ++i)
         {
-            const QModelIndex &child = this->index(i, 0, index);
+            const QModelIndex &child = this->index(i, Columns::col_Name, index);
             if (hiddenIndices.contains(child.internalId()))
             {
                 continue;
@@ -447,7 +444,7 @@ void ProjectModel::slot_onItemChecked(const QModelIndex &index)
     const QModelIndex &parent = index.parent();
     for (int i = 0; i < rowCount(parent); i++)
     {
-        const QModelIndex &child = this->index(i, 0, parent);
+        const QModelIndex &child = this->index(i, Columns::col_Name, parent);
         if (hiddenIndices.contains(child.internalId()))
         {
             continue;

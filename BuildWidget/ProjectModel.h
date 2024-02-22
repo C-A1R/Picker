@@ -51,7 +51,6 @@ public:
 
     const QSet<quintptr> &getHiddenIndices() const;
     const QList<quintptr> &getOrders() const;
-    // const QHash<QString, QStringList> getBuildStructure() const;
     QStringList getResultHolders() const;
     const QStringList getCheckedPdfPaths() const;
     QString listFilePath() const;
@@ -62,6 +61,8 @@ private:
     bool readOrderFromListFile();
     void scanFilesystem(const QDir &dir, QModelIndexList &additionItems);
     void cleanup();
+    void resetResultHolderCheckstates_Up(const QModelIndex &index);
+    void resetResultHolderCheckstates_Down(const QModelIndex &index);
 
 signals:
     void signal_itemChecked(const QModelIndex&);
