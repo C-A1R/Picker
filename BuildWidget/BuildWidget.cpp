@@ -255,6 +255,12 @@ void BuildWidget::slot_build()
         QMessageBox::warning(this, windowTitle(), "Не выбраны опции сохранения");
         return;
     }
+    const auto checkedPdf = project_model->getCheckedPdfPaths();
+    if (checkedPdf.isEmpty())
+    {
+        QMessageBox::warning(this, windowTitle(), "Не выбраны файлы для сохранения");
+        return;
+    }
 
     if (saveOptions == SaveOptions::SAVE_TO_PROJECT_DIRECTORIES)
     {
@@ -290,12 +296,6 @@ void BuildWidget::slot_build()
     }
     connect(builder.get(), &IPdfBuilder::signal_finished, this, &BuildWidget::slot_buildFinished);
     connect(builder.get(), &IPdfBuilder::signal_cancelled, this, &BuildWidget::slot_buildCancelled);
-    const auto checkedPdf = project_model->getCheckedPdfPaths();
-    if (checkedPdf.isEmpty())
-    {
-        QMessageBox::warning(this, windowTitle(), "Не выбраны файлы для сохранения");
-        return;
-    }
     builder->exec(checkedPdf);
 }
 
