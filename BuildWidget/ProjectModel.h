@@ -3,12 +3,9 @@
 
 #include <QFileSystemModel>
 
-class TreeNode;
-
 class ProjectModel : public QFileSystemModel
 {
     Q_OBJECT
-
 
     enum ProjectItemRoles
     {
@@ -63,18 +60,17 @@ private:
     void cleanup();
     void resetResultHolderCheckstates_Up(const QModelIndex &index);
     void resetResultHolderCheckstates_Down(const QModelIndex &index);
+    void checkItem(const QModelIndex& index);
 
 signals:
-    void signal_itemChecked(const QModelIndex&);
     void signal_expand(const QModelIndexList &);
 
 public slots:
     void slot_dropped(const quintptr droppedIndexId, const QList<quintptr> &draggeddIndicesIds);
     void slot_added(const quintptr droppedIndexId, const QString &fullPaths);
-    void slot_setChecked(const QModelIndexList &selected, const bool checked);
+    void slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState);
 
 protected slots:
-    void slot_onItemChecked(const QModelIndex& index);
     void slot_onRootPathChanged();
 };
 

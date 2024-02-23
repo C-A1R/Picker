@@ -12,7 +12,7 @@ public:
     struct ProjectFilesystemTable
     {
         static constexpr char const * const tableName{"project_filesystem"};
-        struct columns
+        struct Columns
         {
             static constexpr char const * const id{"id"};
             static constexpr char const * const printCheckstate{"print_checkstate"};

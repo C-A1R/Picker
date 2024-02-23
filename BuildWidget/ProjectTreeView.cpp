@@ -1,5 +1,7 @@
 #include "ProjectTreeView.h"
 
+#include "ProjectModel.h"
+
 #include <QDropEvent>
 #include <QMenu>
 #include <QPainter>
@@ -8,14 +10,36 @@
 ProjectTreeView::ProjectTreeView(QWidget *parent) : QTreeView(parent)
 {
     setStyle(new ProjectTreeViewStyle(style()));
+}
+
+void ProjectTreeView::mouseReleaseEvent(QMouseEvent *event)
+{
+    const QModelIndex index = indexAt(event->pos());
+    if (index.isValid()
+        && index.column() == ProjectModel::Columns::col_Name
+        && event->button() == Qt::LeftButton)
     {
-        setChecked_action = new QAction("Отметить", this);
-        setChecked_action->setCheckable(true);
-        connect(setChecked_action, &QAction::triggered, this, &ProjectTreeView::slot_setChecked);
+         QModelIndexList selected = selectedIndexes();
+        if (!selected.contains(index))
+        {
+            QTreeView::mouseReleaseEvent(event);
+            return;
+        }
+        QStyleOptionButton opt;
+        opt.rect = visualRect(index);
+        QRect checkBoxRect = style()->subElementRect(QStyle::SE_ItemViewItemCheckIndicator, &opt);
+        {//костыль:
+            checkBoxRect.setLeft(checkBoxRect.left() + 4);
+            checkBoxRect.setRight(checkBoxRect.right() + 4);
+        }
+        if (checkBoxRect.contains(event->pos()))
+        {
+            const auto currCheckState = index.data(Qt::CheckStateRole).value<Qt::CheckState>();
+            emit signal_setChecked(selected, (currCheckState == Qt::Checked || currCheckState == Qt::PartiallyChecked) ? Qt::Unchecked : Qt::Checked);
+            return;
+        }
     }
-    contextMenu = new QMenu(this);
-    contextMenu->addAction(setChecked_action);
-    connect(this, &ProjectTreeView::clicked, this, &ProjectTreeView::slot_clicked);
+    QTreeView::mouseReleaseEvent(event);
 }
 
 void ProjectTreeView::dragEnterEvent(QDragEnterEvent *event)
@@ -132,41 +156,6 @@ QAbstractItemView::DropIndicatorPosition ProjectTreeView::getDropIndicatorPositi
         return DropIndicatorPosition::OnItem;
     }
     return DropIndicatorPosition::OnViewport;
-}
-
-void ProjectTreeView::contextMenuEvent(QContextMenuEvent *event)
-{
-    if (!event)
-    {
-        return;
-    }
-    bool checked = true;
-    const QModelIndexList &selected = selectedIndexes();
-    for (const auto &index : selectedIndexes())
-    {
-        if (!index.data(Qt::CheckStateRole).toBool())
-        {
-            checked = false;
-            break;
-        }
-    }
-    setChecked_action->setChecked(checked);
-    contextMenu->exec(event->globalPos());
-}
-
-void ProjectTreeView::slot_setChecked(const bool checked)
-{
-    qDebug() << "slot_setChecked";
-    emit signal_setChecked(selectedIndexes(), checked);
-}
-
-void ProjectTreeView::slot_clicked(const QModelIndex &index)
-{
-    // QPoint pos = QCursor::pos();
-    // if ()
-    // {
-    //     emit signal_setChecked(selectedIndexes(), !index.data(Qt::CheckStateRole).toBool());
-    // }
 }
 
 void ProjectTreeView::slot_expand(const QModelIndexList &indices)

@@ -1,5 +1,5 @@
 #include "ProjectProxyModel.h"
-#include "BuildWidget.h"
+#include "ProjectModel.h"
 
 #include <QFileSystemModel>
 
@@ -10,14 +10,14 @@ ProjectProxyModel::ProjectProxyModel(QObject *parent)
 
 bool ProjectProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-    const p_model_type *source = static_cast<p_model_type *>(sourceModel());
-    const QModelIndex &index = source->index(sourceRow, p_model_type::Columns::col_Name, sourceParent);
+    const ProjectModel *source = static_cast<ProjectModel *>(sourceModel());
+    const QModelIndex &index = source->index(sourceRow, ProjectModel::Columns::col_Name, sourceParent);
     return !source->getHiddenIndices().contains(index.internalId());
 }
 
 bool ProjectProxyModel::lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const
 {
-    const p_model_type *source = static_cast<p_model_type *>(sourceModel());
+    const ProjectModel *source = static_cast<ProjectModel *>(sourceModel());
     const QList<quintptr> &orders = source->getOrders();
     return orders.indexOf(source_left.internalId()) < orders.indexOf(source_right.internalId());
 }
@@ -56,7 +56,7 @@ void ProjectProxyModel::slot_added(const QModelIndex &droppedIndex, const QStrin
     emit signal_added(droppedIndex.isValid() ? mapToSource(droppedIndex).internalId() : 0, fullPaths);
 }
 
-void ProjectProxyModel::slot_setChecked(const QModelIndexList &selected, const bool checked)
+void ProjectProxyModel::slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState)
 {
     if (selected.isEmpty())
     {
@@ -68,10 +68,10 @@ void ProjectProxyModel::slot_setChecked(const QModelIndexList &selected, const b
                     {
                         return mapToSource(ind);
                     });
-    emit signal_setChecked(sourceIndices, checked);
+    emit signal_setChecked(sourceIndices, checkState);
 }
 
-void ProjectProxyModel::slot_expand(const QModelIndexList &expanded) const
+void ProjectProxyModel::slot_expand(const QModelIndexList &expanded)
 {
     if (expanded.isEmpty())
     {

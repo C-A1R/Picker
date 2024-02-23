@@ -10,7 +10,6 @@ ProjectModel::ProjectModel(QObject *parent)
 {
     setNameFilterDisables(false);
     setNameFilters(QStringList{"*.pdf"});
-    connect(this, &ProjectModel::signal_itemChecked, this, &ProjectModel::slot_onItemChecked);
     connect(this, &ProjectModel::rootPathChanged, this, &ProjectModel::slot_onRootPathChanged);
 }
 
@@ -36,8 +35,10 @@ QVariant ProjectModel::data(const QModelIndex &index, int role) const
     {
     case Qt::CheckStateRole:
     {
-        if (index.column() == Columns::col_Name) return QVariant(checkedItems.value(index.internalId(), Qt::Unchecked));
-        if (index.column() == Columns::col_ResultHolder && isDir(index)) return QVariant(resultHolderCheckstates.value(index.internalId(), Qt::Unchecked));
+        if (index.column() == Columns::col_Name)
+            return QVariant(checkedItems.value(index.internalId(), Qt::Unchecked));
+        if (index.column() == Columns::col_ResultHolder && isDir(index))
+            return QVariant(resultHolderCheckstates.value(index.internalId(), Qt::Unchecked));
         break;
     }
     case Qt::DisplayRole:
@@ -71,7 +72,7 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
     if (role == Qt::CheckStateRole && index.column() == col_Name)
     {
         checkedItems[index.internalId()] = static_cast<Qt::CheckState>(value.toInt());
-        emit signal_itemChecked(index);
+        checkItem(index);
         return true;
     }
     if (role == Qt::CheckStateRole && index.column() == col_ResultHolder)
@@ -258,9 +259,9 @@ bool ProjectModel::readOrderFromListFile()
     QModelIndexList expanded;
     for (const QSqlRecord &rec : std::as_const(recs))
     {
-        const QString path = rec.value(SqlMgr::ProjectFilesystemTable::columns::path).toString();
-        const int printCheckState = rec.value(SqlMgr::ProjectFilesystemTable::columns::printCheckstate).toInt();
-        const int resultHolder = rec.value(SqlMgr::ProjectFilesystemTable::columns::resultHolder).toInt();
+        const QString path = rec.value(SqlMgr::ProjectFilesystemTable::Columns::path).toString();
+        const int printCheckState = rec.value(SqlMgr::ProjectFilesystemTable::Columns::printCheckstate).toInt();
+        const int resultHolder = rec.value(SqlMgr::ProjectFilesystemTable::Columns::resultHolder).toInt();
         if (path.isEmpty())
         {
             continue;
@@ -277,7 +278,7 @@ bool ProjectModel::readOrderFromListFile()
         resultHolderCheckstates[index.siblingAtColumn(Columns::col_ResultHolder).internalId()] = resultHolder == 0 ? Qt::Unchecked : Qt::Checked;
         setData(index, Statuses::LISTED, ProjectItemRoles::StatusRole);
         pathsById.emplace(index.internalId(), this->filePath(index));
-        if (rec.value(SqlMgr::ProjectFilesystemTable::columns::expanded).toBool())
+        if (rec.value(SqlMgr::ProjectFilesystemTable::Columns::expanded).toBool())
         {
             expanded << index;
         }
@@ -288,7 +289,7 @@ bool ProjectModel::readOrderFromListFile()
     scanFilesystem(rootDirectory(), additionItems);
     for (const QModelIndex &ind : std::as_const(additionItems))
     {
-        slot_onItemChecked(ind);//перепростановка галочек
+        checkItem(ind);//перепростановка галочек
     }
     return true;
 }
@@ -408,7 +409,7 @@ void ProjectModel::slot_added(const quintptr droppedIndexId, const QString &full
     }
 }
 
-void ProjectModel::slot_setChecked(const QModelIndexList &selected, const bool checked)
+void ProjectModel::slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState)
 {
     if (selected.isEmpty())
     {
@@ -416,11 +417,15 @@ void ProjectModel::slot_setChecked(const QModelIndexList &selected, const bool c
     }
     for (const QModelIndex &index : selected)
     {
-        setData(index, checked ? Qt::CheckState::Checked : Qt::CheckState::Unchecked, Qt::CheckStateRole);
+        if (index.column() != Columns::col_Name)
+        {
+            continue;
+        }
+        setData(index, checkState, Qt::CheckStateRole);
     }
 }
 
-void ProjectModel::slot_onItemChecked(const QModelIndex &index)
+void ProjectModel::checkItem(const QModelIndex &index)
 {
     Qt::CheckState state = checkedItems.value(index.internalId(), Qt::Unchecked);
     if (state == Qt::Checked || state == Qt::Unchecked)
@@ -442,6 +447,11 @@ void ProjectModel::slot_onItemChecked(const QModelIndex &index)
     int visible = 0;
     bool part = false;
     const QModelIndex &parent = index.parent();
+    if (!parent.isValid() || this->filePath(parent) == rootPath())
+    {
+        emit dataChanged(index, index);
+        return;
+    }
     for (int i = 0; i < rowCount(parent); i++)
     {
         const QModelIndex &child = this->index(i, Columns::col_Name, parent);

@@ -23,20 +23,20 @@ BuildWidget::BuildWidget(QWidget *parent)
 {
     initUi();
     {
-        connect(project_model, &p_model_type::signal_expand, proxy_model, &ProjectProxyModel::slot_expand);
+        connect(project_model, &ProjectModel::signal_expand, proxy_model, &ProjectProxyModel::slot_expand);
         connect(proxy_model, &ProjectProxyModel::signal_expand, project_treeView, &ProjectTreeView::slot_expand);
     }
     {
         connect(project_treeView, &ProjectTreeView::signal_dropped, proxy_model, &ProjectProxyModel::slot_dropped);
-        connect(proxy_model, &ProjectProxyModel::signal_dropped, project_model, &p_model_type::slot_dropped);
+        connect(proxy_model, &ProjectProxyModel::signal_dropped, project_model, &ProjectModel::slot_dropped);
     }
     {
         connect(project_treeView, &ProjectTreeView::signal_added, proxy_model, &ProjectProxyModel::slot_added);
-        connect(proxy_model, &ProjectProxyModel::signal_added, project_model, &p_model_type::slot_added);
+        connect(proxy_model, &ProjectProxyModel::signal_added, project_model, &ProjectModel::slot_added);
     }
     {
         connect(project_treeView, &ProjectTreeView::signal_setChecked, proxy_model, &ProjectProxyModel::slot_setChecked);
-        connect(proxy_model, &ProjectProxyModel::signal_setChecked, project_model, &p_model_type::slot_setChecked);
+        connect(proxy_model, &ProjectProxyModel::signal_setChecked, project_model, &ProjectModel::slot_setChecked);
     }
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
 }
@@ -106,27 +106,27 @@ void BuildWidget::initUi()
 
     project_treeView = new ProjectTreeView(this);
     project_treeView->header()->hide();
-    project_model = new p_model_type(this);
+    project_model = new ProjectModel(this);
     project_model->setReadOnly(true);
     proxy_model = new ProjectProxyModel();
     proxy_model->setSourceModel(project_model);
     proxy_model->setDynamicSortFilter(false);
     project_treeView->setModel(proxy_model);
     project_treeView->setSortingEnabled(true);
-    project_treeView->sortByColumn(p_model_type::col_Name, Qt::AscendingOrder);
+    project_treeView->sortByColumn(ProjectModel::col_Name, Qt::AscendingOrder);
     project_treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     project_treeView->setDragDropMode(QAbstractItemView::DragDrop);
     project_treeView->setDragEnabled(true);
     project_treeView->viewport()->setAcceptDrops(true);
     project_treeView->setDropIndicatorShown(true);
 
-    project_treeView->hideColumn(p_model_type::Columns::col_Size);
-    project_treeView->hideColumn(p_model_type::Columns::col_Type);
-    project_treeView->hideColumn(p_model_type::Columns::col_DateModified);
-    project_treeView->header()->setSectionResizeMode(p_model_type::Columns::col_Name, QHeaderView::Stretch);
-    project_treeView->header()->setSectionResizeMode(p_model_type::Columns::col_ResultHolder, QHeaderView::Fixed);
+    project_treeView->hideColumn(ProjectModel::Columns::col_Size);
+    project_treeView->hideColumn(ProjectModel::Columns::col_Type);
+    project_treeView->hideColumn(ProjectModel::Columns::col_DateModified);
+    project_treeView->header()->setSectionResizeMode(ProjectModel::Columns::col_Name, QHeaderView::Stretch);
+    project_treeView->header()->setSectionResizeMode(ProjectModel::Columns::col_ResultHolder, QHeaderView::Fixed);
     project_treeView->header()->setStretchLastSection(false);
-    project_treeView->header()->resizeSection(p_model_type::Columns::col_ResultHolder, 0);
+    project_treeView->header()->resizeSection(ProjectModel::Columns::col_ResultHolder, 0);
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);
@@ -185,9 +185,9 @@ void BuildWidget::saveTree(const QModelIndex &rootIndex, SqlMgr &sqlMgr) const
 
     for (int i = 0; i < rows; ++i)
     {
-        const QModelIndex &childIndex = proxy_model->index(i, p_model_type::col_Name, rootIndex);
+        const QModelIndex &childIndex = proxy_model->index(i, ProjectModel::Columns::col_Name, rootIndex);
         const QModelIndex &sourceChildIndex = proxy_model->mapToSource(childIndex);
-        const QModelIndex &sourceChildIndex_resultHolderCol = sourceChildIndex.siblingAtColumn(p_model_type::col_ResultHolder);
+        const QModelIndex &sourceChildIndex_resultHolderCol = sourceChildIndex.siblingAtColumn(ProjectModel::Columns::col_ResultHolder);
         const QFileInfo &info = project_model->fileInfo(sourceChildIndex);
         if (!sqlMgr.insertProjectElement(project_model->data(sourceChildIndex, Qt::CheckStateRole).value<Qt::CheckState>(),
                                          project_model->data(sourceChildIndex_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>(),

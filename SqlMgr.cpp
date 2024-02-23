@@ -89,21 +89,21 @@ bool SqlMgr::createPickerDb()
                                        ", %5 BOOL DEFAULT false"
                                        ", %6 TEXT);");
     return exec(sql.arg(ProjectFilesystemTable::tableName
-                        , ProjectFilesystemTable::columns::id
-                        , ProjectFilesystemTable::columns::printCheckstate
-                        , ProjectFilesystemTable::columns::resultHolder
-                        , ProjectFilesystemTable::columns::expanded
-                        , ProjectFilesystemTable::columns::path));
+                        , ProjectFilesystemTable::Columns::id
+                        , ProjectFilesystemTable::Columns::printCheckstate
+                        , ProjectFilesystemTable::Columns::resultHolder
+                        , ProjectFilesystemTable::Columns::expanded
+                        , ProjectFilesystemTable::Columns::path));
 }
 
 bool SqlMgr::insertProjectElement(const Qt::CheckState print, const Qt::CheckState resultHolder, const bool expanded, const QString &path)
 {
     const QString sql = QStringLiteral("INSERT INTO %1 (%2,%3,%4,%5) VALUES (%6,%7,%8,'%9')");
     return exec(sql.arg(ProjectFilesystemTable::tableName
-                        , ProjectFilesystemTable::columns::printCheckstate
-                        , ProjectFilesystemTable::columns::resultHolder
-                        , ProjectFilesystemTable::columns::expanded
-                        , ProjectFilesystemTable::columns::path)
+                        , ProjectFilesystemTable::Columns::printCheckstate
+                        , ProjectFilesystemTable::Columns::resultHolder
+                        , ProjectFilesystemTable::Columns::expanded
+                        , ProjectFilesystemTable::Columns::path)
                     .arg(print == Qt::Unchecked ? 0 : (print == Qt::PartiallyChecked ? 1 : 2))
                     .arg(resultHolder == Qt::Unchecked ? 0 : 1)
                     .arg(expanded)
@@ -113,7 +113,7 @@ bool SqlMgr::insertProjectElement(const Qt::CheckState print, const Qt::CheckSta
 bool SqlMgr::readProjectElements(QList<QSqlRecord> &result)
 {
     const QString sql = QStringLiteral("SELECT * FROM %1 ORDER BY %2");
-    return table(sql.arg(ProjectFilesystemTable::tableName, ProjectFilesystemTable::columns::id), result);
+    return table(sql.arg(ProjectFilesystemTable::tableName, ProjectFilesystemTable::Columns::id), result);
 }
 
 bool SqlMgr::table(const QString &sql, QList<QSqlRecord> &result)
@@ -127,7 +127,7 @@ bool SqlMgr::table(const QString &sql, QList<QSqlRecord> &result)
     QSqlQuery query(*db);
     if (!query.exec(sql))
     {
-        qDebug() << "Не удалось выполнить запрос" << sql;
+        qDebug() << "Не удалось выполнить запрос: " << sql;
         query.clear();
         query.finish();
         return false;
