@@ -1,6 +1,6 @@
 #include "ProjectTreeView.h"
 
-#include "ProjectModel.h"
+#include "ProjectFileSystemModel.h"
 
 #include <QDropEvent>
 #include <QMenu>
@@ -16,7 +16,7 @@ void ProjectTreeView::mouseReleaseEvent(QMouseEvent *event)
 {
     const QModelIndex index = indexAt(event->pos());
     if (index.isValid()
-        && index.column() == ProjectModel::Columns::col_Name
+        && index.column() == ProjectFileSystemModel::Columns::col_Name
         && event->button() == Qt::LeftButton)
     {
          QModelIndexList selected = selectedIndexes();

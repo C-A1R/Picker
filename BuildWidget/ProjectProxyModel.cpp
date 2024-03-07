@@ -1,5 +1,5 @@
 #include "ProjectProxyModel.h"
-#include "ProjectModel.h"
+#include "ProjectFileSystemModel.h"
 
 #include <QFileSystemModel>
 
@@ -10,14 +10,14 @@ ProjectProxyModel::ProjectProxyModel(QObject *parent)
 
 bool ProjectProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-    const ProjectModel *source = static_cast<ProjectModel *>(sourceModel());
-    const QModelIndex &index = source->index(sourceRow, ProjectModel::Columns::col_Name, sourceParent);
+    const ProjectFileSystemModel *source = static_cast<ProjectFileSystemModel *>(sourceModel());
+    const QModelIndex &index = source->index(sourceRow, ProjectFileSystemModel::Columns::col_Name, sourceParent);
     return !source->getHiddenIndices().contains(index.internalId());
 }
 
 bool ProjectProxyModel::lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const
 {
-    const ProjectModel *source = static_cast<ProjectModel *>(sourceModel());
+    const ProjectFileSystemModel *source = static_cast<ProjectFileSystemModel *>(sourceModel());
     const QList<quintptr> &orders = source->getOrders();
     return orders.indexOf(source_left.internalId()) < orders.indexOf(source_right.internalId());
 }

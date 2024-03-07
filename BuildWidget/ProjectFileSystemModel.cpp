@@ -1,19 +1,19 @@
-#include "ProjectModel.h"
+#include "ProjectFileSystemModel.h"
 
 #include "SqlMgr.h"
 
 #include <QMimeData>
 #include <QSqlRecord>
 
-ProjectModel::ProjectModel(QObject *parent)
+ProjectFileSystemModel::ProjectFileSystemModel(QObject *parent)
     : QFileSystemModel(parent)
 {
     setNameFilterDisables(false);
     setNameFilters(QStringList{"*.pdf"});
-    connect(this, &ProjectModel::rootPathChanged, this, &ProjectModel::slot_onRootPathChanged);
+    connect(this, &ProjectFileSystemModel::rootPathChanged, this, &ProjectFileSystemModel::slot_onRootPathChanged);
 }
 
-Qt::ItemFlags ProjectModel::flags(const QModelIndex &index) const
+Qt::ItemFlags ProjectFileSystemModel::flags(const QModelIndex &index) const
 {
     if (!index.isValid())
     {
@@ -29,7 +29,7 @@ Qt::ItemFlags ProjectModel::flags(const QModelIndex &index) const
            | Qt::ItemIsDropEnabled;
 }
 
-QVariant ProjectModel::data(const QModelIndex &index, int role) const
+QVariant ProjectFileSystemModel::data(const QModelIndex &index, int role) const
 {
     switch (role)
     {
@@ -67,7 +67,7 @@ QVariant ProjectModel::data(const QModelIndex &index, int role) const
     return QFileSystemModel::data(index, role);
 }
 
-bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int role)
+bool ProjectFileSystemModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (role == Qt::CheckStateRole && index.column() == col_Name)
     {
@@ -94,33 +94,33 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
     return QFileSystemModel::setData(index, value, role);
 }
 
-Qt::DropActions ProjectModel::supportedDropActions() const
+Qt::DropActions ProjectFileSystemModel::supportedDropActions() const
 {
     return Qt::MoveAction;
 }
 
-// bool ProjectModel::insertRows(int row, int count, const QModelIndex &parent)
+// bool ProjectFileSystemModel::insertRows(int row, int count, const QModelIndex &parent)
 // {
 //     /// @todo
 //     return true;
 // }
 
-int ProjectModel::columnCount(const QModelIndex &/*parent*/) const
+int ProjectFileSystemModel::columnCount(const QModelIndex &/*parent*/) const
 {
     return Columns::col_Max;
 }
 
-const QSet<quintptr> &ProjectModel::getHiddenIndices() const
+const QSet<quintptr> &ProjectFileSystemModel::getHiddenIndices() const
 {
     return hiddenIndices;
 }
 
-const QList<quintptr> &ProjectModel::getOrders() const
+const QList<quintptr> &ProjectFileSystemModel::getOrders() const
 {
     return orders;
 }
 
-QStringList ProjectModel::getResultHolders() const
+QStringList ProjectFileSystemModel::getResultHolders() const
 {
     QStringList result;
     QString tmp;
@@ -139,7 +139,7 @@ QStringList ProjectModel::getResultHolders() const
     return result;
 }
 
-const QStringList ProjectModel::getCheckedPdfPaths() const
+const QStringList ProjectFileSystemModel::getCheckedPdfPaths() const
 {
     QStringList result;
     QString tmp;
@@ -159,12 +159,12 @@ const QStringList ProjectModel::getCheckedPdfPaths() const
 }
 
 /// имя файла для сохранения списка (порядка сортировки)
-QString ProjectModel::listFilePath() const
+QString ProjectFileSystemModel::listFilePath() const
 {
     return rootDirectory().absolutePath() + QDir::separator() + "picker.sqlite";
 }
 
-[[maybe_unused]] bool ProjectModel::scanForHiddenItems(const QDir &dir)
+[[maybe_unused]] bool ProjectFileSystemModel::scanForHiddenItems(const QDir &dir)
 {
     const auto &dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
     const auto &pdfInfoList = dir.entryInfoList(QStringList{"*.pdf"}, QDir::Files);
@@ -193,7 +193,7 @@ QString ProjectModel::listFilePath() const
     return hasPdf || foundPdf;
 }
 
-void ProjectModel::scanDefaultOrder(const QDir &dir)
+void ProjectFileSystemModel::scanDefaultOrder(const QDir &dir)
 {
     const QModelIndex &index = this->index(dir.absolutePath(), Columns::col_Name);
     if (hiddenIndices.contains(index.internalId()))
@@ -231,7 +231,7 @@ void ProjectModel::scanDefaultOrder(const QDir &dir)
 }
 
 /// читаем порядок из файла
-bool ProjectModel::readOrderFromListFile()
+bool ProjectFileSystemModel::readOrderFromListFile()
 {
     const QString dbFilename = listFilePath();
     if (!QFile::exists(dbFilename))
@@ -295,7 +295,7 @@ bool ProjectModel::readOrderFromListFile()
 }
 
 /// читаем файловую систему, ищем файлы, которых нет в списке
-void ProjectModel::scanFilesystem(const QDir &dir, QModelIndexList &additionItems)
+void ProjectFileSystemModel::scanFilesystem(const QDir &dir, QModelIndexList &additionItems)
 {
     const QModelIndex &index = this->index(dir.absolutePath(), Columns::col_Name);
     if (hiddenIndices.contains(index.internalId()))
@@ -337,7 +337,7 @@ void ProjectModel::scanFilesystem(const QDir &dir, QModelIndexList &additionItem
     }
 }
 
-void ProjectModel::cleanup()
+void ProjectFileSystemModel::cleanup()
 {
     resultHolderCheckstates.clear();
     checkedItems.clear();
@@ -346,7 +346,7 @@ void ProjectModel::cleanup()
     pathsById.clear();
 }
 
-void ProjectModel::resetResultHolderCheckstates_Up(const QModelIndex &index)
+void ProjectFileSystemModel::resetResultHolderCheckstates_Up(const QModelIndex &index)
 {
     const QModelIndex &parent = index.parent();
     if (!parent.isValid())
@@ -359,7 +359,7 @@ void ProjectModel::resetResultHolderCheckstates_Up(const QModelIndex &index)
     resetResultHolderCheckstates_Up(sibling);
 }
 
-void ProjectModel::resetResultHolderCheckstates_Down(const QModelIndex &index)
+void ProjectFileSystemModel::resetResultHolderCheckstates_Down(const QModelIndex &index)
 {
     auto name_ind = index.siblingAtColumn(Columns::col_Name);
     for (int i = 0; i < rowCount(name_ind); ++i)
@@ -372,7 +372,7 @@ void ProjectModel::resetResultHolderCheckstates_Down(const QModelIndex &index)
     }
 }
 
-void ProjectModel::slot_dropped(const quintptr droppedIndexId, const QList<quintptr> &draggeddIndicesIds)
+void ProjectFileSystemModel::slot_dropped(const quintptr droppedIndexId, const QList<quintptr> &draggeddIndicesIds)
 {
     if (draggeddIndicesIds.isEmpty())
     {
@@ -389,7 +389,7 @@ void ProjectModel::slot_dropped(const quintptr droppedIndexId, const QList<quint
     }
 }
 
-void ProjectModel::slot_added(const quintptr droppedIndexId, const QString &fullPaths)
+void ProjectFileSystemModel::slot_added(const quintptr droppedIndexId, const QString &fullPaths)
 {
     qDebug() << "slot_added:" << fullPaths;
     if (fullPaths.isEmpty())
@@ -409,7 +409,7 @@ void ProjectModel::slot_added(const quintptr droppedIndexId, const QString &full
     }
 }
 
-void ProjectModel::slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState)
+void ProjectFileSystemModel::slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState)
 {
     if (selected.isEmpty())
     {
@@ -425,7 +425,7 @@ void ProjectModel::slot_setChecked(const QModelIndexList &selected, const Qt::Ch
     }
 }
 
-void ProjectModel::checkItem(const QModelIndex &index)
+void ProjectFileSystemModel::checkItem(const QModelIndex &index)
 {
     Qt::CheckState state = checkedItems.value(index.internalId(), Qt::Unchecked);
     if (state == Qt::Checked || state == Qt::Unchecked)
@@ -491,7 +491,7 @@ void ProjectModel::checkItem(const QModelIndex &index)
     emit dataChanged(index, index);
 }
 
-void ProjectModel::slot_onRootPathChanged()
+void ProjectFileSystemModel::slot_onRootPathChanged()
 {
     cleanup();
     scanForHiddenItems(rootDirectory());

@@ -11,7 +11,7 @@ LIBS += -L$$PWD/lib/ -lZlib
 
 SOURCES += \
     BuildWidget/BuildWidget.cpp \
-    BuildWidget/ProjectModel.cpp \
+    BuildWidget/ProjectFileSystemModel.cpp \
     BuildWidget/ProjectProxyModel.cpp \
     BuildWidget/ProjectTreeView.cpp \
     FileSystemWidget/FileSystemListView.cpp \
@@ -28,7 +28,7 @@ SOURCES += \
 
 HEADERS += \
     BuildWidget/BuildWidget.h \
-    BuildWidget/ProjectModel.h \
+    BuildWidget/ProjectFileSystemModel.h \
     BuildWidget/ProjectProxyModel.h \
     BuildWidget/ProjectTreeView.h \
     FileSystemWidget/FileSystemListView.h \
@@ -52,3 +52,6 @@ RESOURCES += \
     res.qrc
 
 RC_FILE = picker.rc
+
+DISTFILES += \
+    README.md

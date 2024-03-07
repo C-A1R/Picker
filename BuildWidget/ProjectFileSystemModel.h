@@ -1,11 +1,20 @@
-#ifndef PROJECTMODEL_H
-#define PROJECTMODEL_H
+#ifndef PROJECTFILESYSTEMMODEL_H
+#define PROJECTFILESYSTEMMODEL_H
 
 #include <QFileSystemModel>
 
-class ProjectModel : public QFileSystemModel
+class ProjectFileSystemModel : public QFileSystemModel
 {
     Q_OBJECT
+
+    class Item
+    {
+        const QString   m_absolutePath;
+        QList<Item>     m_children;
+    public:
+        Item(const QString &absolutePath) : m_absolutePath{absolutePath} {}
+
+    };
 
     enum ProjectItemRoles
     {
@@ -38,7 +47,7 @@ public:
         col_Max
     };
 
-    ProjectModel(QObject *parent = nullptr);
+    ProjectFileSystemModel(QObject *parent = nullptr);
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
@@ -74,4 +83,4 @@ protected slots:
     void slot_onRootPathChanged();
 };
 
-#endif // PROJECTMODEL_H
+#endif // PROJECTFILESYSTEMMODEL_H
