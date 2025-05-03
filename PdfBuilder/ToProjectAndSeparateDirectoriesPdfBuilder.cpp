@@ -26,9 +26,11 @@ QString ToProjectAndSeparateDirectoryPdfBuilder::destinationFilePath(const QStri
 void ToProjectAndSeparateDirectoryPdfBuilder::slot_allFilesProcessed()
 {
     int currentProgress = 0;
-    progress->setValue(currentProgress);
+    QScopedPointer<QProgressDialog> progress(new QProgressDialog("Копирование...", "Отмена", currentProgress, 0));
+    progress->setWindowModality(Qt::ApplicationModal);
     progress->setMaximum(destinations.count());
-    for (const auto &dest : destinations)
+    progress->show();
+    for (const auto &dest : std::as_const(destinations))
     {
         if (progress->wasCanceled())
         {

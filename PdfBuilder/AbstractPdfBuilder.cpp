@@ -18,10 +18,6 @@ AbstractPdfBuilder::AbstractPdfBuilder(QStringList &&resultHolderPaths)
     {
         threads.emplace_back(&AbstractPdfBuilder::loop, this);
     }
-    progress.reset(new QProgressDialog("Сборка...", "Отмена", currentProgress, 0));
-    progress->setWindowModality(Qt::ApplicationModal);
-    connect(progress.get(), &QProgressDialog::canceled, this, &AbstractPdfBuilder::slot_cancelled);
-    connect(this, &AbstractPdfBuilder::signal_fileProcessed, this, &AbstractPdfBuilder::slot_fileProcessed);
 }
 
 AbstractPdfBuilder::~AbstractPdfBuilder()
@@ -54,6 +50,21 @@ void AbstractPdfBuilder::exec(const QStringList &paths)
             }
         }
     }
+
+    QSharedPointer<QProgressDialog> progress(new QProgressDialog("Сборка...", "Отмена", currentProgress, 0));
+    progress->setWindowModality(Qt::ApplicationModal);
+    disconnect(progress.get(), &QProgressDialog::canceled, progress.get(), &QProgressDialog::cancel);
+    connect(progress.get(), &QProgressDialog::canceled, this, &AbstractPdfBuilder::slot_cancelled);
+    connect(this, &AbstractPdfBuilder::signal_fileProcessed, this,
+            [progress, this]()
+            {
+                progress->setValue(++currentProgress);
+                if (currentProgress == expectedProgress)
+                {
+                    emit signal_allFilesProcessed();
+                    progress->accept();
+                }
+            }, Qt::QueuedConnection);
 
     progress->setMaximum(paths.count());
     progress->show();
@@ -146,16 +157,6 @@ void AbstractPdfBuilder::stop()
         stopped = true;
     }
     cv.notify_all();
-}
-
-void AbstractPdfBuilder::slot_fileProcessed()
-{
-    progress->setValue(++currentProgress);
-    if (currentProgress == expectedProgress)
-    {
-        emit signal_allFilesProcessed();
-        progress->accept();
-    }
 }
 
 void AbstractPdfBuilder::slot_cancelled()

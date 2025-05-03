@@ -24,8 +24,6 @@ class AbstractPdfBuilder : public IPdfBuilder
 
     uint expectedProgress = 0;
     uint currentProgress = 0;
-protected:
-    QScopedPointer<QProgressDialog> progress;
 
 public:
     AbstractPdfBuilder(QStringList &&resultHolderPaths);
@@ -44,7 +42,6 @@ signals:
     void signal_allFilesProcessed();
 
 private slots:
-    void slot_fileProcessed();
     void slot_cancelled();
 
 protected:
