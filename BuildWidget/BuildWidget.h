@@ -5,6 +5,7 @@
 #include <QBitArray>
 
 #include "ProjectFileSystemModel.h"
+#include "ProjectModel.h"
 
 class QToolBar;
 class QLabel;
@@ -26,12 +27,14 @@ class BuildWidget : public QWidget
     };
     Q_DECLARE_FLAGS(SaveOpt, SaveOptions);
 
-    QToolBar            *actions_toolBar {nullptr};
-    QToolBar            *saveOptions_toolBar {nullptr};
-    QLabel              *currentPath_label {nullptr};
-    ProjectTreeView     *project_treeView {nullptr};
-    ProjectFileSystemModel        *project_model {nullptr};
-    ProjectProxyModel   *proxy_model {nullptr};
+    QToolBar                *actions_toolBar {nullptr};
+    QToolBar                *saveOptions_toolBar {nullptr};
+    QLabel                  *currentPath_label {nullptr};
+    ProjectTreeView         *project_treeView {nullptr};
+
+    // ProjectFileSystemModel  *project_model {nullptr};
+    ProjectModel            *project_model {nullptr};
+    ProjectProxyModel       *proxy_model {nullptr};
 
     SaveOpt                     saveOptions{SaveOptions::SAVE_TO_PROJECT_DIRECTORIES};
     QScopedPointer<IPdfBuilder> builder;

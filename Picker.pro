@@ -12,6 +12,8 @@ LIBS += -L$$PWD/lib/ -lZlib
 SOURCES += \
     BuildWidget/BuildWidget.cpp \
     BuildWidget/ProjectFileSystemModel.cpp \
+    BuildWidget/ProjectItem.cpp \
+    BuildWidget/ProjectModel.cpp \
     BuildWidget/ProjectProxyModel.cpp \
     BuildWidget/ProjectTreeView.cpp \
     FileSystemWidget/FileSystemListView.cpp \
@@ -29,6 +31,8 @@ SOURCES += \
 HEADERS += \
     BuildWidget/BuildWidget.h \
     BuildWidget/ProjectFileSystemModel.h \
+    BuildWidget/ProjectItem.h \
+    BuildWidget/ProjectModel.h \
     BuildWidget/ProjectProxyModel.h \
     BuildWidget/ProjectTreeView.h \
     FileSystemWidget/FileSystemListView.h \

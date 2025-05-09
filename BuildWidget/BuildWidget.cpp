@@ -17,26 +17,27 @@
 #include <QMessageBox>
 #include <QSharedPointer>
 
+
 BuildWidget::BuildWidget(QWidget *parent)
     : QWidget(parent)
     , saveOptions{SaveOpt::fromInt(Settings::instance()->value(SETTINGS_SAVE_OPTIONS, SaveOptions::SAVE_TO_PROJECT_DIRECTORIES).toInt())}
 {
     initUi();
     {
-        connect(project_model, &ProjectFileSystemModel::signal_expand, proxy_model, &ProjectProxyModel::slot_expand);
-        connect(proxy_model, &ProjectProxyModel::signal_expand, project_treeView, &ProjectTreeView::slot_expand);
+        // connect(project_model, &ProjectFileSystemModel::signal_expand, proxy_model, &ProjectProxyModel::slot_expand);
+        // connect(proxy_model, &ProjectProxyModel::signal_expand, project_treeView, &ProjectTreeView::slot_expand);
     }
     {
-        connect(project_treeView, &ProjectTreeView::signal_dropped, proxy_model, &ProjectProxyModel::slot_dropped);
-        connect(proxy_model, &ProjectProxyModel::signal_dropped, project_model, &ProjectFileSystemModel::slot_dropped);
+        // connect(project_treeView, &ProjectTreeView::signal_dropped, proxy_model, &ProjectProxyModel::slot_dropped);
+        // connect(proxy_model, &ProjectProxyModel::signal_dropped, project_model, &ProjectFileSystemModel::slot_dropped);
     }
     {
-        connect(project_treeView, &ProjectTreeView::signal_added, proxy_model, &ProjectProxyModel::slot_added);
-        connect(proxy_model, &ProjectProxyModel::signal_added, project_model, &ProjectFileSystemModel::slot_added);
+        // connect(project_treeView, &ProjectTreeView::signal_added, proxy_model, &ProjectProxyModel::slot_added);
+        // connect(proxy_model, &ProjectProxyModel::signal_added, project_model, &ProjectFileSystemModel::slot_added);
     }
     {
-        connect(project_treeView, &ProjectTreeView::signal_setChecked, proxy_model, &ProjectProxyModel::slot_setChecked);
-        connect(proxy_model, &ProjectProxyModel::signal_setChecked, project_model, &ProjectFileSystemModel::slot_setChecked);
+        // connect(project_treeView, &ProjectTreeView::signal_setChecked, proxy_model, &ProjectProxyModel::slot_setChecked);
+        // connect(proxy_model, &ProjectProxyModel::signal_setChecked, project_model, &ProjectFileSystemModel::slot_setChecked);
     }
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
 }
@@ -106,12 +107,12 @@ void BuildWidget::initUi()
 
     project_treeView = new ProjectTreeView(this);
     project_treeView->header()->hide();
-    project_model = new ProjectFileSystemModel(this);
-    project_model->setReadOnly(true);
-    proxy_model = new ProjectProxyModel();
-    proxy_model->setSourceModel(project_model);
-    proxy_model->setDynamicSortFilter(false);
-    project_treeView->setModel(proxy_model);
+    project_model = new ProjectModel(this);
+    // project_model->setReadOnly(true);
+    // proxy_model = new ProjectProxyModel();
+    // proxy_model->setSourceModel(project_model);
+    // proxy_model->setDynamicSortFilter(false);
+    project_treeView->setModel(project_model);
     project_treeView->setSortingEnabled(true);
     project_treeView->sortByColumn(ProjectFileSystemModel::col_Name, Qt::AscendingOrder);
     project_treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -123,10 +124,10 @@ void BuildWidget::initUi()
     project_treeView->hideColumn(ProjectFileSystemModel::Columns::col_Size);
     project_treeView->hideColumn(ProjectFileSystemModel::Columns::col_Type);
     project_treeView->hideColumn(ProjectFileSystemModel::Columns::col_DateModified);
-    project_treeView->header()->setSectionResizeMode(ProjectFileSystemModel::Columns::col_Name, QHeaderView::Stretch);
-    project_treeView->header()->setSectionResizeMode(ProjectFileSystemModel::Columns::col_ResultHolder, QHeaderView::Fixed);
-    project_treeView->header()->setStretchLastSection(false);
-    project_treeView->header()->resizeSection(ProjectFileSystemModel::Columns::col_ResultHolder, 0);
+    // project_treeView->header()->setSectionResizeMode(ProjectFileSystemModel::Columns::col_Name, QHeaderView::Stretch);
+    // project_treeView->header()->setSectionResizeMode(ProjectFileSystemModel::Columns::col_ResultHolder, QHeaderView::Fixed);
+    // project_treeView->header()->setStretchLastSection(false);
+    // project_treeView->header()->resizeSection(ProjectFileSystemModel::Columns::col_ResultHolder, 0);
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);
@@ -145,8 +146,7 @@ void BuildWidget::changeProject(const QString &path)
         return;
     }
     currentPath_label->setText(path);
-    project_model->setRootPath(path);
-    project_treeView->setRootIndex(proxy_model->mapFromSource(project_model->index(path)));
+    project_model->setProjectPath(path);
 }
 
 QString BuildWidget::getDefenitFolder() const
@@ -173,31 +173,31 @@ QString BuildWidget::getDefenitFolder() const
 /// работает с индексами прокси-модели
 void BuildWidget::saveTree(const QModelIndex &rootIndex, SqlMgr &sqlMgr) const
 {
-    if (!rootIndex.isValid())
-    {
-        return;
-    }
-    const int rows = proxy_model->rowCount(rootIndex);
-    if (!rows)
-    {
-        return;
-    }
+    // if (!rootIndex.isValid())
+    // {
+    //     return;
+    // }
+    // const int rows = proxy_model->rowCount(rootIndex);
+    // if (!rows)
+    // {
+    //     return;
+    // }
 
-    for (int i = 0; i < rows; ++i)
-    {
-        const QModelIndex &childIndex = proxy_model->index(i, ProjectFileSystemModel::Columns::col_Name, rootIndex);
-        const QModelIndex &sourceChildIndex = proxy_model->mapToSource(childIndex);
-        const QModelIndex &sourceChildIndex_resultHolderCol = sourceChildIndex.siblingAtColumn(ProjectFileSystemModel::Columns::col_ResultHolder);
-        const QFileInfo &info = project_model->fileInfo(sourceChildIndex);
-        if (!sqlMgr.insertProjectElement(project_model->data(sourceChildIndex, Qt::CheckStateRole).value<Qt::CheckState>(),
-                                         project_model->data(sourceChildIndex_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>(),
-                                         project_treeView->isExpanded(childIndex),
-                                         info.absoluteFilePath()))
-        {
-            qDebug() << "insertion failed: " << info.absoluteFilePath();
-        }
-        saveTree(childIndex, sqlMgr);
-    }
+    // for (int i = 0; i < rows; ++i)
+    // {
+    //     const QModelIndex &childIndex = proxy_model->index(i, ProjectFileSystemModel::Columns::col_Name, rootIndex);
+    //     const QModelIndex &sourceChildIndex = proxy_model->mapToSource(childIndex);
+    //     const QModelIndex &sourceChildIndex_resultHolderCol = sourceChildIndex.siblingAtColumn(ProjectFileSystemModel::Columns::col_ResultHolder);
+    //     const QFileInfo &info = project_model->fileInfo(sourceChildIndex);
+    //     if (!sqlMgr.insertProjectElement(project_model->data(sourceChildIndex, Qt::CheckStateRole).value<Qt::CheckState>(),
+    //                                      project_model->data(sourceChildIndex_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>(),
+    //                                      project_treeView->isExpanded(childIndex),
+    //                                      info.absoluteFilePath()))
+    //     {
+    //         qDebug() << "insertion failed: " << info.absoluteFilePath();
+    //     }
+    //     saveTree(childIndex, sqlMgr);
+    // }
 }
 
 void BuildWidget::slot_changeProject()
@@ -217,86 +217,86 @@ void BuildWidget::slot_changeProject()
 
 void BuildWidget::slot_saveList()
 {
-    const QString dbFilename = project_model->listFilePath();
-    if (QFile::exists(dbFilename))
-    {
-        QFile::remove(dbFilename);
-    }
+    // const QString dbFilename = project_model->listFilePath();
+    // if (QFile::exists(dbFilename))
+    // {
+    //     QFile::remove(dbFilename);
+    // }
 
-    SqlMgr sqlMgr(dbFilename);
-    if (!sqlMgr.open())
-    {
-        qDebug("can`t open db");
-        return;
-    }
-    if (!sqlMgr.createPickerDb())
-    {
-        qDebug("can`t create db");
-        return;
-    }
+    // SqlMgr sqlMgr(dbFilename);
+    // if (!sqlMgr.open())
+    // {
+    //     qDebug("can`t open db");
+    //     return;
+    // }
+    // if (!sqlMgr.createPickerDb())
+    // {
+    //     qDebug("can`t create db");
+    //     return;
+    // }
 
-    if (!sqlMgr.transaction())
-    {
-        qDebug("can`t start transaction");
-        return;
-    }
-    saveTree(proxy_model->mapFromSource(project_model->index(project_model->rootPath())), sqlMgr);
-    if (!sqlMgr.commit())
-    {
-        qDebug("can`t commit transaction");
-        return;
-    }
+    // if (!sqlMgr.transaction())
+    // {
+    //     qDebug("can`t start transaction");
+    //     return;
+    // }
+    // saveTree(proxy_model->mapFromSource(project_model->index(project_model->rootPath())), sqlMgr);
+    // if (!sqlMgr.commit())
+    // {
+    //     qDebug("can`t commit transaction");
+    //     return;
+    // }
 }
 
 void BuildWidget::slot_build()
 {
-    if (saveOptions == SaveOptions::SAVE_NONE)
-    {
-        QMessageBox::warning(this, windowTitle(), "Не выбраны опции сохранения");
-        return;
-    }
-    const auto checkedPdf = project_model->getCheckedPdfPaths();
-    if (checkedPdf.isEmpty())
-    {
-        QMessageBox::warning(this, windowTitle(), "Не выбраны файлы для сохранения");
-        return;
-    }
+    // if (saveOptions == SaveOptions::SAVE_NONE)
+    // {
+    //     QMessageBox::warning(this, windowTitle(), "Не выбраны опции сохранения");
+    //     return;
+    // }
+    // const auto checkedPdf = project_model->getCheckedPdfPaths();
+    // if (checkedPdf.isEmpty())
+    // {
+    //     QMessageBox::warning(this, windowTitle(), "Не выбраны файлы для сохранения");
+    //     return;
+    // }
 
-    if (saveOptions == SaveOptions::SAVE_TO_PROJECT_DIRECTORIES)
-    {
-        builder.reset(new ToProjectDirectoriesPdfBuilder(project_model->getResultHolders()));
-    }
-    else if (saveOptions == SaveOptions::SAVE_TO_SEPARATE_DIRECTORY)
-    {
-        QString defenitFolder = getDefenitFolder();
-        if (defenitFolder.isEmpty())
-        {
-            return;
-        }
-        builder.reset(new ToSeparateDirectoryPdfBuilder(project_model->getResultHolders(), std::move(defenitFolder)));
-    }
-    else if (saveOptions.testFlag(SaveOptions::SAVE_TO_PROJECT_DIRECTORIES)
-               && saveOptions.testFlag(SaveOptions::SAVE_TO_SEPARATE_DIRECTORY))
-    {
-        QString defenitFolder = getDefenitFolder();
-        if (defenitFolder.isEmpty())
-        {
-            return;
-        }
-        builder.reset(new ToProjectAndSeparateDirectoryPdfBuilder(project_model->getResultHolders(),  std::move(defenitFolder)));
-    }
-    else
-    {
-        builder.reset(nullptr);
-    }
-    if (builder.isNull())
-    {
-        QMessageBox::critical(this, windowTitle(), "Не могу выполнить сборку");
-        return;
-    }
-    connect(builder.get(), &IPdfBuilder::signal_finished, this, &BuildWidget::slot_buildFinished);
-    connect(builder.get(), &IPdfBuilder::signal_cancelled, this, &BuildWidget::slot_buildCancelled);
-    builder->exec(checkedPdf);
+    // if (saveOptions == SaveOptions::SAVE_TO_PROJECT_DIRECTORIES)
+    // {
+    //     builder.reset(new ToProjectDirectoriesPdfBuilder(project_model->getResultHolders()));
+    // }
+    // else if (saveOptions == SaveOptions::SAVE_TO_SEPARATE_DIRECTORY)
+    // {
+    //     QString defenitFolder = getDefenitFolder();
+    //     if (defenitFolder.isEmpty())
+    //     {
+    //         return;
+    //     }
+    //     builder.reset(new ToSeparateDirectoryPdfBuilder(project_model->getResultHolders(), std::move(defenitFolder)));
+    // }
+    // else if (saveOptions.testFlag(SaveOptions::SAVE_TO_PROJECT_DIRECTORIES)
+    //            && saveOptions.testFlag(SaveOptions::SAVE_TO_SEPARATE_DIRECTORY))
+    // {
+    //     QString defenitFolder = getDefenitFolder();
+    //     if (defenitFolder.isEmpty())
+    //     {
+    //         return;
+    //     }
+    //     builder.reset(new ToProjectAndSeparateDirectoryPdfBuilder(project_model->getResultHolders(),  std::move(defenitFolder)));
+    // }
+    // else
+    // {
+    //     builder.reset(nullptr);
+    // }
+    // if (builder.isNull())
+    // {
+    //     QMessageBox::critical(this, windowTitle(), "Не могу выполнить сборку");
+    //     return;
+    // }
+    // connect(builder.get(), &IPdfBuilder::signal_finished, this, &BuildWidget::slot_buildFinished);
+    // connect(builder.get(), &IPdfBuilder::signal_cancelled, this, &BuildWidget::slot_buildCancelled);
+    // builder->exec(checkedPdf);
 }
 
 void BuildWidget::slot_saveToFoldersOptionChanged(bool checked)
