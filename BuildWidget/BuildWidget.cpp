@@ -38,6 +38,7 @@ BuildWidget::BuildWidget(QWidget *parent)
     {
         // connect(project_treeView, &ProjectTreeView::signal_setChecked, proxy_model, &ProjectProxyModel::slot_setChecked);
         // connect(proxy_model, &ProjectProxyModel::signal_setChecked, project_model, &ProjectFileSystemModel::slot_setChecked);
+        connect(project_treeView, &ProjectTreeView::signal_setChecked, project_model, &ProjectModel::slot_setChecked);
     }
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
 }
@@ -120,14 +121,14 @@ void BuildWidget::initUi()
     project_treeView->setDragEnabled(true);
     project_treeView->viewport()->setAcceptDrops(true);
     project_treeView->setDropIndicatorShown(true);
-    
+
     project_treeView->hideColumn(ProjectFileSystemModel::Columns::col_Size);
     project_treeView->hideColumn(ProjectFileSystemModel::Columns::col_Type);
     project_treeView->hideColumn(ProjectFileSystemModel::Columns::col_DateModified);
-    // project_treeView->header()->setSectionResizeMode(ProjectFileSystemModel::Columns::col_Name, QHeaderView::Stretch);
-    // project_treeView->header()->setSectionResizeMode(ProjectFileSystemModel::Columns::col_ResultHolder, QHeaderView::Fixed);
-    // project_treeView->header()->setStretchLastSection(false);
-    // project_treeView->header()->resizeSection(ProjectFileSystemModel::Columns::col_ResultHolder, 0);
+    project_treeView->header()->setSectionResizeMode(ProjectFileSystemModel::Columns::col_Name, QHeaderView::Stretch);
+    project_treeView->header()->setSectionResizeMode(ProjectFileSystemModel::Columns::col_ResultHolder, QHeaderView::Fixed);
+    project_treeView->header()->setStretchLastSection(false);
+    project_treeView->header()->resizeSection(ProjectFileSystemModel::Columns::col_ResultHolder, 0);
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);
@@ -142,11 +143,10 @@ void BuildWidget::initUi()
 void BuildWidget::changeProject(const QString &path)
 {
     if (path.isEmpty())
-    {
         return;
-    }
+    if (!project_model->setProjectPath(path))
+        return;
     currentPath_label->setText(path);
-    project_model->setProjectPath(path);
 }
 
 QString BuildWidget::getDefenitFolder() const

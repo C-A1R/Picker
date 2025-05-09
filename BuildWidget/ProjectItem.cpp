@@ -40,32 +40,6 @@ int ProjectItem::row() const
     return -1;
 }
 
-QVariant ProjectItem::data(const int column, const int role) const
-{
-    if (column < 0)
-        return {};
-
-    if (column == 0)
-    {
-        switch (role) {
-        case Qt::DecorationRole:
-        {
-            if (m_info.isDir())
-                return m_iconProvider.icon(QFileIconProvider::Folder);
-            else
-                return m_iconProvider.icon(QFileIconProvider::File);
-            break;
-        }
-        case Qt::DisplayRole:
-            return m_path.dirName();
-        default:
-            break;
-        }
-    }
-
-    return {};
-}
-
 ProjectItem *ProjectItem::parentItem()
 {
     return m_parentItem;

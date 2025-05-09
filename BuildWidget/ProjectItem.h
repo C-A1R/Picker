@@ -24,7 +24,6 @@ public:
 
     ProjectItem *child(const int row);
     int childCount() const;
-    QVariant data(const int column, const int role = Qt::DisplayRole) const;
     int row() const;
     ProjectItem *parentItem();
 
