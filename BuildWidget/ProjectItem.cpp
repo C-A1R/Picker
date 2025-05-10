@@ -50,7 +50,13 @@ const QDir &ProjectItem::getPath() const
     return m_path;
 }
 
-const QFileInfo &ProjectItem::getInfo() const
+bool ProjectItem::exists() const
 {
-    return m_info;
+    return m_info.exists();
 }
+
+bool ProjectItem::isDir() const
+{
+    return m_info.isDir();
+}
+

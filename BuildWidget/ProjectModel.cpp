@@ -6,6 +6,23 @@ ProjectModel::ProjectModel(QObject *parent)
 {
 }
 
+Qt::ItemFlags ProjectModel::flags(const QModelIndex &index) const
+{
+    if (!index.isValid())
+    {
+        return Qt::ItemFlag::NoItemFlags;
+    }
+    const auto item = static_cast<const ProjectItem*>(index.constInternalPointer());
+    if (index.column() == Columns::col_ResultHolder && !item->isDir())
+    {
+        return QAbstractItemModel::flags(index) ^ Qt::ItemIsEnabled;
+    }
+    return QAbstractItemModel::flags(index)
+           | Qt::ItemIsUserCheckable
+           | Qt::ItemIsDragEnabled
+           | Qt::ItemIsDropEnabled;
+}
+
 QModelIndex ProjectModel::index(int row, int column, const QModelIndex &parent) const
 {
     if (!hasIndex(row, column, parent))
@@ -53,7 +70,7 @@ int ProjectModel::columnCount(const QModelIndex &parent) const
 bool ProjectModel::setProjectPath(const QString &rootPath)
 {
     auto projectRootItem = std::unique_ptr<ProjectItem>(new ProjectItem(rootPath));
-    if (!projectRootItem->getInfo().exists())
+    if (!projectRootItem->exists())
     {
         return false;
     }
@@ -156,11 +173,37 @@ void ProjectModel::checkItem(const QModelIndex &index)
 
 void ProjectModel::cleanup()
 {
-    // resultHolderCheckstates.clear();
     checkedItems.clear();
+    resultHolders.clear();
     // hiddenIndices.clear();
     // orders.clear();
     // pathsById.clear();
+}
+
+void ProjectModel::resetResultHolderCheckstates_Up(const QModelIndex &index)
+{
+    const QModelIndex &parent = index.parent();
+    if (!parent.isValid())
+    {
+        return;
+    }
+    const QModelIndex sibling = parent.siblingAtColumn(col_ResultHolder);
+    setData(sibling, Qt::Unchecked, Qt::CheckStateRole);
+    emit dataChanged(sibling, sibling);
+    resetResultHolderCheckstates_Up(sibling);
+}
+
+void ProjectModel::resetResultHolderCheckstates_Down(const QModelIndex &index)
+{
+    auto name_ind = index.siblingAtColumn(Columns::col_Name);
+    for (int i = 0; i < rowCount(name_ind); ++i)
+    {
+        const QModelIndex &name_child = this->index(i, Columns::col_Name, name_ind);
+        const QModelIndex &ch = name_child.siblingAtColumn(Columns::col_ResultHolder);
+        setData(ch, Qt::Unchecked, Qt::CheckStateRole);
+        emit dataChanged(ch, ch);
+        resetResultHolderCheckstates_Down(ch);
+    }
 }
 
 QVariant ProjectModel::data(const QModelIndex &index, const int role) const
@@ -179,7 +222,7 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
         case Qt::DecorationRole:
         {
             const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
-            if (item->getInfo().isDir())
+            if (item->isDir())
                 return iconProvider.icon(QFileIconProvider::Folder);
             else
                 return iconProvider.icon(QFileIconProvider::File);
@@ -200,7 +243,14 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
         {
         case Qt::CheckStateRole:
         {
-            // return QVariant(resultHolderCheckstates.value(index.internalId(), Qt::Unchecked));
+            const auto item = static_cast<const ProjectItem*>(index.constInternalPointer());
+            if (item->isDir())
+                return QVariant(resultHolders.value(index.internalId(), Qt::Unchecked));
+            break;
+        }
+        case Qt::DisplayRole:
+        {
+            return {};
         }
         default:
             break;
@@ -212,19 +262,30 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
 
 bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if (role == Qt::CheckStateRole && index.column() == col_Name)
+    if (index.column() == col_Name)
     {
-        checkedItems[index.internalId()] = static_cast<Qt::CheckState>(value.toInt());
-        checkItem(index);
-        return true;
+        if (role == Qt::CheckStateRole)
+        {
+            checkedItems[index.internalId()] = static_cast<Qt::CheckState>(value.toInt());
+            checkItem(index);
+            return true;
+        }
+    }
+    else if (index.column() == col_ResultHolder)
+    {
+        if (role == Qt::CheckStateRole)
+        {
+            const Qt::CheckState state = static_cast<Qt::CheckState>(value.toInt());
+            if (state == Qt::Checked)
+            {
+                resetResultHolderCheckstates_Up(index);
+                resetResultHolderCheckstates_Down(index);
+            }
+            resultHolders[index.internalId()] = state;
+            return true;
+        }
     }
     return QAbstractItemModel::setData(index, value, role);
-}
-
-Qt::ItemFlags ProjectModel::flags(const QModelIndex &index) const
-{
-    return index.isValid() ? QAbstractItemModel::flags(index)
-                           : Qt::ItemFlags(Qt::NoItemFlags);
 }
 
 void ProjectModel::slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState)

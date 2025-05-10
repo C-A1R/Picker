@@ -28,7 +28,8 @@ public:
     ProjectItem *parentItem();
 
     const QDir &getPath() const;
-    const QFileInfo &getInfo() const;
+    bool exists() const;
+    bool isDir() const;
 };
 
 #endif // PROJECTITEM_H

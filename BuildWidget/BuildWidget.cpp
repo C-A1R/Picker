@@ -115,20 +115,17 @@ void BuildWidget::initUi()
     // proxy_model->setDynamicSortFilter(false);
     project_treeView->setModel(project_model);
     project_treeView->setSortingEnabled(true);
-    project_treeView->sortByColumn(ProjectFileSystemModel::col_Name, Qt::AscendingOrder);
+    project_treeView->sortByColumn(ProjectModel::col_Name, Qt::AscendingOrder);
     project_treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     project_treeView->setDragDropMode(QAbstractItemView::DragDrop);
     project_treeView->setDragEnabled(true);
     project_treeView->viewport()->setAcceptDrops(true);
     project_treeView->setDropIndicatorShown(true);
 
-    project_treeView->hideColumn(ProjectFileSystemModel::Columns::col_Size);
-    project_treeView->hideColumn(ProjectFileSystemModel::Columns::col_Type);
-    project_treeView->hideColumn(ProjectFileSystemModel::Columns::col_DateModified);
-    project_treeView->header()->setSectionResizeMode(ProjectFileSystemModel::Columns::col_Name, QHeaderView::Stretch);
-    project_treeView->header()->setSectionResizeMode(ProjectFileSystemModel::Columns::col_ResultHolder, QHeaderView::Fixed);
+    project_treeView->header()->setSectionResizeMode(ProjectModel::Columns::col_Name, QHeaderView::Stretch);
+    project_treeView->header()->setSectionResizeMode(ProjectModel::Columns::col_ResultHolder, QHeaderView::Fixed);
     project_treeView->header()->setStretchLastSection(false);
-    project_treeView->header()->resizeSection(ProjectFileSystemModel::Columns::col_ResultHolder, 0);
+    project_treeView->header()->resizeSection(ProjectModel::Columns::col_ResultHolder, 0);
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);
@@ -185,9 +182,9 @@ void BuildWidget::saveTree(const QModelIndex &rootIndex, SqlMgr &sqlMgr) const
 
     // for (int i = 0; i < rows; ++i)
     // {
-    //     const QModelIndex &childIndex = proxy_model->index(i, ProjectFileSystemModel::Columns::col_Name, rootIndex);
+    //     const QModelIndex &childIndex = proxy_model->index(i, ProjectModel::Columns::col_Name, rootIndex);
     //     const QModelIndex &sourceChildIndex = proxy_model->mapToSource(childIndex);
-    //     const QModelIndex &sourceChildIndex_resultHolderCol = sourceChildIndex.siblingAtColumn(ProjectFileSystemModel::Columns::col_ResultHolder);
+    //     const QModelIndex &sourceChildIndex_resultHolderCol = sourceChildIndex.siblingAtColumn(ProjectModel::Columns::col_ResultHolder);
     //     const QFileInfo &info = project_model->fileInfo(sourceChildIndex);
     //     if (!sqlMgr.insertProjectElement(project_model->data(sourceChildIndex, Qt::CheckStateRole).value<Qt::CheckState>(),
     //                                      project_model->data(sourceChildIndex_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>(),

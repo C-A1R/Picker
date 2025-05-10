@@ -5,14 +5,6 @@
 
 #include <QAbstractItemModel>
 
-enum Columns
-{
-    col_Name,
-    col_ResultHolder,
-
-    MAX
-};
-
 
 class ProjectModel : public QAbstractItemModel
 {
@@ -22,8 +14,17 @@ class ProjectModel : public QAbstractItemModel
 
     QFileIconProvider                   iconProvider;
     QHash<quintptr, Qt::CheckState>     checkedItems;
+    QHash<quintptr, Qt::CheckState>     resultHolders;
 
 public:
+    enum Columns
+    {
+        col_Name,
+        col_ResultHolder,
+
+        MAX
+    };
+
     Q_DISABLE_COPY_MOVE(ProjectModel)
 
     explicit ProjectModel(QObject *parent = nullptr);
@@ -43,6 +44,8 @@ private:
     [[maybe_unused]] bool scanItem(ProjectItem *item);
     void checkItem(const QModelIndex &index);
     void cleanup();
+    void resetResultHolderCheckstates_Up(const QModelIndex &index);
+    void resetResultHolderCheckstates_Down(const QModelIndex &index);
 
 public slots:
     void slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState);
