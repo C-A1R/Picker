@@ -4,10 +4,21 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
 
-LIBS += -L$$PWD/lib/ -lPDFWriter
-LIBS += -L$$PWD/lib/ -lFreeType
-LIBS += -L$$PWD/lib/ -lLibAesgm
-LIBS += -L$$PWD/lib/ -lZlib
+LIBDIR = $$PWD/lib
+win32: LIBDIR = $$LIBDIR/win32
+unix:  LIBDIR = $$LIBDIR/unix
+
+message($$LIBDIR)
+
+LIBS += -L$$LIBDIR/ -lPDFWriter
+LIBS += -L$$LIBDIR/ -lFreeType
+LIBS += -L$$LIBDIR/ -lLibAesgm
+LIBS += -L$$LIBDIR/ -lZlib
+unix {
+    LIBS += -L$$LIBDIR/ -lLibPng
+    LIBS += -L$$LIBDIR/ -lLibTiff
+    LIBS += -L$$LIBDIR/ -lLibJpeg
+}
 
 SOURCES += \
     BuildWidget/BuildWidget.cpp \
