@@ -2,15 +2,12 @@
 #define BUILDWIDGET_H
 
 #include <QWidget>
-#include <QBitArray>
-
-#include "ProjectFileSystemModel.h"
-#include "ProjectModel.h"
+#include <QStandardItemModel>
 
 class QToolBar;
 class QLabel;
-class QProgressDialog;
 class ProjectTreeView;
+class ProjectModel;
 class ProjectProxyModel;
 class IPdfBuilder;
 class SqlMgr;
@@ -32,12 +29,13 @@ class BuildWidget : public QWidget
     QLabel                  *currentPath_label {nullptr};
     ProjectTreeView         *project_treeView {nullptr};
 
-    // ProjectFileSystemModel  *project_model {nullptr};
     ProjectModel            *project_model {nullptr};
     ProjectProxyModel       *proxy_model {nullptr};
 
     SaveOpt                     saveOptions{SaveOptions::SAVE_TO_PROJECT_DIRECTORIES};
     QScopedPointer<IPdfBuilder> builder;
+
+    // QStandardItemModel *model;
 
 public:
     BuildWidget(QWidget *parent = nullptr);

@@ -1,8 +1,10 @@
 #include "BuildWidget.h"
 #include "ProjectTreeView.h"
+#include "ProjectModel.h"
 #include "ProjectProxyModel.h"
 #include "Settings.h"
 #include "SqlMgr.h"
+
 #include "PdfBuilder/ToProjectDirectoriesPdfBuilder.h"
 #include "PdfBuilder/ToSeparateDirectoryPdfBuilder.h"
 #include "PdfBuilder/ToProjectAndSeparateDirectoriesPdfBuilder.h"
@@ -15,7 +17,6 @@
 #include <QHBoxLayout>
 #include <QFileDialog>
 #include <QMessageBox>
-#include <QSharedPointer>
 
 
 BuildWidget::BuildWidget(QWidget *parent)
@@ -37,10 +38,14 @@ BuildWidget::BuildWidget(QWidget *parent)
     }
     {
         // connect(project_treeView, &ProjectTreeView::signal_setChecked, proxy_model, &ProjectProxyModel::slot_setChecked);
-        // connect(proxy_model, &ProjectProxyModel::signal_setChecked, project_model, &ProjectFileSystemModel::slot_setChecked);
-        connect(project_treeView, &ProjectTreeView::signal_setChecked, project_model, &ProjectModel::slot_setChecked);
+        // connect(proxy_model, &ProjectProxyModel::signal_setChecked, project_model, &ProjectModel::slot_setChecked);
+        // connect(project_treeView, &ProjectTreeView::signal_setChecked, project_model, &ProjectModel::slot_setChecked);
     }
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
+    qDebug() << "Rows in model:" << project_model->rowCount();
+    qDebug() << "proxy_model rows:" << proxy_model->rowCount();
+    qDebug() << "proxy_model->index(0, 0).isValid()" << proxy_model->index(0, 0).isValid();  // true
+    qDebug() << "proxy_model->data(proxy_model->index(0, 0))" << proxy_model->data(proxy_model->index(0, 0));  // название первой папки/файла
 }
 
 BuildWidget::~BuildWidget()
@@ -93,6 +98,8 @@ void BuildWidget::initUi()
         connect(act, &QAction::triggered, this, &BuildWidget::slot_saveToDefenitFolderOptionChanged);
         saveOptions_toolBar->addAction(act);
     }
+// why my project_treeView is empty with proxy model
+
 
     auto tools_hLay = new QHBoxLayout();
     tools_hLay->addWidget(actions_toolBar);
@@ -109,19 +116,30 @@ void BuildWidget::initUi()
     project_treeView = new ProjectTreeView(this);
     project_treeView->header()->hide();
     project_model = new ProjectModel(this);
-    // project_model->setReadOnly(true);
-    // proxy_model = new ProjectProxyModel();
-    // proxy_model->setSourceModel(project_model);
+    proxy_model = new ProjectProxyModel(this);
+    proxy_model->setSourceModel(project_model);
+    proxy_model->setFilterKeyColumn(-1);          // Проверять все столбцы (или выбери нужный)
+    proxy_model->setFilterRegularExpression(".*");  // Разрешает все строки
+    proxy_model->setFilterFixedString(QString());       // Очистить фильтр
     // proxy_model->setDynamicSortFilter(false);
-    project_treeView->setModel(project_model);
-    project_treeView->setSortingEnabled(true);
+
+    // {
+    //     model = new QStandardItemModel(0, 3, this);
+    //     model->insertRow(0);
+    //     model->setData(model->index(0, 0), "subject");
+    //     proxy_model->setSourceModel(model);
+    // }
+
+    project_treeView->setModel(proxy_model);
+    proxy_model->invalidate();
+
+    // project_treeView->setSortingEnabled(true);
     project_treeView->sortByColumn(ProjectModel::col_Name, Qt::AscendingOrder);
     project_treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     project_treeView->setDragDropMode(QAbstractItemView::DragDrop);
     project_treeView->setDragEnabled(true);
     project_treeView->viewport()->setAcceptDrops(true);
     project_treeView->setDropIndicatorShown(true);
-
     project_treeView->header()->setSectionResizeMode(ProjectModel::Columns::col_Name, QHeaderView::Stretch);
     project_treeView->header()->setSectionResizeMode(ProjectModel::Columns::col_ResultHolder, QHeaderView::Fixed);
     project_treeView->header()->setStretchLastSection(false);

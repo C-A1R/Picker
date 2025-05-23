@@ -1,6 +1,6 @@
 #include "ProjectTreeView.h"
 
-#include "ProjectFileSystemModel.h"
+#include "ProjectModel.h"
 
 #include <QDropEvent>
 #include <QMenu>
@@ -16,7 +16,7 @@ void ProjectTreeView::mouseReleaseEvent(QMouseEvent *event)
 {
     const QModelIndex index = indexAt(event->pos());
     if (index.isValid()
-        && index.column() == ProjectFileSystemModel::Columns::col_Name
+        && index.column() == ProjectModel::Columns::col_Name
         && event->button() == Qt::LeftButton)
     {
          QModelIndexList selected = selectedIndexes();
@@ -48,7 +48,9 @@ void ProjectTreeView::dragEnterEvent(QDragEnterEvent *event)
     {
         return;
     }
-    if (event->mimeData()->hasFormat("text/uri-list")) // from this
+    auto f = event->mimeData()->formats();
+    // if (event->mimeData()->hasFormat("text/uri-list")) // from this
+    if (event->mimeData()->hasFormat("application/x-qabstractitemmodeldatalist")) // from this
     {
         if (event->source() != this)
         {
@@ -119,7 +121,8 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
         droppedIndex = model()->index(droppedIndex.row() + 1, droppedIndex.column(), droppedIndex.parent());
     }
 
-    if (event->source() == this && event->mimeData()->hasFormat("text/uri-list")) // from this
+    // if (event->source() == this && event->mimeData()->hasFormat("text/uri-list")) // from this
+    if (event->source() == this && event->mimeData()->hasFormat("application/x-qabstractitemmodeldatalist")) // from this
     {
         const QModelIndexList &draggedIndices = this->selectedIndexes();
         if (draggedIndices.isEmpty())

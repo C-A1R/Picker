@@ -1,5 +1,4 @@
-QT       += core gui sql
-
+QT += core gui sql
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
@@ -7,8 +6,6 @@ CONFIG += c++17
 LIBDIR = $$PWD/lib
 win32: LIBDIR = $$LIBDIR/win32
 unix:  LIBDIR = $$LIBDIR/unix
-
-message($$LIBDIR)
 
 LIBS += -L$$LIBDIR/ -lPDFWriter
 LIBS += -L$$LIBDIR/ -lFreeType

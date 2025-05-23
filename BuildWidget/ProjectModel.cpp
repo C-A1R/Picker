@@ -2,7 +2,7 @@
 
 ProjectModel::ProjectModel(QObject *parent)
     : QAbstractItemModel(parent)
-    , rootItem(std::make_unique<ProjectItem>("root"))
+    , rootItem(std::make_unique<ProjectItem>(""))
 {
 }
 
@@ -12,29 +12,66 @@ Qt::ItemFlags ProjectModel::flags(const QModelIndex &index) const
     {
         return Qt::ItemFlag::NoItemFlags;
     }
-    const auto item = static_cast<const ProjectItem*>(index.constInternalPointer());
-    if (index.column() == Columns::col_ResultHolder && !item->isDir())
-    {
-        return QAbstractItemModel::flags(index) ^ Qt::ItemIsEnabled;
-    }
     return QAbstractItemModel::flags(index)
            | Qt::ItemIsUserCheckable
            | Qt::ItemIsDragEnabled
            | Qt::ItemIsDropEnabled;
 }
 
+// QModelIndex ProjectModel::index(int row, int column, const QModelIndex &parent) const
+// {
+//     qDebug() << "[ProjectModel::index] row:" << row << " col:" << column << " parent:" << parent;
+
+//     // Предположим, что row и column всегда валидны
+//     // и сделаем проверку руками
+//     if (row < 0 && column < 0 && column >= columnCount(parent))
+//         return {};
+
+//     // if (!hasIndex(row, column, parent))
+//     //     return {};
+
+//     ProjectItem *parentItem = parent.isValid() ? static_cast<ProjectItem*>(parent.internalPointer())
+//                                                : rootItem.get();
+//     if (auto *childItem = parentItem->child(row))
+//         return createIndex(row, column, childItem);
+//     return {};
+// }
+
+// QModelIndex ProjectModel::index(int row, int column, const QModelIndex &parent) const
+// {
+//     ProjectItem *parentItem = parent.isValid() ? static_cast<ProjectItem*>(parent.internalPointer())
+//                                                : rootItem.get();
+//     if (!parentItem)
+//         return {};
+
+//     ProjectItem *childItem = parentItem->child(row);
+//     if (!childItem)
+//         return {};
+
+//     return createIndex(row, column, childItem);
+// }
+
 QModelIndex ProjectModel::index(int row, int column, const QModelIndex &parent) const
 {
-    if (!hasIndex(row, column, parent))
-        return {};
+    if (parent.column() > 0 || column != 0 || row < 0) return {};
 
-    ProjectItem *parentItem = parent.isValid() ? static_cast<ProjectItem*>(parent.internalPointer())
-                                               : rootItem.get();
+    ProjectItem *parentItem = parent.isValid() ? static_cast<ProjectItem *>(parent.internalPointer()) : rootItem.get();
+    ProjectItem *child = parentItem->child(row);
+    return child ? createIndex(row, column, child) : QModelIndex();
 
-    if (auto *childItem = parentItem->child(row))
-        return createIndex(row, column, childItem);
 
-    return {};
+    // if (row < 0 || column < 0 || column >= columnCount(parent))
+    //     return {};
+
+    // ProjectItem *parentItem = parent.isValid()
+    //                               ? static_cast<ProjectItem *>(parent.internalPointer())
+    //                               : rootItem.get();
+
+    // ProjectItem *childItem = parentItem->child(row);
+    // if (!childItem)
+    //     return {};
+
+    // return createIndex(row, column, childItem);
 }
 
 QModelIndex ProjectModel::parent(const QModelIndex &index) const
@@ -44,26 +81,62 @@ QModelIndex ProjectModel::parent(const QModelIndex &index) const
 
     auto *childItem = static_cast<ProjectItem*>(index.internalPointer());
     ProjectItem *parentItem = childItem->parentItem();
-
     return parentItem != rootItem.get() ? createIndex(parentItem->row(), 0, parentItem)
                                         : QModelIndex{};
 }
 
+// int ProjectModel::rowCount(const QModelIndex &parent) const
+// {
+//     if (parent.column() > 0)
+//         return 0;
+
+//     const ProjectItem *parentItem = parent.isValid() ? static_cast<const ProjectItem*>(parent.internalPointer())
+//                                                      : rootItem.get();
+//     return parentItem->childCount();
+// }
+
+// int ProjectModel::rowCount(const QModelIndex &parent) const
+// {
+//     const ProjectItem *parentItem = parent.isValid() ? static_cast<const ProjectItem*>(parent.internalPointer())
+//                                                      : rootItem.get();
+//     int count = parentItem->childCount();
+//     qDebug() << "rowCount at" << parent << " = " << count;
+//     return count;
+// }
+
 int ProjectModel::rowCount(const QModelIndex &parent) const
 {
-    if (parent.column() > 0)
-        return 0;
+    if (parent.isValid() && parent.column() != 0) return 0;
 
-    const ProjectItem *parentItem = parent.isValid() ? static_cast<const ProjectItem*>(parent.internalPointer())
-                                                     : rootItem.get();
-
+    ProjectItem *parentItem = parent.isValid()
+                                  ? static_cast<ProjectItem *>(parent.internalPointer())
+                                  : rootItem.get();
     return parentItem->childCount();
+
+
+
+
+    // if (parent.isValid() && parent.column() != 0)
+    //     return 0;
+
+    // const ProjectItem *parentItem = parent.isValid() ? static_cast<const ProjectItem*>(parent.internalPointer())
+    //                                                  : rootItem.get();
+    // int count = parentItem->childCount();
+    // qDebug() << "rowCount at" << parent << " = " << count;
+    // return count;
 }
 
 int ProjectModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
     return Columns::MAX;
+}
+
+bool ProjectModel::hasChildren(const QModelIndex &parent) const
+{
+    ProjectItem *parentItem = parent.isValid() ? static_cast<ProjectItem*>(parent.internalPointer())
+                                               : rootItem.get();
+    return parentItem->childCount() > 0;
 }
 
 /// установить и просканировать диреторию проекта
@@ -85,6 +158,7 @@ bool ProjectModel::setProjectPath(const QString &rootPath)
 /// * потомок - диретория, которая содержит .pdf файлы
 bool ProjectModel::scanItem(ProjectItem *item)
 {
+    // qDebug() << "[scanItem]" << item->getPath();
     if (!item)
         return false;
 
@@ -101,6 +175,7 @@ bool ProjectModel::scanItem(ProjectItem *item)
             continue;
 
         item->appendChild(std::move(child));
+        // orders.emplace_back(index.internalId());
         foundPdf = true;
     }
 
@@ -176,7 +251,7 @@ void ProjectModel::cleanup()
     checkedItems.clear();
     resultHolders.clear();
     // hiddenIndices.clear();
-    // orders.clear();
+    orders.clear();
     // pathsById.clear();
 }
 
@@ -226,7 +301,6 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
                 return iconProvider.icon(QFileIconProvider::Folder);
             else
                 return iconProvider.icon(QFileIconProvider::File);
-            break;
         }
         case Qt::DisplayRole:
         {
@@ -248,10 +322,10 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
                 return QVariant(resultHolders.value(index.internalId(), Qt::Unchecked));
             break;
         }
-        case Qt::DisplayRole:
-        {
-            return {};
-        }
+        // case Qt::DisplayRole:
+        // {
+        //     return {};
+        // }
         default:
             break;
         }
@@ -285,18 +359,18 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
             return true;
         }
     }
-    return QAbstractItemModel::setData(index, value, role);
+    return {};
 }
 
 void ProjectModel::slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState)
 {
-    if (selected.isEmpty()) {
+    if (selected.isEmpty())
         return;
-    }
-    for (const QModelIndex &index : selected) {
-        if (index.column() != Columns::col_Name) {
+
+    for (const QModelIndex &index : selected)
+    {
+        if (index.column() != Columns::col_Name)
             continue;
-        }
         setData(index, checkState, Qt::CheckStateRole);
     }
 }

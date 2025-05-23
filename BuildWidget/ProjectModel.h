@@ -5,6 +5,7 @@
 
 #include <QAbstractItemModel>
 
+class ProjectItem;
 
 class ProjectModel : public QAbstractItemModel
 {
@@ -15,6 +16,7 @@ class ProjectModel : public QAbstractItemModel
     QFileIconProvider                   iconProvider;
     QHash<quintptr, Qt::CheckState>     checkedItems;
     QHash<quintptr, Qt::CheckState>     resultHolders;
+    QList<quintptr>                     orders;
 
 public:
     enum Columns
@@ -37,6 +39,8 @@ public:
     QModelIndex parent(const QModelIndex &index) const override;
     int rowCount(const QModelIndex &parent = {}) const override;
     int columnCount(const QModelIndex &parent = {}) const override;
+
+    bool hasChildren(const QModelIndex &parent = QModelIndex()) const override;
 
     bool setProjectPath(const QString &rootPath);
 
