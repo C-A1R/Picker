@@ -1,7 +1,7 @@
 #include "BuildWidget.h"
 #include "ProjectTreeView.h"
 #include "ProjectModel.h"
-#include "ProjectProxyModel.h"
+#include "ProjectSortProxyModel.h"
 #include "Settings.h"
 #include "SqlMgr.h"
 
@@ -42,10 +42,10 @@ BuildWidget::BuildWidget(QWidget *parent)
         // connect(project_treeView, &ProjectTreeView::signal_setChecked, project_model, &ProjectModel::slot_setChecked);
     }
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
-    qDebug() << "Rows in model:" << project_model->rowCount();
-    qDebug() << "proxy_model rows:" << proxy_model->rowCount();
-    qDebug() << "proxy_model->index(0, 0).isValid()" << proxy_model->index(0, 0).isValid();  // true
-    qDebug() << "proxy_model->data(proxy_model->index(0, 0))" << proxy_model->data(proxy_model->index(0, 0));  // название первой папки/файла
+    // qDebug() << "Rows in model:" << project_model->rowCount();
+    // qDebug() << "proxy_model rows:" << proxy_model->rowCount();
+    // qDebug() << "proxy_model->index(0, 0).isValid()" << proxy_model->index(0, 0).isValid();  // true
+    // qDebug() << "proxy_model->data(proxy_model->index(0, 0))" << proxy_model->data(proxy_model->index(0, 0));  // название первой папки/файла
 }
 
 BuildWidget::~BuildWidget()
@@ -98,8 +98,6 @@ void BuildWidget::initUi()
         connect(act, &QAction::triggered, this, &BuildWidget::slot_saveToDefenitFolderOptionChanged);
         saveOptions_toolBar->addAction(act);
     }
-// why my project_treeView is empty with proxy model
-
 
     auto tools_hLay = new QHBoxLayout();
     tools_hLay->addWidget(actions_toolBar);
@@ -116,24 +114,10 @@ void BuildWidget::initUi()
     project_treeView = new ProjectTreeView(this);
     project_treeView->header()->hide();
     project_model = new ProjectModel(this);
-    proxy_model = new ProjectProxyModel(this);
+    proxy_model = new ProjectSortProxyModel(this);
     proxy_model->setSourceModel(project_model);
-    proxy_model->setFilterKeyColumn(-1);          // Проверять все столбцы (или выбери нужный)
-    proxy_model->setFilterRegularExpression(".*");  // Разрешает все строки
-    proxy_model->setFilterFixedString(QString());       // Очистить фильтр
-    // proxy_model->setDynamicSortFilter(false);
-
-    // {
-    //     model = new QStandardItemModel(0, 3, this);
-    //     model->insertRow(0);
-    //     model->setData(model->index(0, 0), "subject");
-    //     proxy_model->setSourceModel(model);
-    // }
-
     project_treeView->setModel(proxy_model);
-    proxy_model->invalidate();
-
-    // project_treeView->setSortingEnabled(true);
+    project_treeView->setSortingEnabled(true);
     project_treeView->sortByColumn(ProjectModel::col_Name, Qt::AscendingOrder);
     project_treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     project_treeView->setDragDropMode(QAbstractItemView::DragDrop);

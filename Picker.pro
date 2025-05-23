@@ -22,7 +22,7 @@ SOURCES += \
     BuildWidget/ProjectFileSystemModel.cpp \
     BuildWidget/ProjectItem.cpp \
     BuildWidget/ProjectModel.cpp \
-    BuildWidget/ProjectProxyModel.cpp \
+    BuildWidget/ProjectSortProxyModel.cpp \
     BuildWidget/ProjectTreeView.cpp \
     FileSystemWidget/FileSystemListView.cpp \
     FileSystemWidget/FileSystemModel.cpp \
@@ -41,7 +41,7 @@ HEADERS += \
     BuildWidget/ProjectFileSystemModel.h \
     BuildWidget/ProjectItem.h \
     BuildWidget/ProjectModel.h \
-    BuildWidget/ProjectProxyModel.h \
+    BuildWidget/ProjectSortProxyModel.h \
     BuildWidget/ProjectTreeView.h \
     FileSystemWidget/FileSystemListView.h \
     FileSystemWidget/FileSystemModel.h \

@@ -8,10 +8,14 @@ class QToolBar;
 class QLabel;
 class ProjectTreeView;
 class ProjectModel;
-class ProjectProxyModel;
+class ProjectSortProxyModel;
 class IPdfBuilder;
 class SqlMgr;
 
+/**
+ * @brief The BuildWidget class
+ * Виджет для сборки проекта
+ */
 class BuildWidget : public QWidget
 {
     Q_OBJECT
@@ -30,12 +34,10 @@ class BuildWidget : public QWidget
     ProjectTreeView         *project_treeView {nullptr};
 
     ProjectModel            *project_model {nullptr};
-    ProjectProxyModel       *proxy_model {nullptr};
+    ProjectSortProxyModel   *proxy_model {nullptr};
 
     SaveOpt                     saveOptions{SaveOptions::SAVE_TO_PROJECT_DIRECTORIES};
     QScopedPointer<IPdfBuilder> builder;
-
-    // QStandardItemModel *model;
 
 public:
     BuildWidget(QWidget *parent = nullptr);

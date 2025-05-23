@@ -7,6 +7,11 @@
 
 class ProjectItem;
 
+/**
+ * @brief The ProjectModel class
+ * Модель для отображения файловой системы проекта
+ * Содержит в себе элементы ProjectItem
+ */
 class ProjectModel : public QAbstractItemModel
 {
     Q_OBJECT

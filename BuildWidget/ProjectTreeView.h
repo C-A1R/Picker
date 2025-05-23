@@ -4,6 +4,10 @@
 #include <QProxyStyle>
 #include <QTreeView>
 
+/**
+ * @brief The ProjectTreeView class
+ * Дерево проекта
+ */
 class ProjectTreeView : public QTreeView
 {
     Q_OBJECT

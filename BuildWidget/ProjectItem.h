@@ -8,6 +8,10 @@
 #include <vector>
 #include <memory>
 
+/**
+ * @brief The ProjectItem class
+ * Элемент дерева проекта
+ */
 class ProjectItem
 {
     const QDir          m_path;

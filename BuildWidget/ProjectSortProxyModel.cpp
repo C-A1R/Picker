@@ -1,69 +1,98 @@
-#include "ProjectProxyModel.h"
-#include "ProjectModel.h"
+#include "ProjectSortProxyModel.h"
 #include "ProjectItem.h"
 
+#include <algorithm>
 
-ProjectProxyModel::ProjectProxyModel(QObject *parent)
-    : QSortFilterProxyModel(parent)
+ProjectSortProxyModel::ProjectSortProxyModel(QObject *parent)
+    : QIdentityProxyModel(parent)
 {
-    qDebug() << "ProjectProxyModel constructed";
-
-    // Применим сортировку при любых изменениях
-    setDynamicSortFilter(true);
-    setFilterKeyColumn(-1);  // Проверять все колонки
 }
 
-bool ProjectProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
+int ProjectSortProxyModel::rowCount(const QModelIndex &parent) const
 {
-    // Разрешаем все строки (можно заменить на логику фильтрации по имени, типу и т.п.)
-    return true;
-}
-
-bool ProjectProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
-{
-    return sourceModel()->data(left).toString() < sourceModel()->data(right).toString();
-
-    // const QString leftText = sourceModel()->data(left, Qt::DisplayRole).toString();
-    // const QString rightText = sourceModel()->data(right, Qt::DisplayRole).toString();
-    // return QString::localeAwareCompare(leftText, rightText) < 0;
-}
-
-QModelIndex ProjectProxyModel::mapToSource(const QModelIndex &proxyIndex) const
-{
-    return QSortFilterProxyModel::mapToSource(proxyIndex);
-}
-
-QModelIndex ProjectProxyModel::mapFromSource(const QModelIndex &sourceIndex) const
-{
-    return QSortFilterProxyModel::mapFromSource(sourceIndex);
-}
-
-bool ProjectProxyModel::hasChildren(const QModelIndex &parent) const
-{
-    const QModelIndex sourceParent = mapToSource(parent);
-    return sourceModel()->hasChildren(sourceParent);
-}
-
-int ProjectProxyModel::rowCount(const QModelIndex &parent) const
-{
-    int count = QSortFilterProxyModel::rowCount(parent);
-    qDebug() << "proxy rowCount at" << parent << " = " << count;
+    QModelIndex srcParent = mapToSource(parent);
+    int count = sourceModel()->rowCount(srcParent);
+    resort(parent); // гарантируем, что список отсортирован
     return count;
 }
 
+QModelIndex ProjectSortProxyModel::index(const int row, const int column, const QModelIndex &parent) const
+{
+    resort(parent);
+    QModelIndex srcParent = mapToSource(parent);
+    int sourceRow = row;
+    auto it = m_sortedRows.constFind(srcParent);
+    if (it != m_sortedRows.constEnd() && row < it->size())
+        sourceRow = it->at(row);
+    QModelIndex srcIdx = sourceModel()->index(sourceRow, column, srcParent);
+    return createIndex(row, column, srcIdx.internalPointer());
+}
+
+QVariant ProjectSortProxyModel::data(const QModelIndex &proxyIndex, int role) const
+{
+    QModelIndex srcIdx = mapToSource(proxyIndex);
+    return sourceModel()->data(srcIdx, role);
+}
+
+void ProjectSortProxyModel::sort(const int column, const Qt::SortOrder order)
+{
+    m_sortColumn = column;
+    m_sortOrder = order;
+    m_sortedRows.clear();
+    // layoutChanged, чтобы виджеты обновились
+    emit layoutChanged();
+}
+
+/**
+ * @brief ProjectSortProxyModel::compareRows
+ * @return
+ * -1 если a < b
+ * 1 если a > b
+ * 0 если a == b
+ */
+int ProjectSortProxyModel::compareRows(const QModelIndex &a, const QModelIndex &b) const
+{
+    const ProjectItem *itemA = static_cast<ProjectItem*>(a.internalPointer());
+    const ProjectItem *itemB = static_cast<ProjectItem*>(b.internalPointer());
+
+    if (!itemA->isDir() && itemB->isDir())
+        return 1;
+    else if (itemA->isDir() && !itemB->isDir())
+        return -1;
+
+    QVariant va = sourceModel()->data(a.siblingAtColumn(m_sortColumn));
+    QVariant vb = sourceModel()->data(b.siblingAtColumn(m_sortColumn));
+    int cmp = QString::localeAwareCompare(va.toString(), vb.toString());
+    return (m_sortOrder == Qt::AscendingOrder) ? cmp : -cmp;
+}
+
+void ProjectSortProxyModel::resort(const QModelIndex &parent) const
+{
+    QModelIndex srcParent = mapToSource(parent);
+    if (m_sortedRows.contains(srcParent))
+        return; // уже отсортировано
+
+    int count = sourceModel()->rowCount(srcParent);
+    QVector<int> rows(count);
+    for (int i = 0; i < count; ++i)
+    {
+        rows[i] = i;
+    }
+
+    // Сортируем индексы согласно compareRows
+    std::sort(rows.begin(), rows.end(), [&](int a, int b)
+    {
+        QModelIndex ia = sourceModel()->index(a, m_sortColumn, srcParent);
+        QModelIndex ib = sourceModel()->index(b, m_sortColumn, srcParent);
+        return compareRows(ia, ib) < 0;
+    });
+
+    m_sortedRows[srcParent] = rows;
+}
 
 
 
-
-
-
-
-
-
-
-
-
-
+/*********************************************************************************************************************************************/
 
 // QVariant ProjectProxyModel::data(const QModelIndex &index, const int role) const
 // {

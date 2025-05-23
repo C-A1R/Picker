@@ -18,60 +18,17 @@ Qt::ItemFlags ProjectModel::flags(const QModelIndex &index) const
            | Qt::ItemIsDropEnabled;
 }
 
-// QModelIndex ProjectModel::index(int row, int column, const QModelIndex &parent) const
-// {
-//     qDebug() << "[ProjectModel::index] row:" << row << " col:" << column << " parent:" << parent;
-
-//     // Предположим, что row и column всегда валидны
-//     // и сделаем проверку руками
-//     if (row < 0 && column < 0 && column >= columnCount(parent))
-//         return {};
-
-//     // if (!hasIndex(row, column, parent))
-//     //     return {};
-
-//     ProjectItem *parentItem = parent.isValid() ? static_cast<ProjectItem*>(parent.internalPointer())
-//                                                : rootItem.get();
-//     if (auto *childItem = parentItem->child(row))
-//         return createIndex(row, column, childItem);
-//     return {};
-// }
-
-// QModelIndex ProjectModel::index(int row, int column, const QModelIndex &parent) const
-// {
-//     ProjectItem *parentItem = parent.isValid() ? static_cast<ProjectItem*>(parent.internalPointer())
-//                                                : rootItem.get();
-//     if (!parentItem)
-//         return {};
-
-//     ProjectItem *childItem = parentItem->child(row);
-//     if (!childItem)
-//         return {};
-
-//     return createIndex(row, column, childItem);
-// }
-
 QModelIndex ProjectModel::index(int row, int column, const QModelIndex &parent) const
 {
-    if (parent.column() > 0 || column != 0 || row < 0) return {};
+//     qDebug() << "[ProjectModel::index] row:" << row << " col:" << column << " parent:" << parent;
+    if (!hasIndex(row, column, parent))
+        return {};
 
-    ProjectItem *parentItem = parent.isValid() ? static_cast<ProjectItem *>(parent.internalPointer()) : rootItem.get();
-    ProjectItem *child = parentItem->child(row);
-    return child ? createIndex(row, column, child) : QModelIndex();
-
-
-    // if (row < 0 || column < 0 || column >= columnCount(parent))
-    //     return {};
-
-    // ProjectItem *parentItem = parent.isValid()
-    //                               ? static_cast<ProjectItem *>(parent.internalPointer())
-    //                               : rootItem.get();
-
-    // ProjectItem *childItem = parentItem->child(row);
-    // if (!childItem)
-    //     return {};
-
-    // return createIndex(row, column, childItem);
+    ProjectItem *parentItem = parent.isValid() ? static_cast<ProjectItem*>(parent.internalPointer())
+                                               : rootItem.get();
+    if (auto *childItem = parentItem->child(row))
+        return createIndex(row, column, childItem);
+    return {};
 }
 
 QModelIndex ProjectModel::parent(const QModelIndex &index) const
@@ -85,45 +42,16 @@ QModelIndex ProjectModel::parent(const QModelIndex &index) const
                                         : QModelIndex{};
 }
 
-// int ProjectModel::rowCount(const QModelIndex &parent) const
-// {
-//     if (parent.column() > 0)
-//         return 0;
-
-//     const ProjectItem *parentItem = parent.isValid() ? static_cast<const ProjectItem*>(parent.internalPointer())
-//                                                      : rootItem.get();
-//     return parentItem->childCount();
-// }
-
-// int ProjectModel::rowCount(const QModelIndex &parent) const
-// {
-//     const ProjectItem *parentItem = parent.isValid() ? static_cast<const ProjectItem*>(parent.internalPointer())
-//                                                      : rootItem.get();
-//     int count = parentItem->childCount();
-//     qDebug() << "rowCount at" << parent << " = " << count;
-//     return count;
-// }
-
 int ProjectModel::rowCount(const QModelIndex &parent) const
 {
-    if (parent.isValid() && parent.column() != 0) return 0;
+    if (parent.isValid() && parent.column() != 0)
+        return 0;
 
-    ProjectItem *parentItem = parent.isValid()
-                                  ? static_cast<ProjectItem *>(parent.internalPointer())
-                                  : rootItem.get();
-    return parentItem->childCount();
-
-
-
-
-    // if (parent.isValid() && parent.column() != 0)
-    //     return 0;
-
-    // const ProjectItem *parentItem = parent.isValid() ? static_cast<const ProjectItem*>(parent.internalPointer())
-    //                                                  : rootItem.get();
-    // int count = parentItem->childCount();
+    const ProjectItem *parentItem = parent.isValid() ? static_cast<const ProjectItem*>(parent.internalPointer())
+                                                     : rootItem.get();
+    int count = parentItem->childCount();
     // qDebug() << "rowCount at" << parent << " = " << count;
-    // return count;
+    return count;
 }
 
 int ProjectModel::columnCount(const QModelIndex &parent) const
@@ -317,15 +245,15 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
         {
         case Qt::CheckStateRole:
         {
-            const auto item = static_cast<const ProjectItem*>(index.constInternalPointer());
+            const auto item = static_cast<const ProjectItem*>(index.internalPointer());
             if (item->isDir())
                 return QVariant(resultHolders.value(index.internalId(), Qt::Unchecked));
             break;
         }
-        // case Qt::DisplayRole:
-        // {
-        //     return {};
-        // }
+        case Qt::DisplayRole:
+        {
+            return {};
+        }
         default:
             break;
         }
