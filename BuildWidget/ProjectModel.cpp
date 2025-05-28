@@ -20,7 +20,6 @@ Qt::ItemFlags ProjectModel::flags(const QModelIndex &index) const
 
 QModelIndex ProjectModel::index(int row, int column, const QModelIndex &parent) const
 {
-//     qDebug() << "[ProjectModel::index] row:" << row << " col:" << column << " parent:" << parent;
     if (!hasIndex(row, column, parent))
         return {};
 
@@ -50,7 +49,6 @@ int ProjectModel::rowCount(const QModelIndex &parent) const
     const ProjectItem *parentItem = parent.isValid() ? static_cast<const ProjectItem*>(parent.internalPointer())
                                                      : rootItem.get();
     int count = parentItem->childCount();
-    // qDebug() << "rowCount at" << parent << " = " << count;
     return count;
 }
 
@@ -77,16 +75,16 @@ bool ProjectModel::setProjectPath(const QString &rootPath)
     }
     cleanup();
     rootItem = std::move(projectRootItem);
-    scanItem(rootItem.get());
+    double beginOrderIndex = rootItem->getOrderIndex();
+    scanItem(rootItem.get(), beginOrderIndex);
     return true;
 }
 
 /// сканирует директорию и добавляет ей потомков, если:
 /// * потомок - .pdf файл
 /// * потомок - диретория, которая содержит .pdf файлы
-bool ProjectModel::scanItem(ProjectItem *item)
+bool ProjectModel::scanItem(ProjectItem *item, double &orderIndex)
 {
-    // qDebug() << "[scanItem]" << item->getPath();
     if (!item)
         return false;
 
@@ -99,17 +97,17 @@ bool ProjectModel::scanItem(ProjectItem *item)
     for (const QFileInfo &dirInfo : dirInfoList)
     {
         auto child = std::unique_ptr<ProjectItem>(new ProjectItem(dirInfo.absoluteFilePath(), item));
-        if (!scanItem(child.get()))
+        child->setOrderIndex(++orderIndex);
+        if (!scanItem(child.get(), orderIndex))
             continue;
-
         item->appendChild(std::move(child));
-        // orders.emplace_back(index.internalId());
         foundPdf = true;
     }
 
     for (const QFileInfo &pdfInfo : pdfInfoList)
     {
         auto child = std::unique_ptr<ProjectItem>(new ProjectItem(pdfInfo.absoluteFilePath(), item));
+        child->setOrderIndex(++orderIndex);
         item->appendChild(std::move(child));
     }
 
@@ -178,8 +176,6 @@ void ProjectModel::cleanup()
 {
     checkedItems.clear();
     resultHolders.clear();
-    // hiddenIndices.clear();
-    orders.clear();
     // pathsById.clear();
 }
 
@@ -301,4 +297,54 @@ void ProjectModel::slot_setChecked(const QModelIndexList &selected, const Qt::Ch
             continue;
         setData(index, checkState, Qt::CheckStateRole);
     }
+}
+
+void ProjectModel::slot_dropped(const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices)
+{
+    if (draggedIndices.isEmpty())
+    {
+        return;
+    }
+
+    auto droppedItem = static_cast<ProjectItem*>(droppedIndex.internalPointer());
+    auto beforeDroppedItem = static_cast<ProjectItem*>(droppedIndex.siblingAtRow(droppedIndex.row() - 1).internalPointer());
+    ProjectItem *parentItem = nullptr;
+    double newOrderIndex = 0.0;
+    double orderStep = 0.0;
+    if (!droppedItem && !beforeDroppedItem)
+    {
+        const QModelIndex &parentIndex = draggedIndices.first().parent();
+        parentItem = parentIndex.isValid() ? static_cast<ProjectItem*>(parentIndex.internalPointer())
+                                           : rootItem.get();
+        newOrderIndex = parentItem->child(parentItem->childCount() - 1)->getOrderIndex();
+        orderStep = 1.0;
+    }
+    else
+    {
+        const QModelIndex &parentIndex = droppedIndex.parent();
+        parentItem = parentIndex.isValid() ? static_cast<ProjectItem*>(parentIndex.internalPointer())
+                                           : rootItem.get();
+        newOrderIndex = beforeDroppedItem->getOrderIndex();
+        orderStep = (droppedItem->getOrderIndex() - beforeDroppedItem->getOrderIndex()) / (draggedIndices.count() + 1);
+    }
+    newOrderIndex += orderStep;
+
+    emit layoutAboutToBeChanged();
+    for (const QModelIndex &index : draggedIndices)
+    {
+        if (index.column() != Columns::col_Name)
+            continue;
+        auto item = static_cast<ProjectItem*>(index.internalPointer());
+        if (!item)
+            continue;
+        item->setOrderIndex(newOrderIndex);
+        newOrderIndex += orderStep;
+        qDebug() << "dragged:" << item->getPath().dirName() << "new_order:"  << item->getOrderIndex();
+    }
+
+    if (parentItem)
+    {
+        parentItem->sortChildren(); // sort parent item children by order index;
+    }
+    emit layoutChanged();
 }

@@ -24,6 +24,7 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QModelIndex index(const int row, const int column, const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &proxyIndex, int role = Qt::DisplayRole) const override;
+    QModelIndex mapToSource(const QModelIndex &proxyIndex) const override;
 
     // Настройка сортировки
     void sort(const int column, const Qt::SortOrder order = Qt::AscendingOrder) override;
@@ -31,6 +32,14 @@ public:
 private:
     int compareRows(const QModelIndex &a, const QModelIndex &b) const;
     void resort(const QModelIndex &parent = QModelIndex()) const;
+    QModelIndex sortedIndex(const int row, const int column, const QModelIndex &parent = QModelIndex()) const;
+    QModelIndex sortedIndex(const QModelIndex &ind) const;
+
+signals:
+    void signal_dropped(const QModelIndex, const QModelIndexList &);
+
+public slots:
+    void slot_dropped(const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices);
 };
 
 
@@ -48,7 +57,6 @@ private:
 //     QModelIndex mapFromSource(const QModelIndex &sourceIndex) const override;
 
 // protected:
-//     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
 //     bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const override;
 //     // QModelIndex mapToSource(const QModelIndex& proxyIndex) const override;
 //     // QVariant data(const QModelIndex &index, const int role) const override;

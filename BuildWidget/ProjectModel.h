@@ -21,7 +21,6 @@ class ProjectModel : public QAbstractItemModel
     QFileIconProvider                   iconProvider;
     QHash<quintptr, Qt::CheckState>     checkedItems;
     QHash<quintptr, Qt::CheckState>     resultHolders;
-    QList<quintptr>                     orders;
 
 public:
     enum Columns
@@ -50,7 +49,7 @@ public:
     bool setProjectPath(const QString &rootPath);
 
 private:
-    [[maybe_unused]] bool scanItem(ProjectItem *item);
+    [[maybe_unused]] bool scanItem(ProjectItem *item, double &orderIndex);
     void checkItem(const QModelIndex &index);
     void cleanup();
     void resetResultHolderCheckstates_Up(const QModelIndex &index);
@@ -58,6 +57,7 @@ private:
 
 public slots:
     void slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState);
+    void slot_dropped(const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices);
 };
 
 #endif // PROJECTMODEL_H

@@ -139,8 +139,9 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
     {
         emit signal_added(droppedIndex, event->mimeData()->text());
     }
-    this->sortByColumn(0, Qt::AscendingOrder);
+    this->sortByColumn(ProjectModel::Columns::col_Name, Qt::AscendingOrder);
     event->accept();
+    this->selectionModel()->clearSelection();
 }
 
 QAbstractItemView::DropIndicatorPosition ProjectTreeView::getDropIndicatorPosition(const QPoint &position, const QRect &rect)

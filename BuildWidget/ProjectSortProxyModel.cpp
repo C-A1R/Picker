@@ -19,19 +19,19 @@ int ProjectSortProxyModel::rowCount(const QModelIndex &parent) const
 QModelIndex ProjectSortProxyModel::index(const int row, const int column, const QModelIndex &parent) const
 {
     resort(parent);
-    QModelIndex srcParent = mapToSource(parent);
-    int sourceRow = row;
-    auto it = m_sortedRows.constFind(srcParent);
-    if (it != m_sortedRows.constEnd() && row < it->size())
-        sourceRow = it->at(row);
-    QModelIndex srcIdx = sourceModel()->index(sourceRow, column, srcParent);
-    return createIndex(row, column, srcIdx.internalPointer());
+    return sortedIndex(row, column, parent);
 }
 
 QVariant ProjectSortProxyModel::data(const QModelIndex &proxyIndex, int role) const
 {
     QModelIndex srcIdx = mapToSource(proxyIndex);
     return sourceModel()->data(srcIdx, role);
+}
+
+QModelIndex ProjectSortProxyModel::mapToSource(const QModelIndex &proxyIndex) const
+{
+    // auto sourceParentIndex = QIdentityProxyModel::mapToSource(proxyIndex.parent());
+    return QIdentityProxyModel::mapToSource(proxyIndex);
 }
 
 void ProjectSortProxyModel::sort(const int column, const Qt::SortOrder order)
@@ -55,6 +55,10 @@ int ProjectSortProxyModel::compareRows(const QModelIndex &a, const QModelIndex &
     const ProjectItem *itemA = static_cast<ProjectItem*>(a.internalPointer());
     const ProjectItem *itemB = static_cast<ProjectItem*>(b.internalPointer());
 
+    int cmp = itemA->getOrderIndex() < itemB->getOrderIndex() ? -1
+                                                    : itemA->getOrderIndex() > itemB->getOrderIndex() ? 1 : 0;
+    return (m_sortOrder == Qt::AscendingOrder) ? cmp : -cmp;
+/*
     if (!itemA->isDir() && itemB->isDir())
         return 1;
     else if (itemA->isDir() && !itemB->isDir())
@@ -64,6 +68,7 @@ int ProjectSortProxyModel::compareRows(const QModelIndex &a, const QModelIndex &
     QVariant vb = sourceModel()->data(b.siblingAtColumn(m_sortColumn));
     int cmp = QString::localeAwareCompare(va.toString(), vb.toString());
     return (m_sortOrder == Qt::AscendingOrder) ? cmp : -cmp;
+*/
 }
 
 void ProjectSortProxyModel::resort(const QModelIndex &parent) const
@@ -90,6 +95,41 @@ void ProjectSortProxyModel::resort(const QModelIndex &parent) const
     m_sortedRows[srcParent] = rows;
 }
 
+QModelIndex ProjectSortProxyModel::sortedIndex(const int row, const int column, const QModelIndex &parent) const
+{
+    QModelIndex srcParent = mapToSource(parent);
+    int sourceRow = row;
+    auto it = m_sortedRows.constFind(srcParent);
+    if (it != m_sortedRows.constEnd() && row < it->size())
+        sourceRow = it->at(row);
+    QModelIndex srcIdx = sourceModel()->index(sourceRow, column, srcParent);
+    return createIndex(row, column, srcIdx.internalPointer());
+}
+
+QModelIndex ProjectSortProxyModel::sortedIndex(const QModelIndex &ind) const
+{
+    return sortedIndex(ind.row(), ind.column(), ind.parent());
+}
+
+void ProjectSortProxyModel::slot_dropped(const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices)
+{
+    qDebug() << "[ProjectSortProxyModel::slot_dropped]";
+    qDebug() << "dra: " << draggedIndices;
+
+    if (draggedIndices.isEmpty())
+    {
+        return;
+    }
+    QModelIndexList sourceDraggedIndices;
+    std::transform(draggedIndices.cbegin(), draggedIndices.cend(), std::back_inserter(sourceDraggedIndices),
+                    [this](const QModelIndex &ind) -> QModelIndex
+                    {
+                       return sortedIndex(ind);
+                    });
+    qDebug() << "sdra:" << sourceDraggedIndices;
+    emit signal_dropped(sortedIndex(droppedIndex), sourceDraggedIndices);
+}
+
 
 
 /*********************************************************************************************************************************************/
@@ -97,20 +137,6 @@ void ProjectSortProxyModel::resort(const QModelIndex &parent) const
 // QVariant ProjectProxyModel::data(const QModelIndex &index, const int role) const
 // {
 //     return sourceModel()->data(mapToSource(index), role);
-// }
-
-// bool ProjectProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
-// {
-//     qDebug() << "[filterAcceptsRow] row =" << sourceRow << ", parent =" << sourceParent;
-
-//     Q_UNUSED(sourceRow)
-//     Q_UNUSED(sourceParent)
-//     return true;
-
-//     // return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
-//     // const ProjectFileSystemModel *source = static_cast<ProjectFileSystemModel *>(sourceModel());
-//     // const QModelIndex &index = source->index(sourceRow, ProjectFileSystemModel::Columns::col_Name, sourceParent);
-//     // return !source->getHiddenIndices().contains(index.internalId());
 // }
 
 // bool ProjectProxyModel::lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const

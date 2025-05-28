@@ -29,8 +29,7 @@ BuildWidget::BuildWidget(QWidget *parent)
         // connect(proxy_model, &ProjectProxyModel::signal_expand, project_treeView, &ProjectTreeView::slot_expand);
     }
     {
-        // connect(project_treeView, &ProjectTreeView::signal_dropped, proxy_model, &ProjectProxyModel::slot_dropped);
-        // connect(proxy_model, &ProjectProxyModel::signal_dropped, project_model, &ProjectFileSystemModel::slot_dropped);
+        connect(project_treeView, &ProjectTreeView::signal_dropped, project_model, &ProjectModel::slot_dropped);
     }
     {
         // connect(project_treeView, &ProjectTreeView::signal_added, proxy_model, &ProjectProxyModel::slot_added);
@@ -42,10 +41,6 @@ BuildWidget::BuildWidget(QWidget *parent)
         // connect(project_treeView, &ProjectTreeView::signal_setChecked, project_model, &ProjectModel::slot_setChecked);
     }
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
-    // qDebug() << "Rows in model:" << project_model->rowCount();
-    // qDebug() << "proxy_model rows:" << proxy_model->rowCount();
-    // qDebug() << "proxy_model->index(0, 0).isValid()" << proxy_model->index(0, 0).isValid();  // true
-    // qDebug() << "proxy_model->data(proxy_model->index(0, 0))" << proxy_model->data(proxy_model->index(0, 0));  // название первой папки/файла
 }
 
 BuildWidget::~BuildWidget()
@@ -114,9 +109,9 @@ void BuildWidget::initUi()
     project_treeView = new ProjectTreeView(this);
     project_treeView->header()->hide();
     project_model = new ProjectModel(this);
-    proxy_model = new ProjectSortProxyModel(this);
-    proxy_model->setSourceModel(project_model);
-    project_treeView->setModel(proxy_model);
+    // proxy_model = new ProjectSortProxyModel(this);
+    // proxy_model->setSourceModel(project_model);
+    project_treeView->setModel(project_model);
     project_treeView->setSortingEnabled(true);
     project_treeView->sortByColumn(ProjectModel::col_Name, Qt::AscendingOrder);
     project_treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);

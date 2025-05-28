@@ -60,3 +60,23 @@ bool ProjectItem::isDir() const
     return m_info.isDir();
 }
 
+void ProjectItem::setOrderIndex(const double index)
+{
+    m_orderIndex = index;
+}
+
+double ProjectItem::getOrderIndex() const
+{
+    return m_orderIndex;
+}
+
+void ProjectItem::sortChildren(const Qt::SortOrder order)
+{
+    std::sort(m_childItems.begin(), m_childItems.end(),
+              [order](const std::unique_ptr<ProjectItem> &a, const std::unique_ptr<ProjectItem> &b) -> bool
+              {
+                  return (order == Qt::AscendingOrder) ? a->getOrderIndex() < b->getOrderIndex()
+                                                       : a->getOrderIndex() > b->getOrderIndex();
+              });
+}
+
