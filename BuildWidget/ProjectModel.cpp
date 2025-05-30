@@ -80,6 +80,18 @@ bool ProjectModel::setProjectPath(const QString &rootPath)
     return true;
 }
 
+QString ProjectModel::projectDbFilePath() const
+{
+    return rootItem->getPath().absolutePath() + QDir::separator() + "picker.sqlite";
+}
+
+const ProjectItem *ProjectModel::getRootItem() const
+{
+    return rootItem.get();
+}
+
+
+
 /// сканирует директорию и добавляет ей потомков, если:
 /// * потомок - .pdf файл
 /// * потомок - диретория, которая содержит .pdf файлы

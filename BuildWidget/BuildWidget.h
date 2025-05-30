@@ -8,6 +8,7 @@ class QToolBar;
 class QLabel;
 class ProjectTreeView;
 class ProjectModel;
+class ProjectItem;
 class ProjectSortProxyModel;
 class IPdfBuilder;
 class SqlMgr;
@@ -32,9 +33,7 @@ class BuildWidget : public QWidget
     QToolBar                *saveOptions_toolBar {nullptr};
     QLabel                  *currentPath_label {nullptr};
     ProjectTreeView         *project_treeView {nullptr};
-
     ProjectModel            *project_model {nullptr};
-    ProjectSortProxyModel   *proxy_model {nullptr};
 
     SaveOpt                     saveOptions{SaveOptions::SAVE_TO_PROJECT_DIRECTORIES};
     QScopedPointer<IPdfBuilder> builder;
@@ -47,7 +46,10 @@ private:
     void initUi();
     void changeProject(const QString &path);
     QString getDefenitFolder() const;
-    void saveTree(const QModelIndex &rootIndex, SqlMgr &sqlMgr) const;
+
+    void saveProjectTree(const ProjectItem *rootItem, SqlMgr &sqlMgr) const;
+    void saveProjectItem(const QModelIndex &itemIndex, SqlMgr &sqlMgr) const;
+    void saveItem(const QModelIndex &index, SqlMgr &sqlMgr) const;
 
 private slots:
     void slot_changeProject();

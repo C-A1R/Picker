@@ -1,7 +1,6 @@
 #include "BuildWidget.h"
 #include "ProjectTreeView.h"
 #include "ProjectModel.h"
-#include "ProjectSortProxyModel.h"
 #include "Settings.h"
 #include "SqlMgr.h"
 
@@ -29,17 +28,11 @@ BuildWidget::BuildWidget(QWidget *parent)
         // connect(proxy_model, &ProjectProxyModel::signal_expand, project_treeView, &ProjectTreeView::slot_expand);
     }
     {
-        connect(project_treeView, &ProjectTreeView::signal_dropped, project_model, &ProjectModel::slot_dropped);
-    }
-    {
         // connect(project_treeView, &ProjectTreeView::signal_added, proxy_model, &ProjectProxyModel::slot_added);
         // connect(proxy_model, &ProjectProxyModel::signal_added, project_model, &ProjectFileSystemModel::slot_added);
     }
-    {
-        // connect(project_treeView, &ProjectTreeView::signal_setChecked, proxy_model, &ProjectProxyModel::slot_setChecked);
-        // connect(proxy_model, &ProjectProxyModel::signal_setChecked, project_model, &ProjectModel::slot_setChecked);
-        // connect(project_treeView, &ProjectTreeView::signal_setChecked, project_model, &ProjectModel::slot_setChecked);
-    }
+    connect(project_treeView, &ProjectTreeView::signal_setChecked, project_model, &ProjectModel::slot_setChecked);
+    connect(project_treeView, &ProjectTreeView::signal_dropped, project_model, &ProjectModel::slot_dropped);
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
 }
 
@@ -109,8 +102,6 @@ void BuildWidget::initUi()
     project_treeView = new ProjectTreeView(this);
     project_treeView->header()->hide();
     project_model = new ProjectModel(this);
-    // proxy_model = new ProjectSortProxyModel(this);
-    // proxy_model->setSourceModel(project_model);
     project_treeView->setModel(project_model);
     project_treeView->setSortingEnabled(true);
     project_treeView->sortByColumn(ProjectModel::col_Name, Qt::AscendingOrder);
@@ -164,34 +155,62 @@ QString BuildWidget::getDefenitFolder() const
     return defenitFolder;
 }
 
-/// работает с индексами прокси-модели
-void BuildWidget::saveTree(const QModelIndex &rootIndex, SqlMgr &sqlMgr) const
+void BuildWidget::saveProjectTree(const ProjectItem *rootItem, SqlMgr &sqlMgr) const
 {
-    // if (!rootIndex.isValid())
-    // {
-    //     return;
-    // }
-    // const int rows = proxy_model->rowCount(rootIndex);
-    // if (!rows)
-    // {
-    //     return;
-    // }
+    if (!rootItem)
+    {
+        return;
+    }
+    const int rows = rootItem->childCount();
+    if (!rows)
+    {
+        return;
+    }
 
-    // for (int i = 0; i < rows; ++i)
-    // {
-    //     const QModelIndex &childIndex = proxy_model->index(i, ProjectModel::Columns::col_Name, rootIndex);
-    //     const QModelIndex &sourceChildIndex = proxy_model->mapToSource(childIndex);
-    //     const QModelIndex &sourceChildIndex_resultHolderCol = sourceChildIndex.siblingAtColumn(ProjectModel::Columns::col_ResultHolder);
-    //     const QFileInfo &info = project_model->fileInfo(sourceChildIndex);
-    //     if (!sqlMgr.insertProjectElement(project_model->data(sourceChildIndex, Qt::CheckStateRole).value<Qt::CheckState>(),
-    //                                      project_model->data(sourceChildIndex_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>(),
-    //                                      project_treeView->isExpanded(childIndex),
-    //                                      info.absoluteFilePath()))
-    //     {
-    //         qDebug() << "insertion failed: " << info.absoluteFilePath();
-    //     }
-    //     saveTree(childIndex, sqlMgr);
-    // }
+    for (int i = 0; i < rows; ++i)
+    {
+        const QModelIndex &childIndex = project_model->index(i, ProjectModel::Columns::col_Name, QModelIndex());
+        saveItem(childIndex, sqlMgr);
+        saveProjectItem(childIndex, sqlMgr);
+    }
+}
+
+void BuildWidget::saveProjectItem(const QModelIndex &itemIndex, SqlMgr &sqlMgr) const
+{
+    if (!itemIndex.isValid())
+    {
+        return;
+    }
+    const int rows = project_model->rowCount(itemIndex);
+    if (!rows)
+    {
+        return;
+    }
+
+    for (int i = 0; i < rows; ++i)
+    {
+        const QModelIndex &childIndex = project_model->index(i, ProjectModel::Columns::col_Name, itemIndex);
+        saveItem(childIndex, sqlMgr);
+        saveProjectItem(childIndex, sqlMgr);
+    }
+}
+
+void BuildWidget::saveItem(const QModelIndex &index, SqlMgr &sqlMgr) const
+{
+    auto item = static_cast<const ProjectItem*>(index.internalPointer());
+    if (!item)
+    {
+        return;
+    }
+
+    const QModelIndex &index_resultHolderCol = index.siblingAtColumn(ProjectModel::Columns::col_ResultHolder);
+    if (!sqlMgr.insertProjectElement(project_model->data(index, Qt::CheckStateRole).value<Qt::CheckState>(),
+                                     project_model->data(index_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>(),
+                                     project_treeView->isExpanded(index),
+                                     item->getPath().absolutePath()))
+    {
+        qDebug() << "insertion failed: " << item->getPath().absolutePath();
+    }
 }
 
 void BuildWidget::slot_changeProject()
@@ -211,35 +230,35 @@ void BuildWidget::slot_changeProject()
 
 void BuildWidget::slot_saveList()
 {
-    // const QString dbFilename = project_model->listFilePath();
-    // if (QFile::exists(dbFilename))
-    // {
-    //     QFile::remove(dbFilename);
-    // }
+    const QString dbFilename = project_model->projectDbFilePath();
+    if (QFile::exists(dbFilename))
+    {
+        QFile::remove(dbFilename);
+    }
 
-    // SqlMgr sqlMgr(dbFilename);
-    // if (!sqlMgr.open())
-    // {
-    //     qDebug("can`t open db");
-    //     return;
-    // }
-    // if (!sqlMgr.createPickerDb())
-    // {
-    //     qDebug("can`t create db");
-    //     return;
-    // }
+    SqlMgr sqlMgr(dbFilename);
+    if (!sqlMgr.open())
+    {
+        qDebug("can`t open db");
+        return;
+    }
+    if (!sqlMgr.createPickerDb())
+    {
+        qDebug("can`t create db");
+        return;
+    }
 
-    // if (!sqlMgr.transaction())
-    // {
-    //     qDebug("can`t start transaction");
-    //     return;
-    // }
-    // saveTree(proxy_model->mapFromSource(project_model->index(project_model->rootPath())), sqlMgr);
-    // if (!sqlMgr.commit())
-    // {
-    //     qDebug("can`t commit transaction");
-    //     return;
-    // }
+    if (!sqlMgr.transaction())
+    {
+        qDebug("can`t start transaction");
+        return;
+    }
+    saveProjectTree(project_model->getRootItem(), sqlMgr);
+    if (!sqlMgr.commit())
+    {
+        qDebug("can`t commit transaction");
+        return;
+    }
 }
 
 void BuildWidget::slot_build()

@@ -47,6 +47,8 @@ public:
     bool hasChildren(const QModelIndex &parent = QModelIndex()) const override;
 
     bool setProjectPath(const QString &rootPath);
+    QString projectDbFilePath() const;
+    const ProjectItem *getRootItem() const;
 
 private:
     [[maybe_unused]] bool scanItem(ProjectItem *item, double &orderIndex);
