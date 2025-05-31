@@ -14,7 +14,7 @@
  */
 class ProjectItem
 {
-    const uint64_t      id{0};
+    const qulonglong    id{0};
     const QDir          m_path;
     const QFileInfo     m_info;
     QFileIconProvider   m_iconProvider;
@@ -24,21 +24,22 @@ class ProjectItem
     std::vector<std::unique_ptr<ProjectItem>>   m_childItems;
 
 public:
-    enum ItemRoles
+    enum Roles
     {
-        StatusRole = Qt::UserRole
+        ID = Qt::UserRole,
+        STATUS
     };
 
-    explicit ProjectItem(const uint64_t id, const QString &path, ProjectItem *parentItem = nullptr);
+    explicit ProjectItem(const qulonglong id, const QString &path, ProjectItem *parentItem = nullptr);
 
     void appendChild(std::unique_ptr<ProjectItem> &&child);
 
     ProjectItem *child(const int row);
     int childCount() const;
     int row() const;
-    ProjectItem *parentItem();
+    ProjectItem *parentItem() const;
 
-    uint64_t getId() const;
+    qulonglong getId() const;
     const QDir &getPath() const;
     double getOrderIndex() const;
 

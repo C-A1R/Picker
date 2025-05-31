@@ -2,6 +2,7 @@
 #define PROJECTMODEL_H
 
 #include "ProjectItem.h"
+#include "Enums.h"
 
 #include <QAbstractItemModel>
 
@@ -19,27 +20,20 @@ class ProjectModel : public QAbstractItemModel
     std::unique_ptr<ProjectItem>        rootItem;
 
     QFileIconProvider                   iconProvider;
-    QHash<quintptr, Qt::CheckState>     checkedItems;
-    QHash<quintptr, Qt::CheckState>     resultHolders;
+    QHash<qulonglong, Qt::CheckState>   checkedItems;
+    QHash<qulonglong, Qt::CheckState>   resultHolders;
+    QHash<qulonglong, Statuses>         itemStatuses;
 
-    uint64_t idMax = 0;
+    qulonglong idMax = 0;
+
+    const QHash<Statuses, QColor> statusColors =
+    {
+        {Statuses::DEFAULT,     QColor(Qt::transparent)},
+        {Statuses::LISTED,      QColor(100, 221, 23, 50)},
+        {Statuses::NOT_LISTED,  QColor(255, 237, 204, 200)}
+    };
 
 public:
-    enum Columns
-    {
-        col_Name,
-        col_ResultHolder,
-
-        MAX
-    };
-
-    enum Statuses
-    {
-        DEFAULT = 0,
-        LISTED,
-        NOT_LISTED
-    };
-
     Q_DISABLE_COPY_MOVE(ProjectModel)
 
     explicit ProjectModel(QObject *parent = nullptr);

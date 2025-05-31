@@ -1,6 +1,5 @@
 #include "ProjectTreeView.h"
-
-#include "ProjectModel.h"
+#include "Enums.h"
 
 #include <QDropEvent>
 #include <QMenu>
@@ -16,7 +15,7 @@ void ProjectTreeView::mouseReleaseEvent(QMouseEvent *event)
 {
     const QModelIndex index = indexAt(event->pos());
     if (index.isValid()
-        && index.column() == ProjectModel::Columns::col_Name
+        && index.column() == Columns::col_Name
         && event->button() == Qt::LeftButton)
     {
          QModelIndexList selected = selectedIndexes();
@@ -139,7 +138,7 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
     {
         emit signal_added(droppedIndex, event->mimeData()->text());
     }
-    this->sortByColumn(ProjectModel::Columns::col_Name, Qt::AscendingOrder);
+    this->sortByColumn(Columns::col_Name, Qt::AscendingOrder);
     event->accept();
     this->selectionModel()->clearSelection();
 }

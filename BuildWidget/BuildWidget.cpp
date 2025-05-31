@@ -105,16 +105,16 @@ void BuildWidget::initUi()
     project_model = new ProjectModel(this);
     project_treeView->setModel(project_model);
     project_treeView->setSortingEnabled(true);
-    project_treeView->sortByColumn(ProjectModel::col_Name, Qt::AscendingOrder);
+    project_treeView->sortByColumn(Columns::col_Name, Qt::AscendingOrder);
     project_treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     project_treeView->setDragDropMode(QAbstractItemView::DragDrop);
     project_treeView->setDragEnabled(true);
     project_treeView->viewport()->setAcceptDrops(true);
     project_treeView->setDropIndicatorShown(true);
-    project_treeView->header()->setSectionResizeMode(ProjectModel::Columns::col_Name, QHeaderView::Stretch);
-    project_treeView->header()->setSectionResizeMode(ProjectModel::Columns::col_ResultHolder, QHeaderView::Fixed);
+    project_treeView->header()->setSectionResizeMode(Columns::col_Name, QHeaderView::Stretch);
+    project_treeView->header()->setSectionResizeMode(Columns::col_ResultHolder, QHeaderView::Fixed);
     project_treeView->header()->setStretchLastSection(false);
-    project_treeView->header()->resizeSection(ProjectModel::Columns::col_ResultHolder, 0);
+    project_treeView->header()->resizeSection(Columns::col_ResultHolder, 0);
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);
@@ -171,7 +171,7 @@ void BuildWidget::saveProjectTree(const ProjectItem *rootItem, SqlMgr &sqlMgr) c
 
     for (int i = 0; i < rows; ++i)
     {
-        const QModelIndex &childIndex = project_model->index(i, ProjectModel::Columns::col_Name, QModelIndex());
+        const QModelIndex &childIndex = project_model->index(i, Columns::col_Name, QModelIndex());
         saveItem(childIndex, sqlMgr);
         saveProjectItem(childIndex, sqlMgr);
     }
@@ -191,7 +191,7 @@ void BuildWidget::saveProjectItem(const QModelIndex &itemIndex, SqlMgr &sqlMgr) 
 
     for (int i = 0; i < rows; ++i)
     {
-        const QModelIndex &childIndex = project_model->index(i, ProjectModel::Columns::col_Name, itemIndex);
+        const QModelIndex &childIndex = project_model->index(i, Columns::col_Name, itemIndex);
         saveItem(childIndex, sqlMgr);
         saveProjectItem(childIndex, sqlMgr);
     }
@@ -204,13 +204,14 @@ void BuildWidget::saveItem(const QModelIndex &index, SqlMgr &sqlMgr) const
     {
         return;
     }
-    auto parentItem = static_cast<const ProjectItem*>(index.parent().internalPointer());
+    const ProjectItem *parentItem = item->parentItem();
     if (!parentItem)
     {
-        parentItem = project_model->getRootItem();
+        return;
+        // parentItem = project_model->getRootItem();
     }
 
-    const QModelIndex &index_resultHolderCol = index.siblingAtColumn(ProjectModel::Columns::col_ResultHolder);
+    const QModelIndex &index_resultHolderCol = index.siblingAtColumn(Columns::col_ResultHolder);
     if (!sqlMgr.insertProjectElement(item->getId()
                                      , parentItem->getId()
                                      , project_model->data(index, Qt::CheckStateRole).value<Qt::CheckState>()

@@ -1,7 +1,7 @@
 #include "ProjectItem.h"
 
 
-ProjectItem::ProjectItem(const uint64_t id, const QString &path, ProjectItem *parent)
+ProjectItem::ProjectItem(const qulonglong id, const QString &path, ProjectItem *parent)
     : id{id}
     , m_path{path}
     , m_info{m_path.absolutePath()}
@@ -41,12 +41,12 @@ int ProjectItem::row() const
     return -1;
 }
 
-ProjectItem *ProjectItem::parentItem()
+ProjectItem *ProjectItem::parentItem() const
 {
     return m_parentItem;
 }
 
-uint64_t ProjectItem::getId() const
+qulonglong ProjectItem::getId() const
 {
     return id;
 }

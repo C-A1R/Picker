@@ -38,6 +38,7 @@ SOURCES += \
 
 HEADERS += \
     BuildWidget/BuildWidget.h \
+    BuildWidget/Enums.h \
     BuildWidget/ProjectFileSystemModel.h \
     BuildWidget/ProjectItem.h \
     BuildWidget/ProjectModel.h \

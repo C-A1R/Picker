@@ -104,58 +104,71 @@ const ProjectItem *ProjectModel::getRootItem() const
 /// читаем порядок из файла
 bool ProjectModel::readFromFile()
 {
-    return false;
-    // const QString dbFilename = projectDbFilePath();
-    // if (!QFile::exists(dbFilename))
-    // {
-    //     return false;
-    // }
+    const QString dbFilename = projectDbFilePath();
+    if (!QFile::exists(dbFilename))
+    {
+        return false;
+    }
 
-    // SqlMgr sqlMgr(dbFilename);
-    // if (!sqlMgr.open())
-    // {
-    //     qDebug("Can`t read primary order: file is busy");
-    //     return false;
-    // }
+    SqlMgr sqlMgr(dbFilename);
+    if (!sqlMgr.open())
+    {
+        qDebug("Can`t read primary order: file is busy");
+        return false;
+    }
 
-    // QList<QSqlRecord> recs;
-    // if (!sqlMgr.readProjectElements(recs))
-    // {
-    //     qDebug("Can`t read primary order");
-    // }
-    // if (recs.empty())
-    // {
-    //     return true;
-    // }
+    QList<QSqlRecord> recs;
+    if (!sqlMgr.readProjectElements(recs))
+    {
+        qDebug("Can`t read primary order");
+    }
+    if (recs.empty())
+    {
+        return true;
+    }
 
-    // QModelIndexList expanded;
-    // for (const QSqlRecord &rec : std::as_const(recs))
-    // {
-    //     const QString path = rec.value(SqlMgr::ProjectFilesystemTable::Columns::path).toString();
-    //     const int printCheckState = rec.value(SqlMgr::ProjectFilesystemTable::Columns::printCheckstate).toInt();
-    //     const int resultHolder = rec.value(SqlMgr::ProjectFilesystemTable::Columns::resultHolder).toInt();
-    //     if (path.isEmpty())
-    //     {
-    //         continue;
-    //     }
-    //     const QModelIndex index = this->index(path);
-    //     if (!index.isValid())
-    //     {
-    //         //файл из списка был удален
-    //         qDebug() << "listed element was removed:" << path;
-    //         continue;
-    //     }
-    //     // orders.emplace_back(index.internalId());
-    //     checkedItems[index.internalId()] = printCheckState == 0 ? Qt::Unchecked : (printCheckState == 1 ? Qt::PartiallyChecked : Qt::Checked);
-    //     resultHolders[index.siblingAtColumn(Columns::col_ResultHolder).internalId()] = resultHolder == 0 ? Qt::Unchecked : Qt::Checked;
-    //     setData(index, Statuses::LISTED, ProjectItem::ItemRoles::StatusRole);
-    //     // pathsById.emplace(index.internalId(), this->filePath(index));
-    //     if (rec.value(SqlMgr::ProjectFilesystemTable::Columns::expanded).toBool())
-    //     {
-    //         expanded << index;
-    //     }
-    // }
-    // emit signal_expand(expanded);
+    QHash<qulonglong, ProjectItem *> itemsById;
+    itemsById.reserve(recs.size());
+    itemsById.insert(rootItem->getId(), rootItem.get());
+
+    QModelIndexList expanded;
+    for (const QSqlRecord &rec : std::as_const(recs))
+    {
+        const QString path = rec.value(SqlMgr::ProjectFilesystemTable::Columns::path).toString();
+        if (path.isEmpty())
+        {
+            continue;
+        }
+
+        const qulonglong id = rec.value(SqlMgr::ProjectFilesystemTable::Columns::id).toULongLong();
+        idMax = idMax < id ? id : idMax;
+
+        auto parentItem = itemsById.value(rec.value(SqlMgr::ProjectFilesystemTable::Columns::parentId).toULongLong(), rootItem.get());
+        auto item_ptr = std::make_unique<ProjectItem>(id, path, parentItem);
+        if (!item_ptr->exists())
+        {
+            //файл из списка был удален
+            qDebug() << "Item was removed:" << path;
+            continue;
+        }
+        parentItem->appendChild(std::move(item_ptr));
+        ProjectItem *item = parentItem->child(parentItem->childCount() - 1);
+        itemsById.insert(item->getId(), item);
+
+        const int printCheckState = rec.value(SqlMgr::ProjectFilesystemTable::Columns::printCheckstate).toInt();
+        const int resultHolder = rec.value(SqlMgr::ProjectFilesystemTable::Columns::resultHolder).toInt();
+        checkedItems[id] = printCheckState == 0 ? Qt::Unchecked : (printCheckState == 1 ? Qt::PartiallyChecked : Qt::Checked);
+        resultHolders[id] = resultHolder == 0 ? Qt::Unchecked : Qt::Checked;
+        itemStatuses[id] = static_cast<Statuses>(Statuses::LISTED);
+        // pathsById.emplace(index.internalId(), this->filePath(index));
+
+        if (rec.value(SqlMgr::ProjectFilesystemTable::Columns::expanded).toBool())
+        {
+            QModelIndex index = createIndex(parentItem->childCount() - 1, Columns::col_Name, item);
+            expanded.emplaceBack(std::move(index));
+        }
+    }
+    emit signal_expand(expanded);
 
     // QModelIndexList additionItems;
     // scanFilesystem(rootDirectory(), additionItems);
@@ -247,13 +260,18 @@ bool ProjectModel::scanItem(ProjectItem *item, double &orderIndex)
 
 void ProjectModel::checkItem(const QModelIndex &index)
 {
-    Qt::CheckState state = checkedItems.value(index.internalId(), Qt::Unchecked);
+    auto itemId = [this](const QModelIndex &index) -> qulonglong
+    {
+        return data(index, ProjectItem::Roles::ID).toULongLong();
+    };
+
+    Qt::CheckState state = checkedItems.value(itemId(index), Qt::Unchecked);
     if (state == Qt::Checked || state == Qt::Unchecked)
     {
         for (int i = 0; i < rowCount(index); ++i)
         {
             const QModelIndex &child = this->index(i, Columns::col_Name, index);
-            if (checkedItems.value(child.internalId(), Qt::Unchecked) != state)
+            if (checkedItems.value(itemId(child), Qt::Unchecked) != state)
             {
                 setData(child, state, Qt::CheckStateRole);
             }
@@ -272,11 +290,11 @@ void ProjectModel::checkItem(const QModelIndex &index)
     {
         const QModelIndex &child = this->index(i, Columns::col_Name, parent);
         ++visible;
-        if (checkedItems.value(child.internalId(), Qt::Unchecked) != Qt::Unchecked)
+        if (checkedItems.value(itemId(child), Qt::Unchecked) != Qt::Unchecked)
         {
             ++ch;
         }
-        if (checkedItems.value(child.internalId(), Qt::Unchecked) == Qt::PartiallyChecked)
+        if (checkedItems.value(itemId(child), Qt::Unchecked) == Qt::PartiallyChecked)
         {
             part = true;
         }
@@ -288,14 +306,14 @@ void ProjectModel::checkItem(const QModelIndex &index)
     }
     else if (ch == 0)
     {
-        if (checkedItems.value(parent.internalId(), Qt::Unchecked) != Qt::Unchecked)
+        if (checkedItems.value(itemId(parent), Qt::Unchecked) != Qt::Unchecked)
         {
             setData(parent, Qt::Unchecked, Qt::CheckStateRole);
         }
     }
     else if (ch == visible)
     {
-        if (checkedItems.value(parent.internalId(), Qt::Unchecked) != Qt::Checked)
+        if (checkedItems.value(itemId(parent), Qt::Unchecked) != Qt::Checked)
         {
             setData(parent, Qt::Checked, Qt::CheckStateRole);
         }
@@ -348,7 +366,7 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
         {
         case Qt::CheckStateRole:
         {
-            return QVariant(checkedItems.value(index.internalId(), Qt::Unchecked));
+            return QVariant(checkedItems.value(data(index, ProjectItem::Roles::ID).toULongLong(), Qt::Unchecked));
         }
         case Qt::DecorationRole:
         {
@@ -363,6 +381,26 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
             const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
             return item->getPath().dirName();
         }
+        case Qt::BackgroundRole:
+        {
+            const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
+            const Statuses status = itemStatuses.value(item->getId(), Statuses::DEFAULT);
+            if (status == Statuses::NOT_LISTED && checkedItems.value(item->getId()) != Qt::Checked)
+            {
+                return QVariant{};
+            }
+            return statusColors[status];
+        }
+        case ProjectItem::Roles::ID:
+        {
+            const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
+            return item->getId();
+        }
+        case ProjectItem::Roles::STATUS:
+        {
+            const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
+            return QVariant(itemStatuses.value(item->getId(), Statuses::DEFAULT));
+        }
         default:
             break;
         }
@@ -375,7 +413,7 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
         {
             const auto item = static_cast<const ProjectItem*>(index.internalPointer());
             if (item->isDir())
-                return QVariant(resultHolders.value(index.internalId(), Qt::Unchecked));
+                return QVariant(resultHolders.value(item->getId(), Qt::Unchecked));
             break;
         }
         case Qt::DisplayRole:
@@ -396,7 +434,7 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
     {
         if (role == Qt::CheckStateRole)
         {
-            checkedItems[index.internalId()] = static_cast<Qt::CheckState>(value.toInt());
+            checkedItems[data(index, ProjectItem::Roles::ID).toULongLong()] = static_cast<Qt::CheckState>(value.toInt());
             checkItem(index);
             return true;
         }
@@ -411,7 +449,8 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
                 resetResultHolderCheckstates_Up(index);
                 resetResultHolderCheckstates_Down(index);
             }
-            resultHolders[index.internalId()] = state;
+            auto item = static_cast<const ProjectItem*>(index.internalPointer());
+            resultHolders[item->getId()] = state;
             return true;
         }
     }

@@ -98,7 +98,7 @@ bool SqlMgr::createPickerDb()
                         , ProjectFilesystemTable::Columns::path));
 }
 
-bool SqlMgr::insertProjectElement(const uint64_t id, const uint64_t parentId, const Qt::CheckState print
+bool SqlMgr::insertProjectElement(const qulonglong id, const qulonglong parentId, const Qt::CheckState print
                                   , const Qt::CheckState resultHolder, const bool expanded, const QString &path)
 {
     const QString sql = QStringLiteral("INSERT INTO %1 (%2,%3,%4,%5,%6,%7) VALUES (%8,%9,%10,%11,%12,'%13');");
