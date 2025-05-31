@@ -31,6 +31,7 @@ BuildWidget::BuildWidget(QWidget *parent)
         // connect(project_treeView, &ProjectTreeView::signal_added, proxy_model, &ProjectProxyModel::slot_added);
         // connect(proxy_model, &ProjectProxyModel::signal_added, project_model, &ProjectFileSystemModel::slot_added);
     }
+    connect(project_model, &ProjectModel::signal_expand, project_treeView, &ProjectTreeView::slot_expand);
     connect(project_treeView, &ProjectTreeView::signal_setChecked, project_model, &ProjectModel::slot_setChecked);
     connect(project_treeView, &ProjectTreeView::signal_dropped, project_model, &ProjectModel::slot_dropped);
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
@@ -131,6 +132,7 @@ void BuildWidget::changeProject(const QString &path)
         return;
     if (!project_model->setProjectPath(path))
         return;
+    project_model->loadProjectItems();
     currentPath_label->setText(path);
 }
 
@@ -202,12 +204,19 @@ void BuildWidget::saveItem(const QModelIndex &index, SqlMgr &sqlMgr) const
     {
         return;
     }
+    auto parentItem = static_cast<const ProjectItem*>(index.parent().internalPointer());
+    if (!parentItem)
+    {
+        parentItem = project_model->getRootItem();
+    }
 
     const QModelIndex &index_resultHolderCol = index.siblingAtColumn(ProjectModel::Columns::col_ResultHolder);
-    if (!sqlMgr.insertProjectElement(project_model->data(index, Qt::CheckStateRole).value<Qt::CheckState>(),
-                                     project_model->data(index_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>(),
-                                     project_treeView->isExpanded(index),
-                                     item->getPath().absolutePath()))
+    if (!sqlMgr.insertProjectElement(item->getId()
+                                     , parentItem->getId()
+                                     , project_model->data(index, Qt::CheckStateRole).value<Qt::CheckState>()
+                                     , project_model->data(index_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>()
+                                     , project_treeView->isExpanded(index)
+                                     , item->getPath().absolutePath()))
     {
         qDebug() << "insertion failed: " << item->getPath().absolutePath();
     }

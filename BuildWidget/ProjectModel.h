@@ -22,6 +22,8 @@ class ProjectModel : public QAbstractItemModel
     QHash<quintptr, Qt::CheckState>     checkedItems;
     QHash<quintptr, Qt::CheckState>     resultHolders;
 
+    uint64_t idMax = 0;
+
 public:
     enum Columns
     {
@@ -29,6 +31,13 @@ public:
         col_ResultHolder,
 
         MAX
+    };
+
+    enum Statuses
+    {
+        DEFAULT = 0,
+        LISTED,
+        NOT_LISTED
     };
 
     Q_DISABLE_COPY_MOVE(ProjectModel)
@@ -47,15 +56,22 @@ public:
     bool hasChildren(const QModelIndex &parent = QModelIndex()) const override;
 
     bool setProjectPath(const QString &rootPath);
+    void loadProjectItems();
+
     QString projectDbFilePath() const;
     const ProjectItem *getRootItem() const;
 
 private:
+    bool readFromFile();
+    void scanFilesystem(const QDir &dir, QModelIndexList &additionItems);
     [[maybe_unused]] bool scanItem(ProjectItem *item, double &orderIndex);
     void checkItem(const QModelIndex &index);
     void cleanup();
     void resetResultHolderCheckstates_Up(const QModelIndex &index);
     void resetResultHolderCheckstates_Down(const QModelIndex &index);
+
+signals:
+    void signal_expand(const QModelIndexList &);
 
 public slots:
     void slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState);

@@ -2,7 +2,6 @@
 #define BUILDWIDGET_H
 
 #include <QWidget>
-#include <QStandardItemModel>
 
 class QToolBar;
 class QLabel;

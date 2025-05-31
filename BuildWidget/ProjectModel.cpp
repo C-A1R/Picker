@@ -1,8 +1,11 @@
 #include "ProjectModel.h"
+#include "SqlMgr.h"
+
+#include <QSqlRecord>
 
 ProjectModel::ProjectModel(QObject *parent)
     : QAbstractItemModel(parent)
-    , rootItem(std::make_unique<ProjectItem>(""))
+    , rootItem(std::make_unique<ProjectItem>(0, ""))
 {
 }
 
@@ -65,19 +68,27 @@ bool ProjectModel::hasChildren(const QModelIndex &parent) const
     return parentItem->childCount() > 0;
 }
 
-/// установить и просканировать диреторию проекта
+/// установить директорию проекта
 bool ProjectModel::setProjectPath(const QString &rootPath)
 {
-    auto projectRootItem = std::unique_ptr<ProjectItem>(new ProjectItem(rootPath));
+    auto projectRootItem = std::unique_ptr<ProjectItem>(new ProjectItem(0, rootPath));
     if (!projectRootItem->exists())
     {
         return false;
     }
-    cleanup();
     rootItem = std::move(projectRootItem);
-    double beginOrderIndex = rootItem->getOrderIndex();
-    scanItem(rootItem.get(), beginOrderIndex);
     return true;
+}
+
+/// загружаем элементы проекта из файла или из файловой системы
+void ProjectModel::loadProjectItems()
+{
+    cleanup();
+    if (!readFromFile())
+    {
+        double beginOrderIndex = rootItem->getOrderIndex();
+        scanItem(rootItem.get(), beginOrderIndex);
+    }
 }
 
 QString ProjectModel::projectDbFilePath() const
@@ -88,6 +99,114 @@ QString ProjectModel::projectDbFilePath() const
 const ProjectItem *ProjectModel::getRootItem() const
 {
     return rootItem.get();
+}
+
+/// читаем порядок из файла
+bool ProjectModel::readFromFile()
+{
+    return false;
+    // const QString dbFilename = projectDbFilePath();
+    // if (!QFile::exists(dbFilename))
+    // {
+    //     return false;
+    // }
+
+    // SqlMgr sqlMgr(dbFilename);
+    // if (!sqlMgr.open())
+    // {
+    //     qDebug("Can`t read primary order: file is busy");
+    //     return false;
+    // }
+
+    // QList<QSqlRecord> recs;
+    // if (!sqlMgr.readProjectElements(recs))
+    // {
+    //     qDebug("Can`t read primary order");
+    // }
+    // if (recs.empty())
+    // {
+    //     return true;
+    // }
+
+    // QModelIndexList expanded;
+    // for (const QSqlRecord &rec : std::as_const(recs))
+    // {
+    //     const QString path = rec.value(SqlMgr::ProjectFilesystemTable::Columns::path).toString();
+    //     const int printCheckState = rec.value(SqlMgr::ProjectFilesystemTable::Columns::printCheckstate).toInt();
+    //     const int resultHolder = rec.value(SqlMgr::ProjectFilesystemTable::Columns::resultHolder).toInt();
+    //     if (path.isEmpty())
+    //     {
+    //         continue;
+    //     }
+    //     const QModelIndex index = this->index(path);
+    //     if (!index.isValid())
+    //     {
+    //         //файл из списка был удален
+    //         qDebug() << "listed element was removed:" << path;
+    //         continue;
+    //     }
+    //     // orders.emplace_back(index.internalId());
+    //     checkedItems[index.internalId()] = printCheckState == 0 ? Qt::Unchecked : (printCheckState == 1 ? Qt::PartiallyChecked : Qt::Checked);
+    //     resultHolders[index.siblingAtColumn(Columns::col_ResultHolder).internalId()] = resultHolder == 0 ? Qt::Unchecked : Qt::Checked;
+    //     setData(index, Statuses::LISTED, ProjectItem::ItemRoles::StatusRole);
+    //     // pathsById.emplace(index.internalId(), this->filePath(index));
+    //     if (rec.value(SqlMgr::ProjectFilesystemTable::Columns::expanded).toBool())
+    //     {
+    //         expanded << index;
+    //     }
+    // }
+    // emit signal_expand(expanded);
+
+    // QModelIndexList additionItems;
+    // scanFilesystem(rootDirectory(), additionItems);
+    // for (const QModelIndex &ind : std::as_const(additionItems))
+    // {
+    //     checkItem(ind);//перепростановка галочек
+    // }
+    return true;
+}
+
+/// читаем файловую систему, ищем файлы, которых нет в списке
+void ProjectModel::scanFilesystem(const QDir &dir, QModelIndexList &additionItems)
+{
+    // const QModelIndex &index = this->index(dir.absolutePath(), Columns::col_Name);
+    // if (hiddenIndices.contains(index.internalId()))
+    // {
+    //     return;
+    // }
+
+    // const QFileInfoList &dirInfoList = dir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
+    // if (dir != this->rootDirectory())
+    // {
+    //     const QModelIndex &index = this->index(dir.absolutePath(), Columns::col_Name);
+    //     if (!orders.contains(index.internalId()))
+    //     {
+    //         additionItems.emplace_back(index);
+    //         orders.emplace_back(index.internalId());
+    //         setData(index, Statuses::NOT_LISTED, ProjectItemRoles::StatusRole);
+    //     }
+    // }
+    // for (const QFileInfo &dirInfo : dirInfoList)
+    // {
+    //     const QModelIndex &index = this->index(dirInfo.absoluteFilePath(), Columns::col_Name);
+    //     if (hiddenIndices.contains(index.internalId()))
+    //     {
+    //         continue;
+    //     }
+    //     scanFilesystem(QDir(dirInfo.absoluteFilePath()), additionItems);
+    // }
+    // const QFileInfoList pdfInfoList = dir.entryInfoList(QStringList{"*.pdf"}, QDir::Files, QDir::NoSort);
+    // for (const QFileInfo &pdfInfo : pdfInfoList)
+    // {
+    //     const QModelIndex &index = this->index(pdfInfo.absoluteFilePath(), Columns::col_Name);
+    //     if (!orders.contains(index.internalId()))
+    //     {
+    //         additionItems.emplace_back(index);
+    //         orders.emplace_back(index.internalId());
+    //         setData(index, Statuses::NOT_LISTED, ProjectItemRoles::StatusRole);
+    //         pathsById.emplace(index.internalId(), this->filePath(index));
+    //     }
+    // }
 }
 
 
@@ -108,7 +227,7 @@ bool ProjectModel::scanItem(ProjectItem *item, double &orderIndex)
     bool foundPdf = false;
     for (const QFileInfo &dirInfo : dirInfoList)
     {
-        auto child = std::unique_ptr<ProjectItem>(new ProjectItem(dirInfo.absoluteFilePath(), item));
+        auto child = std::unique_ptr<ProjectItem>(new ProjectItem(++idMax, dirInfo.absoluteFilePath(), item));
         child->setOrderIndex(++orderIndex);
         if (!scanItem(child.get(), orderIndex))
             continue;
@@ -118,7 +237,7 @@ bool ProjectModel::scanItem(ProjectItem *item, double &orderIndex)
 
     for (const QFileInfo &pdfInfo : pdfInfoList)
     {
-        auto child = std::unique_ptr<ProjectItem>(new ProjectItem(pdfInfo.absoluteFilePath(), item));
+        auto child = std::unique_ptr<ProjectItem>(new ProjectItem(++idMax, pdfInfo.absoluteFilePath(), item));
         child->setOrderIndex(++orderIndex);
         item->appendChild(std::move(child));
     }
@@ -186,6 +305,7 @@ void ProjectModel::checkItem(const QModelIndex &index)
 
 void ProjectModel::cleanup()
 {
+    idMax = 0;
     checkedItems.clear();
     resultHolders.clear();
     // pathsById.clear();

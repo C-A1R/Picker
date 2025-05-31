@@ -14,6 +14,7 @@
  */
 class ProjectItem
 {
+    const uint64_t      id{0};
     const QDir          m_path;
     const QFileInfo     m_info;
     QFileIconProvider   m_iconProvider;
@@ -23,7 +24,12 @@ class ProjectItem
     std::vector<std::unique_ptr<ProjectItem>>   m_childItems;
 
 public:
-    explicit ProjectItem(const QString &path, ProjectItem *parentItem = nullptr);
+    enum ItemRoles
+    {
+        StatusRole = Qt::UserRole
+    };
+
+    explicit ProjectItem(const uint64_t id, const QString &path, ProjectItem *parentItem = nullptr);
 
     void appendChild(std::unique_ptr<ProjectItem> &&child);
 
@@ -32,13 +38,14 @@ public:
     int row() const;
     ProjectItem *parentItem();
 
+    uint64_t getId() const;
     const QDir &getPath() const;
-    bool exists() const;
-    bool isDir() const;
-
-    void setOrderIndex(const double index);
     double getOrderIndex() const;
 
+    void setOrderIndex(const double index);
+
+    bool exists() const;
+    bool isDir() const;
     void sortChildren(const Qt::SortOrder order = Qt::AscendingOrder);
 };
 

@@ -1,8 +1,9 @@
 #include "ProjectItem.h"
 
 
-ProjectItem::ProjectItem(const QString &path, ProjectItem *parent)
-    : m_path{path}
+ProjectItem::ProjectItem(const uint64_t id, const QString &path, ProjectItem *parent)
+    : id{id}
+    , m_path{path}
     , m_info{m_path.absolutePath()}
     , m_parentItem{parent}
 {
@@ -45,9 +46,24 @@ ProjectItem *ProjectItem::parentItem()
     return m_parentItem;
 }
 
+uint64_t ProjectItem::getId() const
+{
+    return id;
+}
+
 const QDir &ProjectItem::getPath() const
 {
     return m_path;
+}
+
+double ProjectItem::getOrderIndex() const
+{
+    return m_orderIndex;
+}
+
+void ProjectItem::setOrderIndex(const double index)
+{
+    m_orderIndex = index;
 }
 
 bool ProjectItem::exists() const
@@ -58,16 +74,6 @@ bool ProjectItem::exists() const
 bool ProjectItem::isDir() const
 {
     return m_info.isDir();
-}
-
-void ProjectItem::setOrderIndex(const double index)
-{
-    m_orderIndex = index;
-}
-
-double ProjectItem::getOrderIndex() const
-{
-    return m_orderIndex;
 }
 
 void ProjectItem::sortChildren(const Qt::SortOrder order)

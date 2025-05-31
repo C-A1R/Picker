@@ -83,27 +83,34 @@ bool SqlMgr::rollback()
 bool SqlMgr::createPickerDb()
 {
     const QString sql = QStringLiteral("CREATE TABLE IF NOT EXISTS %1"
-                                       "(%2 INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL"
-                                       ", %3 INTEGER(1) DEFAULT 0"
-                                       ", %4 BOOL DEFAULT false"
+                                       "(%2 INTEGER PRIMARY KEY NOT NULL"
+                                       ", %3 INTEGER"
+                                       ", %4 INTEGER(1) DEFAULT 0"
                                        ", %5 BOOL DEFAULT false"
-                                       ", %6 TEXT);");
+                                       ", %6 BOOL DEFAULT false"
+                                       ", %7 TEXT);");
     return exec(sql.arg(ProjectFilesystemTable::tableName
                         , ProjectFilesystemTable::Columns::id
+                        , ProjectFilesystemTable::Columns::parentId
                         , ProjectFilesystemTable::Columns::printCheckstate
                         , ProjectFilesystemTable::Columns::resultHolder
                         , ProjectFilesystemTable::Columns::expanded
                         , ProjectFilesystemTable::Columns::path));
 }
 
-bool SqlMgr::insertProjectElement(const Qt::CheckState print, const Qt::CheckState resultHolder, const bool expanded, const QString &path)
+bool SqlMgr::insertProjectElement(const uint64_t id, const uint64_t parentId, const Qt::CheckState print
+                                  , const Qt::CheckState resultHolder, const bool expanded, const QString &path)
 {
-    const QString sql = QStringLiteral("INSERT INTO %1 (%2,%3,%4,%5) VALUES (%6,%7,%8,'%9')");
+    const QString sql = QStringLiteral("INSERT INTO %1 (%2,%3,%4,%5,%6,%7) VALUES (%8,%9,%10,%11,%12,'%13');");
     return exec(sql.arg(ProjectFilesystemTable::tableName
+                        , ProjectFilesystemTable::Columns::id
+                        , ProjectFilesystemTable::Columns::parentId
                         , ProjectFilesystemTable::Columns::printCheckstate
                         , ProjectFilesystemTable::Columns::resultHolder
                         , ProjectFilesystemTable::Columns::expanded
                         , ProjectFilesystemTable::Columns::path)
+                    .arg(id)
+                    .arg(parentId)
                     .arg(print == Qt::Unchecked ? 0 : (print == Qt::PartiallyChecked ? 1 : 2))
                     .arg(resultHolder == Qt::Unchecked ? 0 : 1)
                     .arg(expanded)
