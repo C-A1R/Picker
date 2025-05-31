@@ -208,12 +208,12 @@ void BuildWidget::saveItem(const QModelIndex &index, SqlMgr &sqlMgr) const
     if (!parentItem)
     {
         return;
-        // parentItem = project_model->getRootItem();
     }
 
     const QModelIndex &index_resultHolderCol = index.siblingAtColumn(Columns::col_ResultHolder);
     if (!sqlMgr.insertProjectElement(item->getId()
                                      , parentItem->getId()
+                                     , item->getOrderIndex()
                                      , project_model->data(index, Qt::CheckStateRole).value<Qt::CheckState>()
                                      , project_model->data(index_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>()
                                      , project_treeView->isExpanded(index)

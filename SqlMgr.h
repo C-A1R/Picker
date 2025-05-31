@@ -16,6 +16,7 @@ public:
         {
             static constexpr char const * const id{"id"};
             static constexpr char const * const parentId{"parent_id"};
+            static constexpr char const * const order{"\"order\""};
             static constexpr char const * const printCheckstate{"print_checkstate"};
             static constexpr char const * const resultHolder{"result_holder"};
             static constexpr char const * const expanded{"expanded"};
@@ -34,7 +35,7 @@ public:
     [[nodiscard]] bool rollback();
 
     [[nodiscard]] bool createPickerDb();
-    [[nodiscard]] bool insertProjectElement(const qulonglong id, const qulonglong parentId, const Qt::CheckState print
+    [[nodiscard]] bool insertProjectElement(const qulonglong id, const qulonglong parentId, const double orderIndex, const Qt::CheckState print
                                             , const Qt::CheckState resultHolder, const bool expanded, const QString &path);
     [[nodiscard]] bool readProjectElements(QList<QSqlRecord> &result);
 

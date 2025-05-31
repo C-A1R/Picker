@@ -130,6 +130,7 @@ bool ProjectModel::readFromFile()
     QHash<qulonglong, ProjectItem *> itemsById;
     itemsById.reserve(recs.size());
     itemsById.insert(rootItem->getId(), rootItem.get());
+    double orderIndex = rootItem->getOrderIndex();
 
     QModelIndexList expanded;
     for (const QSqlRecord &rec : std::as_const(recs))
@@ -151,6 +152,7 @@ bool ProjectModel::readFromFile()
             qDebug() << "Item was removed:" << path;
             continue;
         }
+        item_ptr->setOrderIndex(++orderIndex);//перенумерация порядка, чтобы отбросить дробную часть
         parentItem->appendChild(std::move(item_ptr));
         ProjectItem *item = parentItem->child(parentItem->childCount() - 1);
         itemsById.insert(item->getId(), item);

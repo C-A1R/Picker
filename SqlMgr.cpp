@@ -83,34 +83,38 @@ bool SqlMgr::rollback()
 bool SqlMgr::createPickerDb()
 {
     const QString sql = QStringLiteral("CREATE TABLE IF NOT EXISTS %1"
-                                       "(%2 INTEGER PRIMARY KEY NOT NULL"
-                                       ", %3 INTEGER"
-                                       ", %4 INTEGER(1) DEFAULT 0"
-                                       ", %5 BOOL DEFAULT false"
-                                       ", %6 BOOL DEFAULT false"
-                                       ", %7 TEXT);");
+                                       "(%2 INTEGER PRIMARY KEY NOT NULL"   //id
+                                       ", %3 INTEGER"                       //parentId
+                                       ", %4 REAL"                          //order
+                                       ", %5 INTEGER(1) DEFAULT 0"          //printCheckstate
+                                       ", %6 BOOL DEFAULT false"            //resultHolder
+                                       ", %7 BOOL DEFAULT false"            //expanded
+                                       ", %8 TEXT);");                      //path
     return exec(sql.arg(ProjectFilesystemTable::tableName
                         , ProjectFilesystemTable::Columns::id
                         , ProjectFilesystemTable::Columns::parentId
+                        , ProjectFilesystemTable::Columns::order
                         , ProjectFilesystemTable::Columns::printCheckstate
                         , ProjectFilesystemTable::Columns::resultHolder
                         , ProjectFilesystemTable::Columns::expanded
                         , ProjectFilesystemTable::Columns::path));
 }
 
-bool SqlMgr::insertProjectElement(const qulonglong id, const qulonglong parentId, const Qt::CheckState print
+bool SqlMgr::insertProjectElement(const qulonglong id, const qulonglong parentId, const double orderIndex, const Qt::CheckState print
                                   , const Qt::CheckState resultHolder, const bool expanded, const QString &path)
 {
-    const QString sql = QStringLiteral("INSERT INTO %1 (%2,%3,%4,%5,%6,%7) VALUES (%8,%9,%10,%11,%12,'%13');");
+    const QString sql = QStringLiteral("INSERT INTO %1 (%2,%3,%4,%5,%6,%7,%8) VALUES (%9,%10,%11,%12,%13,%14,'%15');");
     return exec(sql.arg(ProjectFilesystemTable::tableName
                         , ProjectFilesystemTable::Columns::id
                         , ProjectFilesystemTable::Columns::parentId
+                        , ProjectFilesystemTable::Columns::order
                         , ProjectFilesystemTable::Columns::printCheckstate
                         , ProjectFilesystemTable::Columns::resultHolder
                         , ProjectFilesystemTable::Columns::expanded
                         , ProjectFilesystemTable::Columns::path)
                     .arg(id)
                     .arg(parentId)
+                    .arg(orderIndex)
                     .arg(print == Qt::Unchecked ? 0 : (print == Qt::PartiallyChecked ? 1 : 2))
                     .arg(resultHolder == Qt::Unchecked ? 0 : 1)
                     .arg(expanded)
@@ -120,7 +124,7 @@ bool SqlMgr::insertProjectElement(const qulonglong id, const qulonglong parentId
 bool SqlMgr::readProjectElements(QList<QSqlRecord> &result)
 {
     const QString sql = QStringLiteral("SELECT * FROM %1 ORDER BY %2");
-    return table(sql.arg(ProjectFilesystemTable::tableName, ProjectFilesystemTable::Columns::id), result);
+    return table(sql.arg(ProjectFilesystemTable::tableName, ProjectFilesystemTable::Columns::order), result);
 }
 
 bool SqlMgr::table(const QString &sql, QList<QSqlRecord> &result)
