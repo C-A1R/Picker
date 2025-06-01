@@ -551,25 +551,28 @@ void ProjectModel::slot_dropped(const QModelIndex &droppedIndex, const QModelInd
         newOrderIndex = parentItem->child(parentItem->childCount() - 1)->getOrderIndex();
         orderStep = 1.0;
     }
-    else
-    {
-        if (!beforeDroppedItem)
-        {
-            //переместили в начало
-            const QModelIndex &droppedIndexParent = droppedIndex.parent();
-            droppedIndexParent.isValid() ? beforeDroppedItem = static_cast<ProjectItem*>(droppedIndexParent.internalPointer())
-                                         : beforeDroppedItem = rootItem.get();
-        }
 
-        const QModelIndex &parentIndex = droppedIndex.parent();
-        parentItem = parentIndex.isValid() ? static_cast<ProjectItem*>(parentIndex.internalPointer())
-                                           : rootItem.get();
-        newOrderIndex = beforeDroppedItem->getOrderIndex();
-        orderStep = (droppedItem->getOrderIndex() - beforeDroppedItem->getOrderIndex()) / (draggedIndices.count() + 1);
+    if  (!droppedItem)
+    {
+        return;
     }
+
+    if (!beforeDroppedItem)
+    {
+        //переместили в начало
+        const QModelIndex &droppedIndexParent = droppedIndex.parent();
+        droppedIndexParent.isValid() ? beforeDroppedItem = static_cast<ProjectItem*>(droppedIndexParent.internalPointer())
+                                     : beforeDroppedItem = rootItem.get();
+    }
+
+    const QModelIndex &parentIndex = droppedIndex.parent();
+    parentItem = parentIndex.isValid() ? static_cast<ProjectItem*>(parentIndex.internalPointer())
+                                       : rootItem.get();
+    newOrderIndex = beforeDroppedItem->getOrderIndex();
+    orderStep = (droppedItem->getOrderIndex() - beforeDroppedItem->getOrderIndex()) / (draggedIndices.count() + 1);
+
     newOrderIndex += orderStep;
 
-    emit layoutAboutToBeChanged();
     for (const QModelIndex &index : draggedIndices)
     {
         if (index.column() != Columns::col_Name)
@@ -582,6 +585,7 @@ void ProjectModel::slot_dropped(const QModelIndex &droppedIndex, const QModelInd
         qDebug() << "dragged:" << item->getPath().dirName() << "new_order:"  << item->getOrderIndex();
     }
 
+    emit layoutAboutToBeChanged();
     if (parentItem)
     {
         parentItem->sortChildren(); // sort parent item children by order index;

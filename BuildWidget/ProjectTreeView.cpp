@@ -1,5 +1,6 @@
 #include "ProjectTreeView.h"
 #include "Enums.h"
+#include "ProjectItem.h"
 
 #include <QDropEvent>
 #include <QMenu>
@@ -120,6 +121,8 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
         droppedIndex = model()->index(droppedIndex.row() + 1, droppedIndex.column(), droppedIndex.parent());
     }
 
+    QSet<qulonglong> expandedIds;
+    getExpandedItemIds(rootIndex(), expandedIds);
     // if (event->source() == this && event->mimeData()->hasFormat("text/uri-list")) // from this
     if (event->source() == this && event->mimeData()->hasFormat("application/x-qabstractitemmodeldatalist")) // from this
     {
@@ -138,9 +141,9 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
     {
         emit signal_added(droppedIndex, event->mimeData()->text());
     }
-    this->sortByColumn(Columns::col_Name, Qt::AscendingOrder);
     event->accept();
     this->selectionModel()->clearSelection();
+    expandItems(rootIndex(), expandedIds);
 }
 
 QAbstractItemView::DropIndicatorPosition ProjectTreeView::getDropIndicatorPosition(const QPoint &position, const QRect &rect)
@@ -159,6 +162,38 @@ QAbstractItemView::DropIndicatorPosition ProjectTreeView::getDropIndicatorPositi
         return DropIndicatorPosition::OnItem;
     }
     return DropIndicatorPosition::OnViewport;
+}
+
+void ProjectTreeView::getExpandedItemIds(const QModelIndex &index, QSet<qulonglong> &expandedIds) const
+{
+    const ProjectItem *item = static_cast<const ProjectItem*>(index.internalPointer());
+    if (item)
+    {
+        if (isExpanded(index))
+            expandedIds.insert(static_cast<const ProjectItem*>(index.internalPointer())->getId());
+        else
+            return;
+    }
+    for (int i = 0; i < model()->rowCount(index); ++i)
+    {
+        getExpandedItemIds(model()->index(i, 0, index), expandedIds);
+    }
+}
+
+void ProjectTreeView::expandItems(const QModelIndex &index, const QSet<qulonglong> &expandedIds)
+{
+    const ProjectItem *item = static_cast<const ProjectItem*>(index.internalPointer());
+    if (item)
+    {
+        if (expandedIds.contains(item->getId()))
+            expand(index);
+        else
+            return;
+    }
+    for (int i = 0; i < model()->rowCount(index); ++i)
+    {
+        expandItems(model()->index(i, 0, index), expandedIds);
+    }
 }
 
 void ProjectTreeView::slot_expand(const QModelIndexList &indices)
