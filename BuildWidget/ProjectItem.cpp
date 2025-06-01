@@ -14,7 +14,7 @@ void ProjectItem::appendChild(std::unique_ptr<ProjectItem> &&child)
     m_childItems.emplace_back(std::move(child));
 }
 
-ProjectItem *ProjectItem::child(const int row)
+ProjectItem *ProjectItem::child(const int row) const
 {
     return row >= 0 && row < childCount() ? m_childItems.at(row).get() : nullptr;
 }

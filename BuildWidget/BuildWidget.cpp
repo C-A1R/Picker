@@ -273,53 +273,53 @@ void BuildWidget::slot_saveList()
 
 void BuildWidget::slot_build()
 {
-    // if (saveOptions == SaveOptions::SAVE_NONE)
-    // {
-    //     QMessageBox::warning(this, windowTitle(), "Не выбраны опции сохранения");
-    //     return;
-    // }
-    // const auto checkedPdf = project_model->getCheckedPdfPaths();
-    // if (checkedPdf.isEmpty())
-    // {
-    //     QMessageBox::warning(this, windowTitle(), "Не выбраны файлы для сохранения");
-    //     return;
-    // }
+    if (saveOptions == SaveOptions::SAVE_NONE)
+    {
+        QMessageBox::warning(this, windowTitle(), "Не выбраны опции сохранения");
+        return;
+    }
+    const QStringList checkedPdf = project_model->getCheckedPdfPaths();
+    if (checkedPdf.isEmpty())
+    {
+        QMessageBox::warning(this, windowTitle(), "Не выбраны файлы для сохранения");
+        return;
+    }
 
-    // if (saveOptions == SaveOptions::SAVE_TO_PROJECT_DIRECTORIES)
-    // {
-    //     builder.reset(new ToProjectDirectoriesPdfBuilder(project_model->getResultHolders()));
-    // }
-    // else if (saveOptions == SaveOptions::SAVE_TO_SEPARATE_DIRECTORY)
-    // {
-    //     QString defenitFolder = getDefenitFolder();
-    //     if (defenitFolder.isEmpty())
-    //     {
-    //         return;
-    //     }
-    //     builder.reset(new ToSeparateDirectoryPdfBuilder(project_model->getResultHolders(), std::move(defenitFolder)));
-    // }
-    // else if (saveOptions.testFlag(SaveOptions::SAVE_TO_PROJECT_DIRECTORIES)
-    //            && saveOptions.testFlag(SaveOptions::SAVE_TO_SEPARATE_DIRECTORY))
-    // {
-    //     QString defenitFolder = getDefenitFolder();
-    //     if (defenitFolder.isEmpty())
-    //     {
-    //         return;
-    //     }
-    //     builder.reset(new ToProjectAndSeparateDirectoryPdfBuilder(project_model->getResultHolders(),  std::move(defenitFolder)));
-    // }
-    // else
-    // {
-    //     builder.reset(nullptr);
-    // }
-    // if (builder.isNull())
-    // {
-    //     QMessageBox::critical(this, windowTitle(), "Не могу выполнить сборку");
-    //     return;
-    // }
-    // connect(builder.get(), &IPdfBuilder::signal_finished, this, &BuildWidget::slot_buildFinished);
-    // connect(builder.get(), &IPdfBuilder::signal_cancelled, this, &BuildWidget::slot_buildCancelled);
-    // builder->exec(checkedPdf);
+    if (saveOptions == SaveOptions::SAVE_TO_PROJECT_DIRECTORIES)
+    {
+        builder.reset(new ToProjectDirectoriesPdfBuilder(project_model->getResultHolderPaths()));
+    }
+    else if (saveOptions == SaveOptions::SAVE_TO_SEPARATE_DIRECTORY)
+    {
+        QString defenitFolder = getDefenitFolder();
+        if (defenitFolder.isEmpty())
+        {
+            return;
+        }
+        builder.reset(new ToSeparateDirectoryPdfBuilder(project_model->getResultHolderPaths(), std::move(defenitFolder)));
+    }
+    else if (saveOptions.testFlag(SaveOptions::SAVE_TO_PROJECT_DIRECTORIES)
+               && saveOptions.testFlag(SaveOptions::SAVE_TO_SEPARATE_DIRECTORY))
+    {
+        QString defenitFolder = getDefenitFolder();
+        if (defenitFolder.isEmpty())
+        {
+            return;
+        }
+        builder.reset(new ToProjectAndSeparateDirectoryPdfBuilder(project_model->getResultHolderPaths(),  std::move(defenitFolder)));
+    }
+    else
+    {
+        builder.reset(nullptr);
+    }
+    if (builder.isNull())
+    {
+        QMessageBox::critical(this, windowTitle(), "Не могу выполнить сборку");
+        return;
+    }
+    connect(builder.get(), &IPdfBuilder::signal_finished, this, &BuildWidget::slot_buildFinished);
+    connect(builder.get(), &IPdfBuilder::signal_cancelled, this, &BuildWidget::slot_buildCancelled);
+    builder->exec(checkedPdf);
 }
 
 void BuildWidget::slot_saveToFoldersOptionChanged(bool checked)

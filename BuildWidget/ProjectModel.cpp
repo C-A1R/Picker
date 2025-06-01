@@ -101,6 +101,64 @@ const ProjectItem *ProjectModel::getRootItem() const
     return rootItem.get();
 }
 
+QStringList ProjectModel::getCheckedPdfPaths() const
+{
+    QStringList checked;
+    getCheckedPdf(rootItem.get(), checked);
+    return checked;
+}
+
+QStringList ProjectModel::getResultHolderPaths() const
+{
+    QStringList checked;
+    getResultHolders(rootItem.get(), checked);
+    return checked;
+}
+
+void ProjectModel::getCheckedPdf(const ProjectItem *item, QStringList &result) const
+{
+    for (int i = 0; i < item->childCount(); ++i)
+    {
+        const ProjectItem *child = item->child(i);
+        if (!child)
+            continue;
+
+        const Qt::CheckState state = checkedItems.value(child->getId(), Qt::Unchecked);
+        if (state == Qt::Unchecked)
+            continue;
+
+        if (child->isDir())
+        {
+            getCheckedPdf(child, result);
+            continue;
+        }
+
+        if (state == Qt::Checked)
+            result.append(child->getPath().absolutePath());
+    }
+}
+
+void ProjectModel::getResultHolders(const ProjectItem *item, QStringList &result) const
+{
+    for (int i = 0; i < item->childCount(); ++i)
+    {
+        const ProjectItem *child = item->child(i);
+        if (!child)
+            continue;
+
+        if (!child->isDir())
+            continue;
+
+        const Qt::CheckState state = resultHolders.value(child->getId(), Qt::Unchecked);
+        if (state == Qt::Checked)
+        {
+            result.append(child->getPath().absolutePath());
+            continue;
+        }
+        getResultHolders(child, result);
+    }
+}
+
 /// читаем порядок из файла
 bool ProjectModel::readFromFile()
 {
@@ -486,6 +544,7 @@ void ProjectModel::slot_dropped(const QModelIndex &droppedIndex, const QModelInd
     double orderStep = 0.0;
     if (!droppedItem && !beforeDroppedItem)
     {
+        //переместили в конец
         const QModelIndex &parentIndex = draggedIndices.first().parent();
         parentItem = parentIndex.isValid() ? static_cast<ProjectItem*>(parentIndex.internalPointer())
                                            : rootItem.get();
@@ -494,6 +553,14 @@ void ProjectModel::slot_dropped(const QModelIndex &droppedIndex, const QModelInd
     }
     else
     {
+        if (!beforeDroppedItem)
+        {
+            //переместили в начало
+            const QModelIndex &droppedIndexParent = droppedIndex.parent();
+            droppedIndexParent.isValid() ? beforeDroppedItem = static_cast<ProjectItem*>(droppedIndexParent.internalPointer())
+                                         : beforeDroppedItem = rootItem.get();
+        }
+
         const QModelIndex &parentIndex = droppedIndex.parent();
         parentItem = parentIndex.isValid() ? static_cast<ProjectItem*>(parentIndex.internalPointer())
                                            : rootItem.get();

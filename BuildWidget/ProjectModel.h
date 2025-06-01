@@ -54,6 +54,8 @@ public:
 
     QString projectDbFilePath() const;
     const ProjectItem *getRootItem() const;
+    QStringList getCheckedPdfPaths() const;
+    QStringList getResultHolderPaths() const;
 
 private:
     bool readFromFile();
@@ -63,6 +65,8 @@ private:
     void cleanup();
     void resetResultHolderCheckstates_Up(const QModelIndex &index);
     void resetResultHolderCheckstates_Down(const QModelIndex &index);
+    void getCheckedPdf(const ProjectItem *item, QStringList &result) const;
+    void getResultHolders(const ProjectItem *item, QStringList &result) const;
 
 signals:
     void signal_expand(const QModelIndexList &);

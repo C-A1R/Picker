@@ -34,7 +34,7 @@ public:
 
     void appendChild(std::unique_ptr<ProjectItem> &&child);
 
-    ProjectItem *child(const int row);
+    ProjectItem *child(const int row) const;
     int childCount() const;
     int row() const;
     ProjectItem *parentItem() const;
