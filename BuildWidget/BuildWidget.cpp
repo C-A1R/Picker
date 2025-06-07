@@ -16,6 +16,8 @@
 #include <QHBoxLayout>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QStyleHints>
+#include <QApplication>
 
 
 BuildWidget::BuildWidget(QWidget *parent)
@@ -45,25 +47,32 @@ BuildWidget::~BuildWidget()
 
 void BuildWidget::initUi()
 {
+    const bool isDarkTheme = QApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
     actions_toolBar = new QToolBar(this);
     {
         auto act = new QAction(actions_toolBar);
         act->setToolTip("Указать путь к проекту");
-        act->setIcon(QIcon(":/buildWidget/ico/suitcase.svg"));
+        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/suitcase_dark.svg")
+                                       : QIcon(":/buildWidget/ico/suitcase.svg");
+        act->setIcon(icon);
         connect(act, &QAction::triggered, this, &BuildWidget::slot_changeProject);
         actions_toolBar->addAction(act);
     }
     {
         auto act = new QAction(actions_toolBar);
         act->setToolTip("Сохранить список");
-        act->setIcon(QIcon(":/buildWidget/ico/save.svg"));
+        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/save_dark.svg")
+                                       : QIcon(":/buildWidget/ico/save.svg");
+        act->setIcon(icon);
         connect(act, &QAction::triggered, this, &BuildWidget::slot_saveList);
         actions_toolBar->addAction(act);
     }
     {
         auto act = new QAction(actions_toolBar);
         act->setToolTip("Собрать");
-        act->setIcon(QIcon(":/buildWidget/ico/build.svg"));
+        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/build_dark.svg")
+                                       : QIcon(":/buildWidget/ico/build.svg");
+        act->setIcon(icon);
         connect(act, &QAction::triggered, this, &BuildWidget::slot_build);
         actions_toolBar->addAction(act);
     }
@@ -72,7 +81,9 @@ void BuildWidget::initUi()
     {
         auto act = new QAction(saveOptions_toolBar);
         act->setToolTip("Сохранить в каталогах");
-        act->setIcon(QIcon(":/buildWidget/ico/folders.svg"));
+        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/folders_dark.svg")
+                                       : QIcon(":/buildWidget/ico/folders.svg");
+        act->setIcon(icon);
         act->setCheckable(true);
         act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_PROJECT_DIRECTORIES));
         connect(act, &QAction::triggered, this, &BuildWidget::slot_saveToFoldersOptionChanged);
@@ -81,7 +92,9 @@ void BuildWidget::initUi()
     {
         auto act = new QAction(saveOptions_toolBar);
         act->setToolTip("Сохранить в указанный каталог");
-        act->setIcon(QIcon(":/buildWidget/ico/folder.svg"));
+        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/folder_dark.svg")
+                                       : QIcon(":/buildWidget/ico/folder.svg");
+        act->setIcon(icon);
         act->setCheckable(true);
         act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_SEPARATE_DIRECTORY));
         connect(act, &QAction::triggered, this, &BuildWidget::slot_saveToDefenitFolderOptionChanged);
