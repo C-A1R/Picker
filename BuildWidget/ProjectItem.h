@@ -20,8 +20,8 @@ class ProjectItem
     QFileIconProvider   m_iconProvider;
     double              m_orderIndex{1.0};
 
-    ProjectItem                                 *m_parentItem;
-    std::vector<std::unique_ptr<ProjectItem>>   m_childItems;
+    std::weak_ptr<ProjectItem>                  m_parentItem;
+    std::vector<std::shared_ptr<ProjectItem>>   m_childItems;
 
 public:
     enum Roles
@@ -30,14 +30,14 @@ public:
         STATUS
     };
 
-    explicit ProjectItem(const qulonglong id, const QString &path, ProjectItem *parentItem = nullptr);
+    explicit ProjectItem(const qulonglong id, const QString &path, std::shared_ptr<ProjectItem> parentItem = nullptr);
 
-    void appendChild(std::unique_ptr<ProjectItem> &&child);
+    void appendChild(const std::shared_ptr<ProjectItem> &child);
 
-    ProjectItem *child(const int row) const;
+    std::shared_ptr<ProjectItem> child(const int row) const;
     int childCount() const;
     int row() const;
-    ProjectItem *parentItem() const;
+    std::shared_ptr<ProjectItem> parentItem() const;
 
     qulonglong getId() const;
     const QDir &getPath() const;

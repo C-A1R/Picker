@@ -26,10 +26,6 @@ BuildWidget::BuildWidget(QWidget *parent)
 {
     initUi();
     {
-        // connect(project_model, &ProjectFileSystemModel::signal_expand, proxy_model, &ProjectProxyModel::slot_expand);
-        // connect(proxy_model, &ProjectProxyModel::signal_expand, project_treeView, &ProjectTreeView::slot_expand);
-    }
-    {
         // connect(project_treeView, &ProjectTreeView::signal_added, proxy_model, &ProjectProxyModel::slot_added);
         // connect(proxy_model, &ProjectProxyModel::signal_added, project_model, &ProjectFileSystemModel::slot_added);
     }
@@ -170,7 +166,7 @@ QString BuildWidget::getDefenitFolder() const
     return defenitFolder;
 }
 
-void BuildWidget::saveProjectTree(const ProjectItem *rootItem, SqlMgr &sqlMgr) const
+void BuildWidget::saveProjectTree(const std::shared_ptr<const ProjectItem> &rootItem, SqlMgr &sqlMgr) const
 {
     if (!rootItem)
     {
@@ -217,7 +213,7 @@ void BuildWidget::saveItem(const QModelIndex &index, SqlMgr &sqlMgr) const
     {
         return;
     }
-    const ProjectItem *parentItem = item->parentItem();
+    const std::shared_ptr<const ProjectItem> parentItem = item->parentItem();
     if (!parentItem)
     {
         return;

@@ -6,8 +6,6 @@
 
 #include <QAbstractItemModel>
 
-class ProjectItem;
-
 /**
  * @brief The ProjectModel class
  * Модель для отображения файловой системы проекта
@@ -17,12 +15,13 @@ class ProjectModel : public QAbstractItemModel
 {
     Q_OBJECT
 
-    std::unique_ptr<ProjectItem>        rootItem;
+    std::shared_ptr<ProjectItem>        rootItem;
 
     QFileIconProvider                   iconProvider;
     QHash<qulonglong, Qt::CheckState>   checkedItems;
     QHash<qulonglong, Qt::CheckState>   resultHolders;
     QHash<qulonglong, Statuses>         itemStatuses;
+    QHash<QString, std::shared_ptr<ProjectItem>>       itemPaths;
 
     qulonglong idMax = 0;
 
@@ -53,20 +52,21 @@ public:
     void loadProjectItems();
 
     QString projectDbFilePath() const;
-    const ProjectItem *getRootItem() const;
+    std::shared_ptr<const ProjectItem> getRootItem() const;
     QStringList getCheckedPdfPaths() const;
     QStringList getResultHolderPaths() const;
 
 private:
-    bool readFromFile();
-    void scanFilesystem(const QDir &dir, QModelIndexList &additionItems);
-    [[maybe_unused]] bool scanItem(ProjectItem *item, double &orderIndex);
+    bool readFromDb();
+    [[maybe_unused]] bool scanFilesystemItem(const std::shared_ptr<ProjectItem> &item, double &orderIndex);
     void checkItem(const QModelIndex &index);
     void cleanup();
     void resetResultHolderCheckstates_Up(const QModelIndex &index);
     void resetResultHolderCheckstates_Down(const QModelIndex &index);
-    void getCheckedPdf(const ProjectItem *item, QStringList &result) const;
-    void getResultHolders(const ProjectItem *item, QStringList &result) const;
+    void getCheckedPdf(const std::shared_ptr<const ProjectItem> &item, QStringList &result) const;
+    void getResultHolders(const std::shared_ptr<const ProjectItem> &item, QStringList &result) const;
+
+    void insertItem(const std::shared_ptr<ProjectItem> &item, std::shared_ptr<ProjectItem> parentItem = nullptr);
 
 signals:
     void signal_expand(const QModelIndexList &);

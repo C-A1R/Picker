@@ -1,7 +1,7 @@
 #include "ProjectItem.h"
 
 
-ProjectItem::ProjectItem(const qulonglong id, const QString &path, ProjectItem *parent)
+ProjectItem::ProjectItem(const qulonglong id, const QString &path, std::shared_ptr<ProjectItem> parent)
     : id{id}
     , m_path{path}
     , m_info{m_path.absolutePath()}
@@ -9,14 +9,14 @@ ProjectItem::ProjectItem(const qulonglong id, const QString &path, ProjectItem *
 {
 }
 
-void ProjectItem::appendChild(std::unique_ptr<ProjectItem> &&child)
+void ProjectItem::appendChild(const std::shared_ptr<ProjectItem> &child)
 {
-    m_childItems.emplace_back(std::move(child));
+    m_childItems.emplace_back(child);
 }
 
-ProjectItem *ProjectItem::child(const int row) const
+std::shared_ptr<ProjectItem> ProjectItem::child(const int row) const
 {
-    return row >= 0 && row < childCount() ? m_childItems.at(row).get() : nullptr;
+    return row >= 0 && row < childCount() ? m_childItems.at(row) : nullptr;
 }
 
 int ProjectItem::childCount() const
@@ -26,24 +26,25 @@ int ProjectItem::childCount() const
 
 int ProjectItem::row() const
 {
-    if (m_parentItem == nullptr)
+    auto parent = m_parentItem.lock();
+    if (!parent)
         return 0;
 
-    const auto it = std::find_if(m_parentItem->m_childItems.cbegin(), m_parentItem->m_childItems.cend(),
-                                 [this](const std::unique_ptr<ProjectItem> &treeItem) {
+    const auto it = std::find_if(parent->m_childItems.cbegin(), parent->m_childItems.cend(),
+                                 [this](const std::shared_ptr<ProjectItem> &treeItem) {
                                      return treeItem.get() == this;
                                  });
 
-    if (it != m_parentItem->m_childItems.cend())
-        return std::distance(m_parentItem->m_childItems.cbegin(), it);
+    if (it != parent->m_childItems.cend())
+        return std::distance(parent->m_childItems.cbegin(), it);
 
     Q_ASSERT(false); // should not happen
     return -1;
 }
 
-ProjectItem *ProjectItem::parentItem() const
+std::shared_ptr<ProjectItem> ProjectItem::parentItem() const
 {
-    return m_parentItem;
+    return m_parentItem.lock();
 }
 
 qulonglong ProjectItem::getId() const
@@ -79,7 +80,7 @@ bool ProjectItem::isDir() const
 void ProjectItem::sortChildren(const Qt::SortOrder order)
 {
     std::sort(m_childItems.begin(), m_childItems.end(),
-              [order](const std::unique_ptr<ProjectItem> &a, const std::unique_ptr<ProjectItem> &b) -> bool
+              [order](const std::shared_ptr<ProjectItem> &a, const std::shared_ptr<ProjectItem> &b) -> bool
               {
                   return (order == Qt::AscendingOrder) ? a->getOrderIndex() < b->getOrderIndex()
                                                        : a->getOrderIndex() > b->getOrderIndex();
