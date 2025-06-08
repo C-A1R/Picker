@@ -50,6 +50,10 @@ void AbstractPdfBuilder::exec(const QStringList &paths)
             }
         }
     }
+    if(structure.empty())
+    {
+        return;
+    }
 
     QSharedPointer<QProgressDialog> progress(new QProgressDialog("Сборка...", "Отмена", currentProgress, 0));
     progress->setWindowModality(Qt::ApplicationModal);

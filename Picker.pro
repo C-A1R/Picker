@@ -1,18 +1,26 @@
-QT       += core gui sql
-
+QT += core gui sql
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
 
-LIBS += -L$$PWD/lib/ -lPDFWriter
-LIBS += -L$$PWD/lib/ -lFreeType
-LIBS += -L$$PWD/lib/ -lLibAesgm
-LIBS += -L$$PWD/lib/ -lZlib
+LIBDIR = $$PWD/lib
+win32: LIBDIR = $$LIBDIR/win32
+unix:  LIBDIR = $$LIBDIR/unix
+
+LIBS += -L$$LIBDIR/ -lPDFWriter
+LIBS += -L$$LIBDIR/ -lFreeType
+LIBS += -L$$LIBDIR/ -lLibAesgm
+LIBS += -L$$LIBDIR/ -lZlib
+unix {
+    LIBS += -L$$LIBDIR/ -lLibPng
+    LIBS += -L$$LIBDIR/ -lLibTiff
+    LIBS += -L$$LIBDIR/ -lLibJpeg
+}
 
 SOURCES += \
     BuildWidget/BuildWidget.cpp \
-    BuildWidget/ProjectFileSystemModel.cpp \
-    BuildWidget/ProjectProxyModel.cpp \
+    BuildWidget/ProjectItem.cpp \
+    BuildWidget/ProjectModel.cpp \
     BuildWidget/ProjectTreeView.cpp \
     FileSystemWidget/FileSystemListView.cpp \
     FileSystemWidget/FileSystemModel.cpp \
@@ -28,8 +36,9 @@ SOURCES += \
 
 HEADERS += \
     BuildWidget/BuildWidget.h \
-    BuildWidget/ProjectFileSystemModel.h \
-    BuildWidget/ProjectProxyModel.h \
+    BuildWidget/Enums.h \
+    BuildWidget/ProjectItem.h \
+    BuildWidget/ProjectModel.h \
     BuildWidget/ProjectTreeView.h \
     FileSystemWidget/FileSystemListView.h \
     FileSystemWidget/FileSystemModel.h \

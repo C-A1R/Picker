@@ -5,5 +5,10 @@
         <file>ico/build.svg</file>
         <file>ico/folder.svg</file>
         <file>ico/folders.svg</file>
+        <file>ico/suitcase_dark.svg</file>
+        <file>ico/build_dark.svg</file>
+        <file>ico/save_dark.svg</file>
+        <file>ico/folder_dark.svg</file>
+        <file>ico/folders_dark.svg</file>
     </qresource>
 </RCC>

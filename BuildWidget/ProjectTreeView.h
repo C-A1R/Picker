@@ -4,6 +4,10 @@
 #include <QProxyStyle>
 #include <QTreeView>
 
+/**
+ * @brief The ProjectTreeView class
+ * Дерево проекта
+ */
 class ProjectTreeView : public QTreeView
 {
     Q_OBJECT
@@ -27,6 +31,8 @@ private:
     void dropEvent(QDropEvent *event) override;
 
     QAbstractItemView::DropIndicatorPosition getDropIndicatorPosition(const QPoint &position, const QRect &rect);
+    void getExpandedItemIds(const QModelIndex &index, QSet<qulonglong> &expandedIds) const;
+    void expandItems(const QModelIndex &index, const QSet<qulonglong> &expandedIds);
 
 signals:
     void signal_dropped(const QModelIndex &, const QModelIndexList &);
