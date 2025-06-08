@@ -48,7 +48,6 @@ void ProjectTreeView::dragEnterEvent(QDragEnterEvent *event)
     {
         return;
     }
-    auto f = event->mimeData()->formats();
     // if (event->mimeData()->hasFormat("text/uri-list")) // from this
     if (event->mimeData()->hasFormat("application/x-qabstractitemmodeldatalist")) // from this
     {
