@@ -19,10 +19,8 @@ unix {
 
 SOURCES += \
     BuildWidget/BuildWidget.cpp \
-    BuildWidget/ProjectFileSystemModel.cpp \
     BuildWidget/ProjectItem.cpp \
     BuildWidget/ProjectModel.cpp \
-    BuildWidget/ProjectSortProxyModel.cpp \
     BuildWidget/ProjectTreeView.cpp \
     FileSystemWidget/FileSystemListView.cpp \
     FileSystemWidget/FileSystemModel.cpp \
@@ -39,10 +37,8 @@ SOURCES += \
 HEADERS += \
     BuildWidget/BuildWidget.h \
     BuildWidget/Enums.h \
-    BuildWidget/ProjectFileSystemModel.h \
     BuildWidget/ProjectItem.h \
     BuildWidget/ProjectModel.h \
-    BuildWidget/ProjectSortProxyModel.h \
     BuildWidget/ProjectTreeView.h \
     FileSystemWidget/FileSystemListView.h \
     FileSystemWidget/FileSystemModel.h \
