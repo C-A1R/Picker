@@ -41,7 +41,9 @@ void FileSystemWidget::initUi()
     fileSystem_listView->setAlternatingRowColors(true);
     fileSystem_listView->setDragDropMode(QAbstractItemView::DragOnly);
     fileSystem_model = new FileSystemModel(fileSystem_listView, this);
-    fileSystem_model->setFilter(QDir::AllEntries | QDir::NoDot);
+    fileSystem_model->setFilter(QDir::AllEntries | QDir::AllDirs | QDir::NoDot);
+    fileSystem_model->setNameFilters(QStringList() << "*.pdf");
+    fileSystem_model->setNameFilterDisables(false);
     fileSystem_listView->setModel(fileSystem_model);
 
     auto main_vLay = new QVBoxLayout();
