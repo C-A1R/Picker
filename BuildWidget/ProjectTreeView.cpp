@@ -86,15 +86,6 @@ void ProjectTreeView::dragMoveEvent(QDragMoveEvent *event)
     if (dropIndicatorPosition == QAbstractItemView::DropIndicatorPosition::AboveItem
         || dropIndicatorPosition == QAbstractItemView::DropIndicatorPosition::BelowItem)
     {
-        if (const QModelIndexList &draggedIndices = this->selectedIndexes();
-            !draggedIndices.isEmpty())
-        {
-            if (droppedIndex.isValid() && draggedIndices.first().parent().internalId() != droppedIndex.parent().internalId())
-            {
-                event->ignore();
-                return;
-            }
-        }
         QTreeView::dragMoveEvent(event);
         event->accept();
         return;
@@ -115,9 +106,10 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
         return;
     }
     QModelIndex droppedIndex = indexAt(event->position().toPoint());
+    QModelIndex dropRootIndex = droppedIndex.parent();
     if (dropIndicatorPosition == QAbstractItemView::DropIndicatorPosition::BelowItem)
     {
-        droppedIndex = model()->index(droppedIndex.row() + 1, droppedIndex.column(), droppedIndex.parent());
+        droppedIndex = droppedIndex.siblingAtRow(droppedIndex.row() + 1);
     }
 
     QSet<qulonglong> expandedIds;
@@ -134,7 +126,7 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
         {
             return;
         }
-        emit signal_dropped(droppedIndex, draggedIndices);
+        emit signal_dropped(dropRootIndex, droppedIndex, draggedIndices);
     }
     else if (event->mimeData()->hasFormat("text/plain")) // from left panel
     {

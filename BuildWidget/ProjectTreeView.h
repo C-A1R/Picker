@@ -35,7 +35,7 @@ private:
     void expandItems(const QModelIndex &index, const QSet<qulonglong> &expandedIds);
 
 signals:
-    void signal_dropped(const QModelIndex &, const QModelIndexList &);
+    void signal_dropped(const QModelIndex &, const QModelIndex &, const QModelIndexList &);
     void signal_added(const QModelIndex &, const QString &);
     void signal_setChecked(const QModelIndexList &, const Qt::CheckState);
 

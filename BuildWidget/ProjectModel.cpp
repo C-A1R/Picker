@@ -28,8 +28,6 @@ QModelIndex ProjectModel::index(int row, int column, const QModelIndex &parent) 
 
     const ProjectItem *parentItem = parent.isValid() ? static_cast<ProjectItem*>(parent.internalPointer())
                                                      : rootItem.get();
-    // if (!parentItem)
-    //     return {};
     if (const std::shared_ptr<const ProjectItem> &childItem = parentItem->child(row))
         return createIndex(row, column, childItem.get());
     return {};
@@ -174,6 +172,7 @@ void ProjectModel::insertItem(const std::shared_ptr<ProjectItem> &item, std::sha
     {
         parentItem = rootItem;
     }
+    item->setParent(parentItem);
     parentItem->appendChild(item);
     itemPaths.insert(item->getPath().absolutePath(), item);
 }
@@ -404,7 +403,7 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
         {
         case Qt::CheckStateRole:
         {
-            return QVariant(checkedItems.value(data(index, ProjectItem::Roles::ID).toULongLong(), Qt::Unchecked));
+            return checkedItems.value(data(index, ProjectItem::Roles::ID).toULongLong(), Qt::Unchecked);
         }
         case Qt::DecorationRole:
         {
@@ -437,7 +436,12 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
         case ProjectItem::Roles::STATUS:
         {
             const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
-            return QVariant(itemStatuses.value(item->getId(), Statuses::DEFAULT));
+            return itemStatuses.value(item->getId(), Statuses::DEFAULT);
+        }
+        case ProjectItem::Roles::ABS_PATH:
+        {
+            const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
+            return item->getPath().absolutePath();
         }
         default:
             break;
@@ -451,7 +455,7 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
         {
             const auto item = static_cast<const ProjectItem*>(index.internalPointer());
             if (item->isDir())
-                return QVariant(resultHolders.value(item->getId(), Qt::Unchecked));
+                return resultHolders.value(item->getId(), Qt::Unchecked);
             break;
         }
         case Qt::DisplayRole:
@@ -508,65 +512,59 @@ void ProjectModel::slot_setChecked(const QModelIndexList &selected, const Qt::Ch
     }
 }
 
-void ProjectModel::slot_dropped(const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices)
+void ProjectModel::slot_dropped(const QModelIndex &dropRootIndex,const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices)
 {
     if (draggedIndices.isEmpty())
-    {
         return;
-    }
+
+    auto _findItem = [this](const QModelIndex &index) -> std::shared_ptr<ProjectItem>
+    {
+        return index.isValid() ? itemPaths.value(index.data(ProjectItem::Roles::ABS_PATH).toString(), nullptr) : rootItem;
+    };
 
     auto droppedItem = static_cast<ProjectItem*>(droppedIndex.internalPointer());
     auto beforeDroppedItem = static_cast<ProjectItem*>(droppedIndex.siblingAtRow(droppedIndex.row() - 1).internalPointer());
-    ProjectItem *parentItem = nullptr;
-    double newOrderIndex = 0.0;
+    std::shared_ptr<ProjectItem> parentItem = _findItem(dropRootIndex);
+    if (!parentItem)
+        return;
+
+    double newOrder = 0.0;
     double orderStep = 0.0;
     if (!droppedItem && !beforeDroppedItem)
     {
         //переместили в конец
-        const QModelIndex &parentIndex = draggedIndices.first().parent();
-        parentItem = parentIndex.isValid() ? static_cast<ProjectItem*>(parentIndex.internalPointer())
-                                           : rootItem.get();
-        newOrderIndex = parentItem->child(parentItem->childCount() - 1)->getOrderIndex();
+        newOrder = parentItem->child(parentItem->childCount() - 1)->getOrderIndex();
         orderStep = 1.0;
     }
-
-    if  (!droppedItem)
+    else
     {
-        return;
+        if (!droppedItem)
+            return;
+        newOrder = beforeDroppedItem ? beforeDroppedItem->getOrderIndex()
+                                     : parentItem->getOrderIndex();
+        orderStep = (droppedItem->getOrderIndex() - newOrder) / (draggedIndices.count() + 1);
     }
 
-    if (!beforeDroppedItem)
-    {
-        //переместили в начало
-        const QModelIndex &droppedIndexParent = droppedIndex.parent();
-        droppedIndexParent.isValid() ? beforeDroppedItem = static_cast<ProjectItem*>(droppedIndexParent.internalPointer())
-                                     : beforeDroppedItem = rootItem.get();
-    }
-
-    const QModelIndex &parentIndex = droppedIndex.parent();
-    parentItem = parentIndex.isValid() ? static_cast<ProjectItem*>(parentIndex.internalPointer())
-                                       : rootItem.get();
-    newOrderIndex = beforeDroppedItem->getOrderIndex();
-    orderStep = (droppedItem->getOrderIndex() - beforeDroppedItem->getOrderIndex()) / (draggedIndices.count() + 1);
-
-    newOrderIndex += orderStep;
+    newOrder += orderStep;
 
     for (const QModelIndex &index : draggedIndices)
     {
         if (index.column() != Columns::col_Name)
             continue;
-        auto item = static_cast<ProjectItem*>(index.internalPointer());
+        auto item = _findItem(index);
         if (!item)
             continue;
-        item->setOrderIndex(newOrderIndex);
-        newOrderIndex += orderStep;
+        item->setOrderIndex(newOrder);
+        newOrder += orderStep;
+        if (parentItem != item->parentItem())
+        {
+            item->parentItem()->removeChild(item->getId());
+            insertItem(item, parentItem);
+        }
         qDebug() << "dragged:" << item->getPath().dirName() << "new_order:"  << item->getOrderIndex();
     }
 
     emit layoutAboutToBeChanged();
-    if (parentItem)
-    {
-        parentItem->sortChildren(); // sort parent item children by order index;
-    }
+    parentItem->sortChildren(); // sort parent item children by order index;
     emit layoutChanged();
 }

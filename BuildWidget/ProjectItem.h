@@ -5,7 +5,6 @@
 #include <QDir>
 #include <QFileIconProvider>
 
-#include <vector>
 #include <memory>
 
 /**
@@ -20,19 +19,21 @@ class ProjectItem
     QFileIconProvider   m_iconProvider;
     double              m_orderIndex{1.0};
 
-    std::weak_ptr<ProjectItem>                  m_parentItem;
-    std::vector<std::shared_ptr<ProjectItem>>   m_childItems;
+    std::weak_ptr<ProjectItem>              m_parentItem;
+    QList<std::shared_ptr<ProjectItem>>     m_childItems;
 
 public:
     enum Roles
     {
         ID = Qt::UserRole,
-        STATUS
+        STATUS,
+        ABS_PATH
     };
 
     explicit ProjectItem(const qulonglong id, const QString &path, std::shared_ptr<ProjectItem> parentItem = nullptr);
 
     void appendChild(const std::shared_ptr<ProjectItem> &child);
+    void removeChild(const qulonglong id);
 
     std::shared_ptr<ProjectItem> child(const int row) const;
     int childCount() const;
@@ -44,6 +45,7 @@ public:
     double getOrderIndex() const;
 
     void setOrderIndex(const double index);
+    void setParent(const std::shared_ptr<ProjectItem> &parent);
 
     bool exists() const;
     bool isDir() const;

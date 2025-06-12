@@ -11,7 +11,20 @@ ProjectItem::ProjectItem(const qulonglong id, const QString &path, std::shared_p
 
 void ProjectItem::appendChild(const std::shared_ptr<ProjectItem> &child)
 {
-    m_childItems.emplace_back(child);
+    m_childItems.append(child);
+}
+
+void ProjectItem::removeChild(const qulonglong id)
+{
+    for (auto &child : m_childItems)
+    {
+        if (child->getId() == id)
+        {
+            child->setParent(nullptr); // remove parent reference
+            m_childItems.removeOne(child);
+            break;
+        }
+    }
 }
 
 std::shared_ptr<ProjectItem> ProjectItem::child(const int row) const
@@ -65,6 +78,11 @@ double ProjectItem::getOrderIndex() const
 void ProjectItem::setOrderIndex(const double index)
 {
     m_orderIndex = index;
+}
+
+void ProjectItem::setParent(const std::shared_ptr<ProjectItem> &parent)
+{
+    m_parentItem = parent;
 }
 
 bool ProjectItem::exists() const

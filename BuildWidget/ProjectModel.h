@@ -73,7 +73,7 @@ signals:
 
 public slots:
     void slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState);
-    void slot_dropped(const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices);
+    void slot_dropped(const QModelIndex &dropRootIndex, const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices);
 };
 
 #endif // PROJECTMODEL_H
