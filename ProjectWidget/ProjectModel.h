@@ -5,6 +5,7 @@
 #include "Enums.h"
 
 #include <QAbstractItemModel>
+#include <QIcon>
 
 /**
  * @brief The ProjectModel class
@@ -21,8 +22,10 @@ class ProjectModel : public QAbstractItemModel
     QHash<qulonglong, Statuses>                     itemStatuses;
     QHash<QString, std::shared_ptr<ProjectItem>>    itemPaths;
 
-    QFileIconProvider   iconProvider;
-    qulonglong          idMax = 0;
+    qulonglong idMax = 0;
+
+    QIcon dirIcon;
+    QIcon pdfIcon;
 
     const QHash<Statuses, QColor> statusColors =
     {

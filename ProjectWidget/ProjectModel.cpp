@@ -2,11 +2,16 @@
 #include "SqlMgr.h"
 
 #include <QSqlRecord>
+#include <QFileIconProvider>
 
 ProjectModel::ProjectModel(QObject *parent)
     : QAbstractItemModel(parent)
     , rootItem(std::make_shared<ProjectItem>(0, ""))
 {
+    QFileIconProvider provider;
+    dirIcon = provider.icon(QFileIconProvider::Folder);
+    const QFileInfo fakeFile("example.pdf");
+    pdfIcon = provider.icon(fakeFile);
 }
 
 Qt::ItemFlags ProjectModel::flags(const QModelIndex &index) const
@@ -439,9 +444,9 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
         {
             const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
             if (item->isDir())
-                return iconProvider.icon(QFileIconProvider::Folder);
+                return dirIcon;
             else
-                return iconProvider.icon(QFileIconProvider::File);
+                return pdfIcon;
         }
         case Qt::DisplayRole:
         {

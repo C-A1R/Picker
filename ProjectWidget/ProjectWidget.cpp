@@ -326,7 +326,6 @@ void ProjectWidget::slot_build()
     connect(builder.get(), &IPdfBuilder::signal_finished, this, &ProjectWidget::slot_buildFinished);
     connect(builder.get(), &IPdfBuilder::signal_cancelled, this, &ProjectWidget::slot_buildCancelled);
     builder->exec(structure);
-    project_model->scanFilesystemItem();
 }
 
 void ProjectWidget::slot_saveToFoldersOptionChanged(bool checked)
