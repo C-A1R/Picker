@@ -1,4 +1,4 @@
-#include "BuildWidget.h"
+#include "ProjectWidget.h"
 #include "ProjectTreeView.h"
 #include "ProjectModel.h"
 #include "Settings.h"
@@ -20,7 +20,7 @@
 #include <QApplication>
 
 
-BuildWidget::BuildWidget(QWidget *parent)
+ProjectWidget::ProjectWidget(QWidget *parent)
     : QWidget(parent)
     , saveOptions{SaveOpt::fromInt(Settings::instance()->value(SETTINGS_SAVE_OPTIONS, SaveOptions::SAVE_TO_PROJECT_DIRECTORIES).toInt())}
 {
@@ -32,13 +32,13 @@ BuildWidget::BuildWidget(QWidget *parent)
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
 }
 
-BuildWidget::~BuildWidget()
+ProjectWidget::~ProjectWidget()
 {
     Settings::instance()->setValue(SETTINGS_BUILD_PATH, currentPath_label->text());
     Settings::instance()->setValue(SETTINGS_SAVE_OPTIONS, saveOptions.toInt());
 }
 
-void BuildWidget::initUi()
+void ProjectWidget::initUi()
 {
     const bool isDarkTheme = QApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
     actions_toolBar = new QToolBar(this);
@@ -48,7 +48,7 @@ void BuildWidget::initUi()
         const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/suitcase_dark.svg")
                                        : QIcon(":/buildWidget/ico/suitcase.svg");
         act->setIcon(icon);
-        connect(act, &QAction::triggered, this, &BuildWidget::slot_changeProject);
+        connect(act, &QAction::triggered, this, &ProjectWidget::slot_changeProject);
         actions_toolBar->addAction(act);
     }
     {
@@ -57,7 +57,7 @@ void BuildWidget::initUi()
         const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/save_dark.svg")
                                        : QIcon(":/buildWidget/ico/save.svg");
         act->setIcon(icon);
-        connect(act, &QAction::triggered, this, &BuildWidget::slot_saveList);
+        connect(act, &QAction::triggered, this, &ProjectWidget::slot_saveProject);
         actions_toolBar->addAction(act);
     }
     {
@@ -66,7 +66,7 @@ void BuildWidget::initUi()
         const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/build_dark.svg")
                                        : QIcon(":/buildWidget/ico/build.svg");
         act->setIcon(icon);
-        connect(act, &QAction::triggered, this, &BuildWidget::slot_build);
+        connect(act, &QAction::triggered, this, &ProjectWidget::slot_build);
         actions_toolBar->addAction(act);
     }
 
@@ -79,7 +79,7 @@ void BuildWidget::initUi()
         act->setIcon(icon);
         act->setCheckable(true);
         act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_PROJECT_DIRECTORIES));
-        connect(act, &QAction::triggered, this, &BuildWidget::slot_saveToFoldersOptionChanged);
+        connect(act, &QAction::triggered, this, &ProjectWidget::slot_saveToFoldersOptionChanged);
         saveOptions_toolBar->addAction(act);
     }
     {
@@ -90,7 +90,7 @@ void BuildWidget::initUi()
         act->setIcon(icon);
         act->setCheckable(true);
         act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_SEPARATE_DIRECTORY));
-        connect(act, &QAction::triggered, this, &BuildWidget::slot_saveToDefenitFolderOptionChanged);
+        connect(act, &QAction::triggered, this, &ProjectWidget::slot_saveToDefenitFolderOptionChanged);
         saveOptions_toolBar->addAction(act);
     }
 
@@ -132,7 +132,7 @@ void BuildWidget::initUi()
     setLayout(main_vLay);
 }
 
-void BuildWidget::changeProject(const QString &path)
+void ProjectWidget::changeProject(const QString &path)
 {
     if (path.isEmpty())
         return;
@@ -142,7 +142,7 @@ void BuildWidget::changeProject(const QString &path)
     currentPath_label->setText(path);
 }
 
-QString BuildWidget::getDefenitFolder() const
+QString ProjectWidget::getDefenitFolder() const
 {
     QString defenitFolder{Settings::instance()->value(SETTINGS_DEFENIT_PATH).toString()};
     auto currentPath = defenitFolder;
@@ -163,7 +163,7 @@ QString BuildWidget::getDefenitFolder() const
     return defenitFolder;
 }
 
-void BuildWidget::saveProjectTree(const std::shared_ptr<const ProjectItem> &rootItem, SqlMgr &sqlMgr) const
+void ProjectWidget::saveProjectTree(const std::shared_ptr<const ProjectItem> &rootItem, SqlMgr &sqlMgr) const
 {
     if (!rootItem)
     {
@@ -183,7 +183,7 @@ void BuildWidget::saveProjectTree(const std::shared_ptr<const ProjectItem> &root
     }
 }
 
-void BuildWidget::saveProjectItem(const QModelIndex &itemIndex, SqlMgr &sqlMgr) const
+void ProjectWidget::saveProjectItem(const QModelIndex &itemIndex, SqlMgr &sqlMgr) const
 {
     if (!itemIndex.isValid())
     {
@@ -203,7 +203,7 @@ void BuildWidget::saveProjectItem(const QModelIndex &itemIndex, SqlMgr &sqlMgr) 
     }
 }
 
-void BuildWidget::saveItem(const QModelIndex &index, SqlMgr &sqlMgr) const
+void ProjectWidget::saveItem(const QModelIndex &index, SqlMgr &sqlMgr) const
 {
     auto item = static_cast<const ProjectItem*>(index.internalPointer());
     if (!item)
@@ -229,7 +229,7 @@ void BuildWidget::saveItem(const QModelIndex &index, SqlMgr &sqlMgr) const
     }
 }
 
-void BuildWidget::slot_changeProject()
+void ProjectWidget::slot_changeProject()
 {
     auto currentPath = currentPath_label->text();
     if (currentPath.isEmpty())
@@ -244,7 +244,7 @@ void BuildWidget::slot_changeProject()
     changeProject(folderPath);
 }
 
-void BuildWidget::slot_saveList()
+void ProjectWidget::slot_saveProject()
 {
     const QString dbFilename = project_model->projectDbFilePath();
     if (QFile::exists(dbFilename))
@@ -277,7 +277,7 @@ void BuildWidget::slot_saveList()
     }
 }
 
-void BuildWidget::slot_build()
+void ProjectWidget::slot_build()
 {
     if (saveOptions == SaveOptions::SAVE_NONE)
     {
@@ -323,27 +323,27 @@ void BuildWidget::slot_build()
         QMessageBox::critical(this, windowTitle(), "Не могу выполнить сборку");
         return;
     }
-    connect(builder.get(), &IPdfBuilder::signal_finished, this, &BuildWidget::slot_buildFinished);
-    connect(builder.get(), &IPdfBuilder::signal_cancelled, this, &BuildWidget::slot_buildCancelled);
+    connect(builder.get(), &IPdfBuilder::signal_finished, this, &ProjectWidget::slot_buildFinished);
+    connect(builder.get(), &IPdfBuilder::signal_cancelled, this, &ProjectWidget::slot_buildCancelled);
     builder->exec(checkedPdf);
 }
 
-void BuildWidget::slot_saveToFoldersOptionChanged(bool checked)
+void ProjectWidget::slot_saveToFoldersOptionChanged(bool checked)
 {
     saveOptions.setFlag(SaveOptions::SAVE_TO_PROJECT_DIRECTORIES, checked);
 }
 
-void BuildWidget::slot_saveToDefenitFolderOptionChanged(bool checked)
+void ProjectWidget::slot_saveToDefenitFolderOptionChanged(bool checked)
 {
     saveOptions.setFlag(SaveOptions::SAVE_TO_SEPARATE_DIRECTORY, checked);
 }
 
-void BuildWidget::slot_buildFinished()
+void ProjectWidget::slot_buildFinished()
 {
     QMessageBox::information(this, windowTitle(), "Сборка завершена");
 }
 
-void BuildWidget::slot_buildCancelled()
+void ProjectWidget::slot_buildCancelled()
 {
     QMessageBox::information(this, windowTitle(), "Сборка отменена пользователем");
 }

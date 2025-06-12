@@ -17,11 +17,14 @@ unix {
     LIBS += -L$$LIBDIR/ -lLibJpeg
 }
 
+VERSION = 1.2
+DEFINES += APP_VERSION=\\\"$$VERSION\\\"
+
 SOURCES += \
-    BuildWidget/BuildWidget.cpp \
-    BuildWidget/ProjectItem.cpp \
-    BuildWidget/ProjectModel.cpp \
-    BuildWidget/ProjectTreeView.cpp \
+    ProjectWidget/ProjectItem.cpp \
+    ProjectWidget/ProjectModel.cpp \
+    ProjectWidget/ProjectTreeView.cpp \
+    ProjectWidget/ProjectWidget.cpp \
     FileSystemWidget/FileSystemListView.cpp \
     FileSystemWidget/FileSystemModel.cpp \
     FileSystemWidget/FileSystemWidget.cpp \
@@ -35,11 +38,11 @@ SOURCES += \
     main.cpp
 
 HEADERS += \
-    BuildWidget/BuildWidget.h \
-    BuildWidget/Enums.h \
-    BuildWidget/ProjectItem.h \
-    BuildWidget/ProjectModel.h \
-    BuildWidget/ProjectTreeView.h \
+    ProjectWidget/Enums.h \
+    ProjectWidget/ProjectItem.h \
+    ProjectWidget/ProjectModel.h \
+    ProjectWidget/ProjectTreeView.h \
+    ProjectWidget/ProjectWidget.h \
     FileSystemWidget/FileSystemListView.h \
     FileSystemWidget/FileSystemModel.h \
     FileSystemWidget/FileSystemWidget.h \

@@ -9,6 +9,14 @@ class SqlMgr
     QSqlDatabase    *db {nullptr};
 
 public:
+    struct InfoTable
+    {
+        static constexpr char const * const tableName{"app_info"};
+        struct Columns
+        {
+            static constexpr char const * const version{"version"};
+        };
+    };
     struct ProjectFilesystemTable
     {
         static constexpr char const * const tableName{"project_filesystem"};
@@ -42,6 +50,9 @@ public:
 private:
     [[nodiscard]] bool exec(const QString &sql);
     [[nodiscard]] bool table(const QString &sql, QList<QSqlRecord> &result);
+
+    [[nodiscard]] bool createInfoTable();
+    [[nodiscard]] bool createProjectFilesystemTable();
 
 };
 

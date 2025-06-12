@@ -1,5 +1,5 @@
-#ifndef BUILDWIDGET_H
-#define BUILDWIDGET_H
+#ifndef PROJECTWIDGET_H
+#define PROJECTWIDGET_H
 
 #include <QWidget>
 
@@ -13,10 +13,10 @@ class IPdfBuilder;
 class SqlMgr;
 
 /**
- * @brief The BuildWidget class
+ * @brief The ProjectWidget class
  * Виджет для сборки проекта
  */
-class BuildWidget : public QWidget
+class ProjectWidget : public QWidget
 {
     Q_OBJECT
 
@@ -38,8 +38,8 @@ class BuildWidget : public QWidget
     QScopedPointer<IPdfBuilder> builder;
 
 public:
-    BuildWidget(QWidget *parent = nullptr);
-    ~BuildWidget();
+    ProjectWidget(QWidget *parent = nullptr);
+    ~ProjectWidget();
 
 private:
     void initUi();
@@ -52,7 +52,7 @@ private:
 
 private slots:
     void slot_changeProject();
-    void slot_saveList();
+    void slot_saveProject();
     void slot_build();
     void slot_saveToFoldersOptionChanged(bool checked);
     void slot_saveToDefenitFolderOptionChanged(bool checked);
@@ -60,4 +60,4 @@ private slots:
     void slot_buildCancelled();
 };
 
-#endif // BUILDWIDGET_H
+#endif // PROJECTWIDGET_H

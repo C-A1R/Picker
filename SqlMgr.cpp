@@ -82,22 +82,11 @@ bool SqlMgr::rollback()
 
 bool SqlMgr::createPickerDb()
 {
-    const QString sql = QStringLiteral("CREATE TABLE IF NOT EXISTS %1"
-                                       "(%2 INTEGER PRIMARY KEY NOT NULL"   //id
-                                       ", %3 INTEGER"                       //parentId
-                                       ", %4 REAL"                          //order
-                                       ", %5 INTEGER(1) DEFAULT 0"          //printCheckstate
-                                       ", %6 BOOL DEFAULT false"            //resultHolder
-                                       ", %7 BOOL DEFAULT false"            //expanded
-                                       ", %8 TEXT);");                      //path
-    return exec(sql.arg(ProjectFilesystemTable::tableName
-                        , ProjectFilesystemTable::Columns::id
-                        , ProjectFilesystemTable::Columns::parentId
-                        , ProjectFilesystemTable::Columns::order
-                        , ProjectFilesystemTable::Columns::printCheckstate
-                        , ProjectFilesystemTable::Columns::resultHolder
-                        , ProjectFilesystemTable::Columns::expanded
-                        , ProjectFilesystemTable::Columns::path));
+    if (!createInfoTable())
+        return false;
+    if (!createProjectFilesystemTable())
+        return false;
+    return true;
 }
 
 bool SqlMgr::insertProjectElement(const qulonglong id, const qulonglong parentId, const double orderIndex, const Qt::CheckState print
@@ -154,4 +143,33 @@ bool SqlMgr::table(const QString &sql, QList<QSqlRecord> &result)
     query.clear();
     query.finish();
     return true;
+}
+
+bool SqlMgr::createInfoTable()
+{
+    QString sql = QStringLiteral("CREATE TABLE IF NOT EXISTS %1 (%2 VARCHAR);");
+    if (!exec(sql.arg(InfoTable::tableName, InfoTable::Columns::version)))
+        return false;
+    sql = QStringLiteral("INSERT INTO %1 (%2) VALUES (%3);");
+    return exec(sql.arg(InfoTable::tableName, InfoTable::Columns::version, QStringLiteral("'%1'").arg(APP_VERSION)));
+}
+
+bool SqlMgr::createProjectFilesystemTable()
+{
+    const QString sql = QStringLiteral("CREATE TABLE IF NOT EXISTS %1"
+                                       "(%2 INTEGER PRIMARY KEY NOT NULL"   //id
+                                       ", %3 INTEGER"                       //parentId
+                                       ", %4 REAL"                          //order
+                                       ", %5 INTEGER(1) DEFAULT 0"          //printCheckstate
+                                       ", %6 BOOL DEFAULT false"            //resultHolder
+                                       ", %7 BOOL DEFAULT false"            //expanded
+                                       ", %8 TEXT);");                      //path
+    return exec(sql.arg(ProjectFilesystemTable::tableName
+                        , ProjectFilesystemTable::Columns::id
+                        , ProjectFilesystemTable::Columns::parentId
+                        , ProjectFilesystemTable::Columns::order
+                        , ProjectFilesystemTable::Columns::printCheckstate
+                        , ProjectFilesystemTable::Columns::resultHolder
+                        , ProjectFilesystemTable::Columns::expanded
+                        , ProjectFilesystemTable::Columns::path));
 }

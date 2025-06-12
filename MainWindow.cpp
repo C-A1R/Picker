@@ -1,6 +1,6 @@
 #include "MainWindow.h"
 #include "FileSystemWidget/FileSystemWidget.h"
-#include "BuildWidget/BuildWidget.h"
+#include "ProjectWidget/ProjectWidget.h"
 #include "Settings.h"
 
 #include <QSplitter>
@@ -44,7 +44,7 @@ void MainWindow::initUi()
     auto fileSystemWidget = new FileSystemWidget(splitter);
     splitter->addWidget(fileSystemWidget);
 
-    auto buildWidget = new BuildWidget(splitter);
+    auto buildWidget = new ProjectWidget(splitter);
     splitter->addWidget(buildWidget);
 
     if (const QStringList split_sizes = Settings::instance()->value(SETTINGS_SPLIT_SIZES).toStringList();
