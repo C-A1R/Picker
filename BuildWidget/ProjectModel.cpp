@@ -177,6 +177,11 @@ void ProjectModel::insertItem(const std::shared_ptr<ProjectItem> &item, std::sha
     itemPaths.insert(item->getPath().absolutePath(), item);
 }
 
+std::shared_ptr<ProjectItem> ProjectModel::findItem(const QModelIndex &index)
+{
+    return index.isValid() ? itemPaths.value(index.data(ProjectItem::Roles::ABS_PATH).toString(), nullptr) : rootItem;
+}
+
 /// читаем порядок из файла
 bool ProjectModel::readFromDb()
 {
@@ -218,7 +223,6 @@ bool ProjectModel::readFromDb()
         }
 
         const qulonglong id = rec.value(SqlMgr::ProjectFilesystemTable::Columns::id).toULongLong();
-        idMax = idMax < id ? id : idMax;
 
         auto parentItem = itemsById.value(rec.value(SqlMgr::ProjectFilesystemTable::Columns::parentId).toULongLong(), rootItem);
         auto item = std::make_shared<ProjectItem>(id, path, parentItem);
@@ -244,6 +248,8 @@ bool ProjectModel::readFromDb()
             QModelIndex index = createIndex(parentItem->childCount() - 1, Columns::col_Name, item.get());
             expanded.emplaceBack(std::move(index));
         }
+
+        idMax = idMax < id ? id : idMax;
     }
     emit signal_expand(expanded);
 
@@ -269,13 +275,15 @@ bool ProjectModel::scanFilesystemItem(const std::shared_ptr<ProjectItem> &item, 
     for (const QFileInfo &dirInfo : dirInfoList)
     {
         const QString &childPath = dirInfo.absoluteFilePath();
-        auto child = std::make_shared<ProjectItem>(++idMax, childPath, item);
+        const qulonglong id = idMax + 1;
+        auto child = std::make_shared<ProjectItem>(id, childPath, item);
         child->setOrderIndex(++orderIndex);
         if (!scanFilesystemItem(child, orderIndex))
             continue;
         if (!itemPaths.contains(childPath))
         {
             insertItem(child, item);
+            idMax = id;
         }
         foundPdf = true;
     }
@@ -283,12 +291,14 @@ bool ProjectModel::scanFilesystemItem(const std::shared_ptr<ProjectItem> &item, 
     for (const QFileInfo &pdfInfo : pdfInfoList)
     {
         const QString &childPath = pdfInfo.absoluteFilePath();
-        auto child = std::make_shared<ProjectItem>(++idMax, childPath, item);
+        const qulonglong id = idMax + 1;
+        auto child = std::make_shared<ProjectItem>(id, childPath, item);
         child->setOrderIndex(++orderIndex);
         if (!itemPaths.contains(childPath))
         {
             insertItem(child, item);
             itemStatuses[child->getId()] = Statuses::NOT_LISTED;
+            idMax = id;
         }
     }
 
@@ -512,22 +522,13 @@ void ProjectModel::slot_setChecked(const QModelIndexList &selected, const Qt::Ch
     }
 }
 
-void ProjectModel::slot_dropped(const QModelIndex &dropRootIndex,const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices)
+std::tuple<double, double> ProjectModel::newOrder(const std::shared_ptr<const ProjectItem> parentItem, const QModelIndex &droppedIndex, const int draggedCount)
 {
-    if (draggedIndices.isEmpty())
-        return;
-
-    auto _findItem = [this](const QModelIndex &index) -> std::shared_ptr<ProjectItem>
-    {
-        return index.isValid() ? itemPaths.value(index.data(ProjectItem::Roles::ABS_PATH).toString(), nullptr) : rootItem;
-    };
+    if (!parentItem || !draggedCount)
+        return std::make_tuple(0.0, 0.0);
 
     auto droppedItem = static_cast<ProjectItem*>(droppedIndex.internalPointer());
     auto beforeDroppedItem = static_cast<ProjectItem*>(droppedIndex.siblingAtRow(droppedIndex.row() - 1).internalPointer());
-    std::shared_ptr<ProjectItem> parentItem = _findItem(dropRootIndex);
-    if (!parentItem)
-        return;
-
     double newOrder = 0.0;
     double orderStep = 0.0;
     if (!droppedItem && !beforeDroppedItem)
@@ -539,19 +540,38 @@ void ProjectModel::slot_dropped(const QModelIndex &dropRootIndex,const QModelInd
     else
     {
         if (!droppedItem)
-            return;
+            return std::make_tuple(0.0, 0.0);
+
         newOrder = beforeDroppedItem ? beforeDroppedItem->getOrderIndex()
                                      : parentItem->getOrderIndex();
-        orderStep = (droppedItem->getOrderIndex() - newOrder) / (draggedIndices.count() + 1);
+        orderStep = (droppedItem->getOrderIndex() - newOrder) / (draggedCount + 1);
     }
-
     newOrder += orderStep;
+
+    return std::make_tuple(newOrder, orderStep);
+}
+
+void ProjectModel::slot_dropped(const QModelIndex &dropRootIndex,const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices)
+{
+    if (draggedIndices.isEmpty())
+        return;
+
+    const std::shared_ptr<ProjectItem> parentItem = findItem(dropRootIndex);
+    if (!parentItem)
+        return;
+
+    auto no = newOrder(parentItem, droppedIndex, draggedIndices.count());
+    double newOrder = 0.0;
+    double orderStep = 0.0;
+    std::tie(newOrder, orderStep) = no;
+    if (newOrder == 0.0 && orderStep == 0.0)
+        return;
 
     for (const QModelIndex &index : draggedIndices)
     {
         if (index.column() != Columns::col_Name)
             continue;
-        auto item = _findItem(index);
+        const std::shared_ptr<ProjectItem> item = findItem(index);
         if (!item)
             continue;
         item->setOrderIndex(newOrder);
@@ -562,6 +582,45 @@ void ProjectModel::slot_dropped(const QModelIndex &dropRootIndex,const QModelInd
             insertItem(item, parentItem);
         }
         qDebug() << "dragged:" << item->getPath().dirName() << "new_order:"  << item->getOrderIndex();
+    }
+
+    emit layoutAboutToBeChanged();
+    parentItem->sortChildren(); // sort parent item children by order index;
+    emit layoutChanged();
+}
+
+void ProjectModel::slot_added(const QModelIndex &dropRootIndex, const QModelIndex droppedIndex, const QString &fullPaths)
+{
+    if (fullPaths.isEmpty())
+        return;
+    qDebug() << "slot_added:" << fullPaths;
+
+    const std::shared_ptr<ProjectItem> parentItem = findItem(dropRootIndex);
+    if (!parentItem)
+        return;
+
+    const QStringList paths = fullPaths.split('*');
+
+    auto no = newOrder(parentItem, droppedIndex, paths.count());
+    double newOrder = 0.0;
+    double orderStep = 0.0;
+    std::tie(newOrder, orderStep) = no;
+    if (newOrder == 0.0 && orderStep == 0.0)
+        return;
+
+    for (const QString &path : paths)
+    {
+        auto newItem = std::make_shared<ProjectItem>(++idMax, path, parentItem);
+        if (!newItem->exists())
+            continue;
+        if (newItem->isDir() || !newItem->getPath().dirName().endsWith(".pdf", Qt::CaseInsensitive))
+            continue;
+        if (itemPaths.contains(newItem->getPath().absolutePath()))
+            continue;
+
+        newItem->setOrderIndex(newOrder);
+        newOrder += orderStep;
+        insertItem(newItem, parentItem);
     }
 
     emit layoutAboutToBeChanged();

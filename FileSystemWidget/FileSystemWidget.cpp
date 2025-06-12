@@ -39,6 +39,8 @@ void FileSystemWidget::initUi()
 
     fileSystem_listView = new FileSystemListView(this);
     fileSystem_listView->setAlternatingRowColors(true);
+    fileSystem_listView->setDragEnabled(true);
+    fileSystem_listView->setDefaultDropAction(Qt::IgnoreAction);
     fileSystem_listView->setDragDropMode(QAbstractItemView::DragOnly);
     fileSystem_model = new FileSystemModel(fileSystem_listView, this);
     fileSystem_model->setFilter(QDir::AllEntries | QDir::AllDirs | QDir::NoDot);

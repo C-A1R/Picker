@@ -32,9 +32,7 @@ AbstractPdfBuilder::~AbstractPdfBuilder()
 void AbstractPdfBuilder::exec(const QStringList &paths)
 {
     if (resultHolderPaths.isEmpty() || paths.isEmpty())
-    {
         return;
-    }
 
     expectedProgress = 0;
     QHash<QString, QStringList> structure;
@@ -51,9 +49,7 @@ void AbstractPdfBuilder::exec(const QStringList &paths)
         }
     }
     if(structure.empty())
-    {
         return;
-    }
 
     QSharedPointer<QProgressDialog> progress(new QProgressDialog("Сборка...", "Отмена", currentProgress, 0));
     progress->setWindowModality(Qt::ApplicationModal);
@@ -78,23 +74,19 @@ void AbstractPdfBuilder::exec(const QStringList &paths)
         iter.next();
         const QStringList pdfFilePaths = iter.value();
         if (pdfFilePaths.isEmpty())
-        {
             continue;
-        }
+
         const QString destinationPdfPath = destinationFilePath(iter.key());
         if (destinationPdfPath.isEmpty())
-        {
             continue;
-        }
+
         {
             std::unique_lock lock(taskMutex);
             tasks.emplace([pdfFilePaths, destinationPdfPath, this]() -> void
                           {
                               QDir dir{destinationPdfPath};
                               if (dir.exists())
-                              {
                                   dir.remove(destinationPdfPath);
-                              }
 
                               PDFWriter pdfWriter;
                               pdfWriter.StartPDF(destinationPdfPath.toUtf8().toStdString(), ePDFVersionMax);
@@ -102,9 +94,7 @@ void AbstractPdfBuilder::exec(const QStringList &paths)
                               {
                                   pdfWriter.AppendPDFPagesFromPDF(path.toUtf8().toStdString(), PDFPageRange());
                                   if (std::unique_lock lock(taskMutex); stopped)
-                                  {
                                       return;
-                                  }
                                   emit signal_fileProcessed();
                               }
                               pdfWriter.EndPDF();
@@ -124,15 +114,12 @@ void AbstractPdfBuilder::loop()
             cv.wait(lock, [this]() -> bool
                     {
                         if (stopped)
-                        {
                             return true;
-                        }
                         return !tasks.empty();
                     });
             if (stopped)
-            {
                 return;
-            }
+
             if (!tasks.empty())
             {
                 fn = tasks.front();

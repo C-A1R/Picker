@@ -130,7 +130,7 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
     }
     else if (event->mimeData()->hasFormat("text/plain")) // from left panel
     {
-        emit signal_added(droppedIndex, event->mimeData()->text());
+        emit signal_added(dropRootIndex, droppedIndex, event->mimeData()->text());
     }
     event->accept();
     this->selectionModel()->clearSelection();

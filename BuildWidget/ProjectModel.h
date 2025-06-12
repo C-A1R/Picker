@@ -67,6 +67,9 @@ private:
     void getResultHolders(const std::shared_ptr<const ProjectItem> &item, QStringList &result) const;
 
     void insertItem(const std::shared_ptr<ProjectItem> &item, std::shared_ptr<ProjectItem> parentItem = nullptr);
+    std::shared_ptr<ProjectItem> findItem(const QModelIndex &index);
+
+    std::tuple<double, double> newOrder(const std::shared_ptr<const ProjectItem> parentItem, const QModelIndex &droppedIndex, const int draggedCount);
 
 signals:
     void signal_expand(const QModelIndexList &);
@@ -74,6 +77,7 @@ signals:
 public slots:
     void slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState);
     void slot_dropped(const QModelIndex &dropRootIndex, const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices);
+    void slot_added(const QModelIndex &dropRootIndex, const QModelIndex droppedIndex, const QString &fullPaths);
 };
 
 #endif // PROJECTMODEL_H

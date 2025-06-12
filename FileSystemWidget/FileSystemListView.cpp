@@ -100,6 +100,7 @@ void FileSystemListView::mouseMoveEvent(QMouseEvent *event)
         drag->setMimeData(mimeData);
         drag->exec();
     }
+    selected.clear();
 }
 
 void FileSystemListView::mouseDoubleClickEvent(QMouseEvent *event)

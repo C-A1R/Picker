@@ -36,7 +36,7 @@ private:
 
 signals:
     void signal_dropped(const QModelIndex &, const QModelIndex &, const QModelIndexList &);
-    void signal_added(const QModelIndex &, const QString &);
+    void signal_added(const QModelIndex &, const QModelIndex &, const QString &);
     void signal_setChecked(const QModelIndexList &, const Qt::CheckState);
 
 public slots:

@@ -25,13 +25,10 @@ BuildWidget::BuildWidget(QWidget *parent)
     , saveOptions{SaveOpt::fromInt(Settings::instance()->value(SETTINGS_SAVE_OPTIONS, SaveOptions::SAVE_TO_PROJECT_DIRECTORIES).toInt())}
 {
     initUi();
-    {
-        // connect(project_treeView, &ProjectTreeView::signal_added, proxy_model, &ProjectProxyModel::slot_added);
-        // connect(proxy_model, &ProjectProxyModel::signal_added, project_model, &ProjectFileSystemModel::slot_added);
-    }
-    connect(project_model, &ProjectModel::signal_expand, project_treeView, &ProjectTreeView::slot_expand);
-    connect(project_treeView, &ProjectTreeView::signal_setChecked, project_model, &ProjectModel::slot_setChecked);
-    connect(project_treeView, &ProjectTreeView::signal_dropped, project_model, &ProjectModel::slot_dropped);
+    connect(project_model,    &ProjectModel::signal_expand,        project_treeView, &ProjectTreeView::slot_expand);
+    connect(project_treeView, &ProjectTreeView::signal_setChecked, project_model,    &ProjectModel::slot_setChecked);
+    connect(project_treeView, &ProjectTreeView::signal_dropped,    project_model,    &ProjectModel::slot_dropped);
+    connect(project_treeView, &ProjectTreeView::signal_added,      project_model,    &ProjectModel::slot_added);
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
 }
 
