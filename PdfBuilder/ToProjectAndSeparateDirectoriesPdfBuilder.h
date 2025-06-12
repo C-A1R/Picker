@@ -9,10 +9,10 @@ class ToProjectAndSeparateDirectoryPdfBuilder : public ToProjectDirectoriesPdfBu
     QString defenitFolder;
     QList<QString> destinations;
 public:
-    ToProjectAndSeparateDirectoryPdfBuilder(QStringList &&resultHolderPaths, QString &&defenitFolder);
+    ToProjectAndSeparateDirectoryPdfBuilder(QString &&defenitFolder);
     ~ToProjectAndSeparateDirectoryPdfBuilder() override = default;
 protected:
-    void exec(const QStringList &paths) override;
+    void exec(const QHash<QString, QStringList> &fileStructure) override;
     QString destinationFilePath(const QString &parentPath) override;
 private slots:
     void slot_allFilesProcessed();

@@ -1,7 +1,6 @@
 #include "ToProjectDirectoriesPdfBuilder.h"
 
-ToProjectDirectoriesPdfBuilder::ToProjectDirectoriesPdfBuilder(QStringList &&resultHolderPaths)
-    : AbstractPdfBuilder{std::move(resultHolderPaths)}
+ToProjectDirectoriesPdfBuilder::ToProjectDirectoriesPdfBuilder()
 {
     connect(this, &AbstractPdfBuilder::signal_allFilesProcessed, this, &IPdfBuilder::signal_finished);
 }

@@ -5,12 +5,12 @@
 #include <QProgressDialog>
 #include <QThread>
 #include <QFileDialog>
+#include <QProgressDialog>
 
 #include <thread>
 #include <iostream>
 
-AbstractPdfBuilder::AbstractPdfBuilder(QStringList &&resultHolderPaths)
-    : resultHolderPaths{std::move(resultHolderPaths)}
+AbstractPdfBuilder::AbstractPdfBuilder()
 {
     const unsigned int threads_count = 4/*std::thread::hardware_concurrency() - 1*/;
     threads.reserve(threads_count);
@@ -29,27 +29,19 @@ AbstractPdfBuilder::~AbstractPdfBuilder()
     }
 }
 
-void AbstractPdfBuilder::exec(const QStringList &paths)
+void AbstractPdfBuilder::exec(const QHash<QString, QStringList> &fileStructure)
 {
-    if (resultHolderPaths.isEmpty() || paths.isEmpty())
+    if (fileStructure.isEmpty())
         return;
 
-    expectedProgress = 0;
-    QHash<QString, QStringList> structure;
-    for (const auto &pdf : paths)
     {
-        for (const auto &holder : resultHolderPaths)
+        QHashIterator<QString, QStringList> iter(fileStructure);
+        while(iter.hasNext())
         {
-            if (pdf.contains(holder))
-            {
-                structure[holder] << pdf;
-                ++expectedProgress;
-                break;
-            }
+            iter.next();
+            expectedProgress += iter.value().count();
         }
     }
-    if(structure.empty())
-        return;
 
     QSharedPointer<QProgressDialog> progress(new QProgressDialog("Сборка...", "Отмена", currentProgress, 0));
     progress->setWindowModality(Qt::ApplicationModal);
@@ -66,9 +58,9 @@ void AbstractPdfBuilder::exec(const QStringList &paths)
                 }
             }, Qt::QueuedConnection);
 
-    progress->setMaximum(paths.count());
+    progress->setMaximum(expectedProgress);
     progress->show();
-    QHashIterator<QString, QStringList> iter(structure);
+    QHashIterator<QString, QStringList> iter(fileStructure);
     while(iter.hasNext())
     {
         iter.next();

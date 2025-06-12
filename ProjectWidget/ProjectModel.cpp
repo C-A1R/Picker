@@ -92,7 +92,7 @@ void ProjectModel::loadProjectItems()
         scanFilesystemItem(rootItem, beginOrderIndex);
         for (int i = 0; i < rootItem->childCount(); ++i)
         {
-            setData(index(i, 0), Qt::Checked, Qt::CheckStateRole);
+            setData(index(i, Columns::col_Name), Qt::Checked, Qt::CheckStateRole);
         }
     }
 }
@@ -107,18 +107,27 @@ std::shared_ptr<const ProjectItem> ProjectModel::getRootItem() const
     return rootItem;
 }
 
-QStringList ProjectModel::getCheckedPdfPaths() const
+QHash<QString, QStringList> ProjectModel::makeBuildFileStructure() const
 {
-    QStringList checked;
-    getCheckedPdf(rootItem, checked);
-    return checked;
-}
+    QHash<QString, QStringList> result;
+    const QStringList resultHolderPaths = getResultHolderPaths();
+    if (resultHolderPaths.isEmpty())
+        return result;
 
-QStringList ProjectModel::getResultHolderPaths() const
-{
-    QStringList checked;
-    getResultHolders(rootItem, checked);
-    return checked;
+    QList<std::shared_ptr<const ProjectItem>> resultHolders;
+    std::transform(resultHolderPaths.cbegin(), resultHolderPaths.cend(), std::back_inserter(resultHolders),
+                   [this](const QString &path)
+                   {
+                       return itemPaths.value(path, nullptr);
+                   });
+
+    for (const std::shared_ptr<const ProjectItem> &holder : std::as_const(resultHolders))
+    {
+        QStringList checked;
+        getCheckedPdf(holder, checked);
+        result.emplace(holder->getPath().absolutePath(), std::move(checked));
+    }
+    return result;
 }
 
 void ProjectModel::getCheckedPdf(const std::shared_ptr<const ProjectItem> &item, QStringList &result) const
@@ -142,6 +151,13 @@ void ProjectModel::getCheckedPdf(const std::shared_ptr<const ProjectItem> &item,
         if (state == Qt::Checked)
             result.append(child->getPath().absolutePath());
     }
+}
+
+QStringList ProjectModel::getResultHolderPaths() const
+{
+    QStringList checked;
+    getResultHolders(rootItem, checked);
+    return checked;
 }
 
 void ProjectModel::getResultHolders(const std::shared_ptr<const ProjectItem> &item, QStringList &result) const
@@ -249,7 +265,8 @@ bool ProjectModel::readFromDb()
             expanded.emplaceBack(std::move(index));
         }
 
-        idMax = idMax < id ? id : idMax;
+        if (idMax < id)
+            idMax = id;
     }
     emit signal_expand(expanded);
 
@@ -275,15 +292,19 @@ bool ProjectModel::scanFilesystemItem(const std::shared_ptr<ProjectItem> &item, 
     for (const QFileInfo &dirInfo : dirInfoList)
     {
         const QString &childPath = dirInfo.absoluteFilePath();
-        const qulonglong id = idMax + 1;
-        auto child = std::make_shared<ProjectItem>(id, childPath, item);
-        child->setOrderIndex(++orderIndex);
+        std::shared_ptr<ProjectItem> child = itemPaths.value(childPath, nullptr);
+        if (!child)
+        {
+            child = std::make_shared<ProjectItem>(++idMax, childPath, item);
+            child->setOrderIndex(++orderIndex);
+        }
+
         if (!scanFilesystemItem(child, orderIndex))
             continue;
+
         if (!itemPaths.contains(childPath))
         {
             insertItem(child, item);
-            idMax = id;
         }
         foundPdf = true;
     }
@@ -291,15 +312,13 @@ bool ProjectModel::scanFilesystemItem(const std::shared_ptr<ProjectItem> &item, 
     for (const QFileInfo &pdfInfo : pdfInfoList)
     {
         const QString &childPath = pdfInfo.absoluteFilePath();
-        const qulonglong id = idMax + 1;
-        auto child = std::make_shared<ProjectItem>(id, childPath, item);
+        if (itemPaths.contains(childPath))
+            continue;
+
+        auto child = std::make_shared<ProjectItem>(++idMax, childPath, item);
         child->setOrderIndex(++orderIndex);
-        if (!itemPaths.contains(childPath))
-        {
-            insertItem(child, item);
-            itemStatuses[child->getId()] = Statuses::NOT_LISTED;
-            idMax = id;
-        }
+        insertItem(child, item);
+        itemStatuses[child->getId()] = Statuses::NOT_LISTED;
     }
 
     return hasPdf || foundPdf;
@@ -373,6 +392,7 @@ void ProjectModel::cleanup()
     idMax = 0;
     checkedItems.clear();
     resultHolders.clear();
+    itemStatuses.clear();
     itemPaths.clear();
 }
 
@@ -457,7 +477,7 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
             break;
         }
     }
-    else if (index.column() == col_ResultHolder)
+    else if (index.column() == Columns::col_ResultHolder)
     {
         switch (role)
         {
@@ -482,7 +502,7 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
 
 bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if (index.column() == col_Name)
+    if (index.column() == Columns::col_Name)
     {
         if (role == Qt::CheckStateRole)
         {
@@ -491,7 +511,7 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
             return true;
         }
     }
-    else if (index.column() == col_ResultHolder)
+    else if (index.column() == Columns::col_ResultHolder)
     {
         if (role == Qt::CheckStateRole)
         {

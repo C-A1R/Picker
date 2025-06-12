@@ -284,8 +284,8 @@ void ProjectWidget::slot_build()
         QMessageBox::warning(this, windowTitle(), "Не выбраны опции сохранения");
         return;
     }
-    const QStringList checkedPdf = project_model->getCheckedPdfPaths();
-    if (checkedPdf.isEmpty())
+    const QHash<QString, QStringList> structure = project_model->makeBuildFileStructure();
+    if (structure.isEmpty())
     {
         QMessageBox::warning(this, windowTitle(), "Не выбраны файлы для сохранения");
         return;
@@ -293,7 +293,7 @@ void ProjectWidget::slot_build()
 
     if (saveOptions == SaveOptions::SAVE_TO_PROJECT_DIRECTORIES)
     {
-        builder.reset(new ToProjectDirectoriesPdfBuilder(project_model->getResultHolderPaths()));
+        builder.reset(new ToProjectDirectoriesPdfBuilder());
     }
     else if (saveOptions == SaveOptions::SAVE_TO_SEPARATE_DIRECTORY)
     {
@@ -302,7 +302,7 @@ void ProjectWidget::slot_build()
         {
             return;
         }
-        builder.reset(new ToSeparateDirectoryPdfBuilder(project_model->getResultHolderPaths(), std::move(defenitFolder)));
+        builder.reset(new ToSeparateDirectoryPdfBuilder(std::move(defenitFolder)));
     }
     else if (saveOptions.testFlag(SaveOptions::SAVE_TO_PROJECT_DIRECTORIES)
                && saveOptions.testFlag(SaveOptions::SAVE_TO_SEPARATE_DIRECTORY))
@@ -312,7 +312,7 @@ void ProjectWidget::slot_build()
         {
             return;
         }
-        builder.reset(new ToProjectAndSeparateDirectoryPdfBuilder(project_model->getResultHolderPaths(),  std::move(defenitFolder)));
+        builder.reset(new ToProjectAndSeparateDirectoryPdfBuilder(std::move(defenitFolder)));
     }
     else
     {
@@ -325,7 +325,8 @@ void ProjectWidget::slot_build()
     }
     connect(builder.get(), &IPdfBuilder::signal_finished, this, &ProjectWidget::slot_buildFinished);
     connect(builder.get(), &IPdfBuilder::signal_cancelled, this, &ProjectWidget::slot_buildCancelled);
-    builder->exec(checkedPdf);
+    builder->exec(structure);
+    project_model->scanFilesystemItem();
 }
 
 void ProjectWidget::slot_saveToFoldersOptionChanged(bool checked)

@@ -7,7 +7,7 @@
 class ToProjectDirectoriesPdfBuilder : public AbstractPdfBuilder
 {
 public:
-    ToProjectDirectoriesPdfBuilder(QStringList &&resultHolderPaths);
+    ToProjectDirectoriesPdfBuilder();
     ~ToProjectDirectoriesPdfBuilder() override = default;
 protected:
     QString destinationFilePath(const QString &parentPath) override;

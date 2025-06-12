@@ -3,19 +3,18 @@
 
 #include "IPdfBuilder.h"
 
-#include <QProgressDialog>
-
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <queue>
 #include <functional>
 
+class ProjectItem;
+
 class AbstractPdfBuilder : public IPdfBuilder
 {
     Q_OBJECT
 
-    const QStringList resultHolderPaths;
     std::mutex taskMutex;
     std::condition_variable cv;
     std::vector<std::thread> threads;
@@ -26,11 +25,11 @@ class AbstractPdfBuilder : public IPdfBuilder
     uint currentProgress = 0;
 
 public:
-    AbstractPdfBuilder(QStringList &&resultHolderPaths);
+    AbstractPdfBuilder();
     ~AbstractPdfBuilder() override;
 
 protected:
-    void exec(const QStringList &paths) override;
+    void exec(const QHash<QString, QStringList> &fileStructure) override;
 
 private:
     void loop();

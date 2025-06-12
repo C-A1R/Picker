@@ -1,19 +1,19 @@
 #include "ToProjectAndSeparateDirectoriesPdfBuilder.h"
 
 #include <QDir>
+#include <QProgressDialog>
 
-ToProjectAndSeparateDirectoryPdfBuilder::ToProjectAndSeparateDirectoryPdfBuilder(QStringList &&resultHolderPaths, QString &&defenitFolder)
-    : ToProjectDirectoriesPdfBuilder{std::move(resultHolderPaths)}
-    , defenitFolder{std::move(defenitFolder)}
+ToProjectAndSeparateDirectoryPdfBuilder::ToProjectAndSeparateDirectoryPdfBuilder(QString &&defenitFolder)
+    : defenitFolder{std::move(defenitFolder)}
 {
     disconnect(this, &AbstractPdfBuilder::signal_allFilesProcessed, this, &IPdfBuilder::signal_finished);
     connect(this, &AbstractPdfBuilder::signal_allFilesProcessed, this, &ToProjectAndSeparateDirectoryPdfBuilder::slot_allFilesProcessed);
 }
 
-void ToProjectAndSeparateDirectoryPdfBuilder::exec(const QStringList &paths)
+void ToProjectAndSeparateDirectoryPdfBuilder::exec(const QHash<QString, QStringList> &fileStructure)
 {
     destinations.clear();
-    ToProjectDirectoriesPdfBuilder::exec(paths);
+    ToProjectDirectoriesPdfBuilder::exec(fileStructure);
 }
 
 QString ToProjectAndSeparateDirectoryPdfBuilder::destinationFilePath(const QString &parentPath)

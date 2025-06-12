@@ -8,7 +8,7 @@ class ToSeparateDirectoryPdfBuilder : public AbstractPdfBuilder
 {
     const QString separateDirectory;
 public:
-    ToSeparateDirectoryPdfBuilder(QStringList &&resultHolderPaths, QString &&defenitFolder);
+    ToSeparateDirectoryPdfBuilder(QString &&defenitFolder);
     ~ToSeparateDirectoryPdfBuilder() override = default;
 protected:
     QString destinationFilePath(const QString &parentPath) override;

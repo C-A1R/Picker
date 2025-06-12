@@ -1,8 +1,7 @@
 #include "ToSeparateDirectoryPdfBuilder.h"
 
-ToSeparateDirectoryPdfBuilder::ToSeparateDirectoryPdfBuilder(QStringList &&resultHolderPaths, QString &&defenitFolder)
-    : AbstractPdfBuilder{std::move(resultHolderPaths)}
-    , separateDirectory{std::move(defenitFolder)}
+ToSeparateDirectoryPdfBuilder::ToSeparateDirectoryPdfBuilder(QString &&defenitFolder)
+    : separateDirectory{std::move(defenitFolder)}
 {
     connect(this, &AbstractPdfBuilder::signal_allFilesProcessed, this, &IPdfBuilder::signal_finished);
 }

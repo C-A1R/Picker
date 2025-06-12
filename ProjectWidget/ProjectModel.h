@@ -8,22 +8,21 @@
 
 /**
  * @brief The ProjectModel class
- * Модель для отображения файловой системы проекта
+ * Модель для отображения структуры проекта
  * Содержит в себе элементы ProjectItem
  */
 class ProjectModel : public QAbstractItemModel
 {
     Q_OBJECT
 
-    std::shared_ptr<ProjectItem>        rootItem;
+    std::shared_ptr<ProjectItem>                    rootItem;
+    QHash<qulonglong, Qt::CheckState>               checkedItems;
+    QHash<qulonglong, Qt::CheckState>               resultHolders;
+    QHash<qulonglong, Statuses>                     itemStatuses;
+    QHash<QString, std::shared_ptr<ProjectItem>>    itemPaths;
 
-    QFileIconProvider                   iconProvider;
-    QHash<qulonglong, Qt::CheckState>   checkedItems;
-    QHash<qulonglong, Qt::CheckState>   resultHolders;
-    QHash<qulonglong, Statuses>         itemStatuses;
-    QHash<QString, std::shared_ptr<ProjectItem>>       itemPaths;
-
-    qulonglong idMax = 0;
+    QFileIconProvider   iconProvider;
+    qulonglong          idMax = 0;
 
     const QHash<Statuses, QColor> statusColors =
     {
@@ -53,8 +52,7 @@ public:
 
     QString projectDbFilePath() const;
     std::shared_ptr<const ProjectItem> getRootItem() const;
-    QStringList getCheckedPdfPaths() const;
-    QStringList getResultHolderPaths() const;
+    QHash<QString, QStringList> makeBuildFileStructure() const;
 
 private:
     bool readFromDb();
@@ -64,6 +62,7 @@ private:
     void resetResultHolderCheckstates_Up(const QModelIndex &index);
     void resetResultHolderCheckstates_Down(const QModelIndex &index);
     void getCheckedPdf(const std::shared_ptr<const ProjectItem> &item, QStringList &result) const;
+    QStringList getResultHolderPaths() const;
     void getResultHolders(const std::shared_ptr<const ProjectItem> &item, QStringList &result) const;
 
     void insertItem(const std::shared_ptr<ProjectItem> &item, std::shared_ptr<ProjectItem> parentItem = nullptr);
