@@ -3,7 +3,6 @@
 
 #include <QWidget>
 
-class QToolBar;
 class QLabel;
 class ProjectTreeView;
 class ProjectModel;
@@ -11,6 +10,7 @@ class ProjectItem;
 class ProjectSortProxyModel;
 class IPdfBuilder;
 class SqlMgr;
+class QUndoStack;
 
 /**
  * @brief The ProjectWidget class
@@ -28,14 +28,14 @@ class ProjectWidget : public QWidget
     };
     Q_DECLARE_FLAGS(SaveOpt, SaveOptions);
 
-    QToolBar                *actions_toolBar {nullptr};
-    QToolBar                *saveOptions_toolBar {nullptr};
     QLabel                  *currentPath_label {nullptr};
     ProjectTreeView         *project_treeView {nullptr};
     ProjectModel            *project_model {nullptr};
 
     SaveOpt                     saveOptions{SaveOptions::SAVE_TO_PROJECT_DIRECTORIES};
     QScopedPointer<IPdfBuilder> builder;
+
+    QUndoStack *undoStack {nullptr};
 
 public:
     ProjectWidget(QWidget *parent = nullptr);

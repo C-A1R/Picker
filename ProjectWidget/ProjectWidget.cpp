@@ -18,11 +18,13 @@
 #include <QMessageBox>
 #include <QStyleHints>
 #include <QApplication>
+#include <QUndoStack>
 
 
 ProjectWidget::ProjectWidget(QWidget *parent)
     : QWidget(parent)
     , saveOptions{SaveOpt::fromInt(Settings::instance()->value(SETTINGS_SAVE_OPTIONS, SaveOptions::SAVE_TO_PROJECT_DIRECTORIES).toInt())}
+    , undoStack{new QUndoStack(this)}
 {
     initUi();
     connect(project_model,    &ProjectModel::signal_expand,        project_treeView, &ProjectTreeView::slot_expand);
@@ -41,7 +43,7 @@ ProjectWidget::~ProjectWidget()
 void ProjectWidget::initUi()
 {
     const bool isDarkTheme = QApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-    actions_toolBar = new QToolBar(this);
+    QToolBar *actions_toolBar = new QToolBar(this);
     {
         auto act = new QAction(actions_toolBar);
         act->setToolTip("Указать путь к проекту");
@@ -70,7 +72,29 @@ void ProjectWidget::initUi()
         actions_toolBar->addAction(act);
     }
 
-    saveOptions_toolBar = new QToolBar(this);
+    QToolBar *undoRedo_toolBar = new QToolBar(this);
+    {
+        auto act = new QAction(undoRedo_toolBar);
+        act->setToolTip("Отмена");
+        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/undo_dark.svg")
+                                       : QIcon(":/buildWidget/ico/undo.svg");
+        act->setIcon(icon);
+        act->setEnabled(undoStack->canUndo());
+        connect(act, &QAction::triggered, undoStack, &QUndoStack::undo);
+        undoRedo_toolBar->addAction(act);
+    }
+    {
+        auto act = new QAction(undoRedo_toolBar);
+        act->setToolTip("Повтор");
+        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/redo_dark.svg")
+                                       : QIcon(":/buildWidget/ico/redo.svg");
+        act->setIcon(icon);
+        act->setEnabled(undoStack->canRedo());
+        connect(act, &QAction::triggered, undoStack, &QUndoStack::redo);
+        undoRedo_toolBar->addAction(act);
+    }
+
+    QToolBar *saveOptions_toolBar = new QToolBar(this);
     {
         auto act = new QAction(saveOptions_toolBar);
         act->setToolTip("Сохранить в каталогах");
@@ -96,6 +120,8 @@ void ProjectWidget::initUi()
 
     auto tools_hLay = new QHBoxLayout();
     tools_hLay->addWidget(actions_toolBar);
+    tools_hLay->addStretch();
+    tools_hLay->addWidget(undoRedo_toolBar);
     tools_hLay->addStretch();
     tools_hLay->addWidget(saveOptions_toolBar);
 
@@ -140,6 +166,7 @@ void ProjectWidget::changeProject(const QString &path)
         return;
     project_model->loadProjectItems();
     currentPath_label->setText(path);
+    currentPath_label->setToolTip(path);
 }
 
 QString ProjectWidget::getDefenitFolder() const

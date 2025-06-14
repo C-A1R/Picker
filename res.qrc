@@ -10,5 +10,9 @@
         <file>ico/save_dark.svg</file>
         <file>ico/folder_dark.svg</file>
         <file>ico/folders_dark.svg</file>
+        <file>ico/redo.svg</file>
+        <file>ico/undo.svg</file>
+        <file>ico/redo_dark.svg</file>
+        <file>ico/undo_dark.svg</file>
     </qresource>
 </RCC>
