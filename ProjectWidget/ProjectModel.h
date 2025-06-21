@@ -57,6 +57,8 @@ public:
     std::shared_ptr<const ProjectItem> getRootItem() const;
     QHash<QString, QStringList> makeBuildFileStructure() const;
 
+    void setItemsChecked(const QModelIndexList &selected, const Qt::CheckState checkState);
+
 private:
     bool readFromDb();
     [[maybe_unused]] bool scanFilesystemItem(const std::shared_ptr<ProjectItem> &item, double &orderIndex);
@@ -77,7 +79,6 @@ signals:
     void signal_expand(const QModelIndexList &);
 
 public slots:
-    void slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState);
     void slot_dropped(const QModelIndex &dropRootIndex, const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices);
     void slot_added(const QModelIndex &dropRootIndex, const QModelIndex droppedIndex, const QString &fullPaths);
 };

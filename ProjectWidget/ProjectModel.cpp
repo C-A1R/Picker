@@ -354,7 +354,7 @@ void ProjectModel::checkItem(const QModelIndex &index)
     const QModelIndex &parent = index.parent();
     if (!parent.isValid())
     {
-        emit dataChanged(index, index);
+        emit dataChanged(index, index, QList<int>{Qt::CheckStateRole});
         return;
     }
     for (int i = 0; i < rowCount(parent); i++)
@@ -389,7 +389,7 @@ void ProjectModel::checkItem(const QModelIndex &index)
             setData(parent, Qt::Checked, Qt::CheckStateRole);
         }
     }
-    emit dataChanged(index, index);
+    emit dataChanged(index, index, QList<int>{Qt::CheckStateRole});
 }
 
 void ProjectModel::cleanup()
@@ -410,7 +410,7 @@ void ProjectModel::resetResultHolderCheckstates_Up(const QModelIndex &index)
     }
     const QModelIndex sibling = parent.siblingAtColumn(col_ResultHolder);
     setData(sibling, Qt::Unchecked, Qt::CheckStateRole);
-    emit dataChanged(sibling, sibling);
+    emit dataChanged(sibling, sibling, QList<int>{Qt::CheckStateRole});
     resetResultHolderCheckstates_Up(sibling);
 }
 
@@ -422,7 +422,7 @@ void ProjectModel::resetResultHolderCheckstates_Down(const QModelIndex &index)
         const QModelIndex &name_child = this->index(i, Columns::col_Name, name_ind);
         const QModelIndex &ch = name_child.siblingAtColumn(Columns::col_ResultHolder);
         setData(ch, Qt::Unchecked, Qt::CheckStateRole);
-        emit dataChanged(ch, ch);
+        emit dataChanged(ch, ch, QList<int>{Qt::CheckStateRole});
         resetResultHolderCheckstates_Down(ch);
     }
 }
@@ -534,7 +534,7 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
     return {};
 }
 
-void ProjectModel::slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState)
+void ProjectModel::setItemsChecked(const QModelIndexList &selected, const Qt::CheckState checkState)
 {
     if (selected.isEmpty())
         return;

@@ -1,8 +1,9 @@
 #include "ProjectWidget.h"
 #include "ProjectTreeView.h"
-#include "ProjectModel.h"
 #include "Settings.h"
 #include "SqlMgr.h"
+
+#include "Commands/ItemsCheckedCmd.h"
 
 #include "PdfBuilder/ToProjectDirectoriesPdfBuilder.h"
 #include "PdfBuilder/ToSeparateDirectoryPdfBuilder.h"
@@ -27,10 +28,10 @@ ProjectWidget::ProjectWidget(QWidget *parent)
     , undoStack{new QUndoStack(this)}
 {
     initUi();
-    connect(project_model,    &ProjectModel::signal_expand,        project_treeView, &ProjectTreeView::slot_expand);
-    connect(project_treeView, &ProjectTreeView::signal_setChecked, project_model,    &ProjectModel::slot_setChecked);
-    connect(project_treeView, &ProjectTreeView::signal_dropped,    project_model,    &ProjectModel::slot_dropped);
-    connect(project_treeView, &ProjectTreeView::signal_added,      project_model,    &ProjectModel::slot_added);
+    connect(project_model,    &ProjectModel::signal_expand,             project_treeView,   &ProjectTreeView::slot_expand);
+    connect(project_treeView, &ProjectTreeView::signal_itemsChecked,    this,               &ProjectWidget::slot_itemsChecked);
+    connect(project_treeView, &ProjectTreeView::signal_dropped,         project_model,      &ProjectModel::slot_dropped);
+    connect(project_treeView, &ProjectTreeView::signal_added,           project_model,      &ProjectModel::slot_added);
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
 }
 
@@ -82,6 +83,7 @@ void ProjectWidget::initUi()
         act->setEnabled(undoStack->canUndo());
         connect(act, &QAction::triggered, undoStack, &QUndoStack::undo);
         undoRedo_toolBar->addAction(act);
+        connect(undoStack, &QUndoStack::canUndoChanged, act, &QAction::setEnabled);
     }
     {
         auto act = new QAction(undoRedo_toolBar);
@@ -92,6 +94,7 @@ void ProjectWidget::initUi()
         act->setEnabled(undoStack->canRedo());
         connect(act, &QAction::triggered, undoStack, &QUndoStack::redo);
         undoRedo_toolBar->addAction(act);
+        connect(undoStack, &QUndoStack::canRedoChanged, act, &QAction::setEnabled);
     }
 
     QToolBar *saveOptions_toolBar = new QToolBar(this);
@@ -373,4 +376,9 @@ void ProjectWidget::slot_buildFinished()
 void ProjectWidget::slot_buildCancelled()
 {
     QMessageBox::information(this, windowTitle(), "Сборка отменена пользователем");
+}
+
+void ProjectWidget::slot_itemsChecked(const QModelIndexList &selected, const Qt::CheckState checkState)
+{
+    undoStack->push(new ItemsCheckedCmd(selected, checkState, project_model));
 }

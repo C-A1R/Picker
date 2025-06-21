@@ -1,11 +1,12 @@
 #ifndef PROJECTWIDGET_H
 #define PROJECTWIDGET_H
 
+#include "ProjectModel.h"
+
 #include <QWidget>
 
 class QLabel;
 class ProjectTreeView;
-class ProjectModel;
 class ProjectItem;
 class ProjectSortProxyModel;
 class IPdfBuilder;
@@ -58,6 +59,8 @@ private slots:
     void slot_saveToDefenitFolderOptionChanged(bool checked);
     void slot_buildFinished();
     void slot_buildCancelled();
+
+    void slot_itemsChecked(const QModelIndexList &selected, const Qt::CheckState checkState);
 };
 
 #endif // PROJECTWIDGET_H
