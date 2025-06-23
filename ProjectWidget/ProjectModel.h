@@ -55,9 +55,12 @@ public:
 
     QString projectDbFilePath() const;
     std::shared_ptr<const ProjectItem> getRootItem() const;
+    QStringList getResultHolderPaths(std::shared_ptr<const ProjectItem> item = nullptr) const;
+    QModelIndexList getResultHolderIndices(const QModelIndex &index = QModelIndex()) const;
     QHash<QString, QStringList> makeBuildFileStructure() const;
 
     void setItemsChecked(const QModelIndexList &selected, const Qt::CheckState checkState);
+    void setResultHolders(const QModelIndexList &resultHolders);
 
 private:
     bool readFromDb();
@@ -67,11 +70,11 @@ private:
     void resetResultHolderCheckstates_Up(const QModelIndex &index);
     void resetResultHolderCheckstates_Down(const QModelIndex &index);
     void getCheckedPdf(const std::shared_ptr<const ProjectItem> &item, QStringList &result) const;
-    QStringList getResultHolderPaths() const;
     void getResultHolders(const std::shared_ptr<const ProjectItem> &item, QStringList &result) const;
+    void getResultHolders(const QModelIndex &index, QModelIndexList &result) const;
 
     void insertItem(const std::shared_ptr<ProjectItem> &item, std::shared_ptr<ProjectItem> parentItem = nullptr);
-    std::shared_ptr<ProjectItem> findItem(const QModelIndex &index);
+    std::shared_ptr<ProjectItem> findItem(const QModelIndex &index) const;
 
     std::tuple<double, double> newOrder(const std::shared_ptr<const ProjectItem> parentItem, const QModelIndex &droppedIndex, const int draggedCount);
 

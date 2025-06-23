@@ -22,6 +22,7 @@ DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
 SOURCES += \
     ProjectWidget/Commands/ItemsCheckedCmd.cpp \
+    ProjectWidget/Commands/ResultHolderCheckedCmd.cpp \
     ProjectWidget/ProjectItem.cpp \
     ProjectWidget/ProjectModel.cpp \
     ProjectWidget/ProjectTreeView.cpp \
@@ -40,6 +41,7 @@ SOURCES += \
 
 HEADERS += \
     ProjectWidget/Commands/ItemsCheckedCmd.h \
+    ProjectWidget/Commands/ResultHolderCheckedCmd.h \
     ProjectWidget/Enums.h \
     ProjectWidget/ProjectItem.h \
     ProjectWidget/ProjectModel.h \

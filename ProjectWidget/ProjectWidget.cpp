@@ -4,6 +4,7 @@
 #include "SqlMgr.h"
 
 #include "Commands/ItemsCheckedCmd.h"
+#include "Commands/ResultHolderCheckedCmd.h"
 
 #include "PdfBuilder/ToProjectDirectoriesPdfBuilder.h"
 #include "PdfBuilder/ToSeparateDirectoryPdfBuilder.h"
@@ -28,10 +29,14 @@ ProjectWidget::ProjectWidget(QWidget *parent)
     , undoStack{new QUndoStack(this)}
 {
     initUi();
-    connect(project_model,    &ProjectModel::signal_expand,             project_treeView,   &ProjectTreeView::slot_expand);
-    connect(project_treeView, &ProjectTreeView::signal_itemsChecked,    this,               &ProjectWidget::slot_itemsChecked);
-    connect(project_treeView, &ProjectTreeView::signal_dropped,         project_model,      &ProjectModel::slot_dropped);
-    connect(project_treeView, &ProjectTreeView::signal_added,           project_model,      &ProjectModel::slot_added);
+
+    connect(project_treeView, &ProjectTreeView::signal_itemsChecked,            this,   &ProjectWidget::slot_itemsChecked);
+    connect(project_treeView, &ProjectTreeView::signal_resultHolderChecked,     this,   &ProjectWidget::slot_resultHolderChecked);
+
+    connect(project_model,    &ProjectModel::signal_expand,         project_treeView,   &ProjectTreeView::slot_expand);
+    connect(project_treeView, &ProjectTreeView::signal_dropped,     project_model,      &ProjectModel::slot_dropped);
+    connect(project_treeView, &ProjectTreeView::signal_added,       project_model,      &ProjectModel::slot_added);
+
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
 }
 
@@ -380,5 +385,12 @@ void ProjectWidget::slot_buildCancelled()
 
 void ProjectWidget::slot_itemsChecked(const QModelIndexList &selected, const Qt::CheckState checkState)
 {
+    if (selected.empty())
+        return;
     undoStack->push(new ItemsCheckedCmd(selected, checkState, project_model));
+}
+
+void ProjectWidget::slot_resultHolderChecked(const QModelIndex &index)
+{
+    undoStack->push(new ResultHolderCheckedCmd(index, project_model));
 }

@@ -61,6 +61,7 @@ private slots:
     void slot_buildCancelled();
 
     void slot_itemsChecked(const QModelIndexList &selected, const Qt::CheckState checkState);
+    void slot_resultHolderChecked(const QModelIndex &index);
 };
 
 #endif // PROJECTWIDGET_H

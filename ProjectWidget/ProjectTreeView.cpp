@@ -15,13 +15,16 @@ ProjectTreeView::ProjectTreeView(QWidget *parent) : QTreeView(parent)
 void ProjectTreeView::mousePressEvent(QMouseEvent *event)
 {
     const QModelIndex index = indexAt(event->pos());
-    if (index.isValid()
-        && index.column() == Columns::col_Name
-        && event->button() == Qt::LeftButton)
+    if (index.isValid() && event->button() == Qt::LeftButton)
     {
         if (!checkBoxClicked(index, event))
         {
             QTreeView::mousePressEvent(event);
+            return;
+        }
+        if (index.column() == Columns::col_ResultHolder)
+        {
+            emit signal_resultHolderChecked(index);
             return;
         }
 
@@ -59,7 +62,7 @@ void ProjectTreeView::mouseReleaseEvent(QMouseEvent *event)
 {
     const QModelIndex index = indexAt(event->pos());
     if (index.isValid()
-        && index.column() == Columns::col_Name
+        // && index.column() == Columns::col_Name
         && event->button() == Qt::LeftButton)
     {
         if (checkBoxClicked(index, event))

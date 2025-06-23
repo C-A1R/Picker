@@ -18,7 +18,6 @@ public:
 
 private:
     void undo() override;
-
     void redo() override;
 };
 
