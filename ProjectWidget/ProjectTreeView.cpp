@@ -12,33 +12,63 @@ ProjectTreeView::ProjectTreeView(QWidget *parent) : QTreeView(parent)
     setStyle(new ProjectTreeViewStyle(style()));
 }
 
+void ProjectTreeView::mousePressEvent(QMouseEvent *event)
+{
+    const QModelIndex index = indexAt(event->pos());
+    if (index.isValid() && event->button() == Qt::LeftButton)
+    {
+        if (!checkBoxClicked(index, event))
+        {
+            QTreeView::mousePressEvent(event);
+            return;
+        }
+        if (index.column() == Columns::col_ResultHolder)
+        {
+            emit signal_resultHolderChecked(index);
+            return;
+        }
+
+        QModelIndexList selected = selectedIndexes();
+        selected.removeIf([&index](const QModelIndex &ind)
+                          {
+                              return ind.column() != index.column();
+                          });
+        if (selected.isEmpty())
+        {
+            selected << index;
+            selectRow(index);
+        }
+        else if (!selected.contains(index))
+        {
+            selected.clear();
+            selected << index;
+            selectionModel()->clearSelection();
+            selectRow(index);
+        }
+
+        const auto currCheckState = index.data(Qt::CheckStateRole).value<Qt::CheckState>();
+        const auto newCheckState = (currCheckState == Qt::Checked || currCheckState == Qt::PartiallyChecked) ? Qt::Unchecked : Qt::Checked;
+        selected.removeIf([&newCheckState](const QModelIndex &ind)
+                          {
+                              return ind.data(Qt::CheckStateRole) == newCheckState;
+                          });
+        emit signal_itemsChecked(selected, newCheckState);
+        return;
+    }
+    QTreeView::mousePressEvent(event);
+}
+
 void ProjectTreeView::mouseReleaseEvent(QMouseEvent *event)
 {
     const QModelIndex index = indexAt(event->pos());
     if (index.isValid()
-        && index.column() == Columns::col_Name
+        // && index.column() == Columns::col_Name
         && event->button() == Qt::LeftButton)
     {
-         QModelIndexList selected = selectedIndexes();
-        if (!selected.contains(index))
-        {
-            QTreeView::mouseReleaseEvent(event);
+        if (checkBoxClicked(index, event))
             return;
-        }
-        QStyleOptionButton opt;
-        opt.rect = visualRect(index);
-        QRect checkBoxRect = style()->subElementRect(QStyle::SE_ItemViewItemCheckIndicator, &opt);
-        {//костыль:
-            checkBoxRect.setLeft(checkBoxRect.left() + 4);
-            checkBoxRect.setRight(checkBoxRect.right() + 4);
-        }
-        if (checkBoxRect.contains(event->pos()))
-        {
-            const auto currCheckState = index.data(Qt::CheckStateRole).value<Qt::CheckState>();
-            emit signal_setChecked(selected, (currCheckState == Qt::Checked || currCheckState == Qt::PartiallyChecked) ? Qt::Unchecked : Qt::Checked);
-            return;
-        }
     }
+
     QTreeView::mouseReleaseEvent(event);
 }
 
@@ -48,7 +78,6 @@ void ProjectTreeView::dragEnterEvent(QDragEnterEvent *event)
     {
         return;
     }
-    // if (event->mimeData()->hasFormat("text/uri-list")) // from this
     if (event->mimeData()->hasFormat("application/x-qabstractitemmodeldatalist")) // from this
     {
         if (event->source() != this)
@@ -114,7 +143,6 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
 
     QSet<qulonglong> expandedIds;
     getExpandedItemIds(rootIndex(), expandedIds);
-    // if (event->source() == this && event->mimeData()->hasFormat("text/uri-list")) // from this
     if (event->source() == this && event->mimeData()->hasFormat("application/x-qabstractitemmodeldatalist")) // from this
     {
         const QModelIndexList &draggedIndices = this->selectedIndexes();
@@ -184,6 +212,31 @@ void ProjectTreeView::expandItems(const QModelIndex &index, const QSet<qulonglon
     for (int i = 0; i < model()->rowCount(index); ++i)
     {
         expandItems(model()->index(i, 0, index), expandedIds);
+    }
+}
+
+bool ProjectTreeView::checkBoxClicked(const QModelIndex &index, QMouseEvent *event) const
+{
+    if (!index.isValid())
+        return false;
+    QStyleOptionButton opt;
+    opt.rect = visualRect(index);
+    QRect checkBoxRect = style()->subElementRect(QStyle::SE_ItemViewItemCheckIndicator, &opt);
+    {//костыль:
+        checkBoxRect.setLeft(checkBoxRect.left() + 4);
+        checkBoxRect.setRight(checkBoxRect.right() + 4);
+    }
+    return checkBoxRect.contains(event->pos());
+}
+
+void ProjectTreeView::selectRow(const QModelIndex &index)
+{
+    if (!index.isValid())
+        return;
+
+    for (int col = 0; col < Columns::MAX; ++col)
+    {
+        selectionModel()->select(model()->index(index.row(), col, index.parent()), QItemSelectionModel::Select);
     }
 }
 

@@ -58,8 +58,7 @@ int ProjectModel::rowCount(const QModelIndex &parent) const
 
     const ProjectItem *parentItem = parent.isValid() ? static_cast<const ProjectItem*>(parent.internalPointer())
                                                      : rootItem.get();
-    int count = parentItem->childCount();
-    return count;
+    return parentItem->childCount();
 }
 
 int ProjectModel::columnCount(const QModelIndex &parent) const
@@ -115,7 +114,7 @@ std::shared_ptr<const ProjectItem> ProjectModel::getRootItem() const
 QHash<QString, QStringList> ProjectModel::makeBuildFileStructure() const
 {
     QHash<QString, QStringList> result;
-    const QStringList resultHolderPaths = getResultHolderPaths();
+    const QStringList resultHolderPaths = getResultHolderPaths(rootItem);
     if (resultHolderPaths.isEmpty())
         return result;
 
@@ -158,10 +157,22 @@ void ProjectModel::getCheckedPdf(const std::shared_ptr<const ProjectItem> &item,
     }
 }
 
-QStringList ProjectModel::getResultHolderPaths() const
+QStringList ProjectModel::getResultHolderPaths(std::shared_ptr<const ProjectItem> item) const
 {
     QStringList checked;
-    getResultHolders(rootItem, checked);
+    if (!item)
+        item = rootItem;
+    getResultHolders(item, checked);
+    return checked;
+}
+
+QModelIndexList ProjectModel::getResultHolderIndices(const QModelIndex &index) const
+{
+    QModelIndexList checked;
+    if (!index.isValid())
+        return checked;
+
+    getResultHolders(index, checked);
     return checked;
 }
 
@@ -186,6 +197,34 @@ void ProjectModel::getResultHolders(const std::shared_ptr<const ProjectItem> &it
     }
 }
 
+void ProjectModel::getResultHolders(const QModelIndex &index, QModelIndexList &result) const
+{
+    const QModelIndex &sibling = index.siblingAtColumn(0);
+    if (!sibling.isValid())
+        return;
+
+    const int rows = rowCount(sibling);
+    if (!rows)
+        return;
+
+    for (int i = 0; i < rows; ++i)
+    {
+        const QModelIndex &siblingChild = this->index(i, 0, sibling);
+        if (!siblingChild.isValid())
+            continue;
+        const QModelIndex &child = siblingChild.siblingAtColumn(Columns::col_ResultHolder);
+        if (!child.isValid())
+            continue;
+
+        if (child.data(Qt::CheckStateRole).value<Qt::CheckState>() == Qt::Checked)
+        {
+            result.append(child);
+            continue;
+        }
+        getResultHolders(child, result);
+    }
+}
+
 ///добавлять элемент в модель только этим методом
 void ProjectModel::insertItem(const std::shared_ptr<ProjectItem> &item, std::shared_ptr<ProjectItem> parentItem)
 {
@@ -198,7 +237,7 @@ void ProjectModel::insertItem(const std::shared_ptr<ProjectItem> &item, std::sha
     itemPaths.insert(item->getPath().absolutePath(), item);
 }
 
-std::shared_ptr<ProjectItem> ProjectModel::findItem(const QModelIndex &index)
+std::shared_ptr<ProjectItem> ProjectModel::findItem(const QModelIndex &index) const
 {
     return index.isValid() ? itemPaths.value(index.data(ProjectItem::Roles::ABS_PATH).toString(), nullptr) : rootItem;
 }
@@ -354,7 +393,7 @@ void ProjectModel::checkItem(const QModelIndex &index)
     const QModelIndex &parent = index.parent();
     if (!parent.isValid())
     {
-        emit dataChanged(index, index);
+        emit dataChanged(index, index, QList<int>{Qt::CheckStateRole});
         return;
     }
     for (int i = 0; i < rowCount(parent); i++)
@@ -389,7 +428,7 @@ void ProjectModel::checkItem(const QModelIndex &index)
             setData(parent, Qt::Checked, Qt::CheckStateRole);
         }
     }
-    emit dataChanged(index, index);
+    emit dataChanged(index, index, QList<int>{Qt::CheckStateRole});
 }
 
 void ProjectModel::cleanup()
@@ -410,7 +449,7 @@ void ProjectModel::resetResultHolderCheckstates_Up(const QModelIndex &index)
     }
     const QModelIndex sibling = parent.siblingAtColumn(col_ResultHolder);
     setData(sibling, Qt::Unchecked, Qt::CheckStateRole);
-    emit dataChanged(sibling, sibling);
+    emit dataChanged(sibling, sibling, QList<int>{Qt::CheckStateRole});
     resetResultHolderCheckstates_Up(sibling);
 }
 
@@ -422,7 +461,7 @@ void ProjectModel::resetResultHolderCheckstates_Down(const QModelIndex &index)
         const QModelIndex &name_child = this->index(i, Columns::col_Name, name_ind);
         const QModelIndex &ch = name_child.siblingAtColumn(Columns::col_ResultHolder);
         setData(ch, Qt::Unchecked, Qt::CheckStateRole);
-        emit dataChanged(ch, ch);
+        emit dataChanged(ch, ch, QList<int>{Qt::CheckStateRole});
         resetResultHolderCheckstates_Down(ch);
     }
 }
@@ -528,13 +567,14 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
             }
             auto item = static_cast<const ProjectItem*>(index.internalPointer());
             resultHolders[item->getId()] = state;
+            emit dataChanged(index, index, QList<int>{Qt::CheckStateRole});
             return true;
         }
     }
     return {};
 }
 
-void ProjectModel::slot_setChecked(const QModelIndexList &selected, const Qt::CheckState checkState)
+void ProjectModel::setItemsChecked(const QModelIndexList &selected, const Qt::CheckState checkState)
 {
     if (selected.isEmpty())
         return;
@@ -544,6 +584,14 @@ void ProjectModel::slot_setChecked(const QModelIndexList &selected, const Qt::Ch
         if (index.column() != Columns::col_Name)
             continue;
         setData(index, checkState, Qt::CheckStateRole);
+    }
+}
+
+void ProjectModel::setResultHolders(const QModelIndexList &resultHolders)
+{
+    for (const QModelIndex &index : resultHolders)
+    {
+        setData(index, Qt::Checked, Qt::CheckStateRole);
     }
 }
 

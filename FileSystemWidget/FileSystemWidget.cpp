@@ -81,6 +81,7 @@ void FileSystemWidget::initDriveActions()
         fileSystem_listView->setRootIndex(fileSystem_model->index(drivePath));
         drives_toolBar->actions().at(0)->setChecked(true);
         currentPath_label->setText(drivePath);
+        currentPath_label->setToolTip(drivePath);
     };
 
     const auto lastPath{Settings::instance()->value(SETTINGS_FILESYSTEM_PATH).toString()};
@@ -119,6 +120,7 @@ void FileSystemWidget::initDriveActions()
         (*actIter)->setChecked(true);
     }
     currentPath_label->setText(lastPath);
+    currentPath_label->setToolTip(lastPath);
 }
 
 void FileSystemWidget::slot_goIn()
@@ -136,7 +138,9 @@ void FileSystemWidget::slot_goIn()
     }
     fileSystem_listView->setRootIndex(fileSystem_model->index(newRootPath));
     fileSystem_model->setRootPath(newRootPath);
-    currentPath_label->setText(index.data(QFileSystemModel::FilePathRole).toString());
+    const QString &drivePath = index.data(QFileSystemModel::FilePathRole).toString();
+    currentPath_label->setText(drivePath);
+    currentPath_label->setToolTip(drivePath);
     fileSystem_listView->setCurrentIndex(QModelIndex());
 }
 
@@ -146,7 +150,9 @@ void FileSystemWidget::slot_goUp()
     fileSystem_listView->setRootIndex(parentIndex);
     const QString prevRootPath = fileSystem_model->rootPath();
     fileSystem_model->setRootPath(fileSystem_model->fileInfo(parentIndex).filePath());
-    currentPath_label->setText(parentIndex.data(QFileSystemModel::FilePathRole).toString());
+    const QString &drivePath = parentIndex.data(QFileSystemModel::FilePathRole).toString();
+    currentPath_label->setText(drivePath);
+    currentPath_label->setToolTip(drivePath);
     fileSystem_listView->setCurrentIndex(fileSystem_model->index(prevRootPath));
 }
 
@@ -161,4 +167,5 @@ void FileSystemWidget::slot_changeDrive()
     fileSystem_model->setRootPath(act->text());
     fileSystem_listView->setRootIndex(fileSystem_model->index(act->text()));
     currentPath_label->setText(fileSystem_model->rootPath());
+    currentPath_label->setToolTip(fileSystem_model->rootPath());
 }

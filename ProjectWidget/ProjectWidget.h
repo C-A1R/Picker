@@ -1,16 +1,17 @@
 #ifndef PROJECTWIDGET_H
 #define PROJECTWIDGET_H
 
+#include "ProjectModel.h"
+
 #include <QWidget>
 
-class QToolBar;
 class QLabel;
 class ProjectTreeView;
-class ProjectModel;
 class ProjectItem;
 class ProjectSortProxyModel;
 class IPdfBuilder;
 class SqlMgr;
+class QUndoStack;
 
 /**
  * @brief The ProjectWidget class
@@ -28,14 +29,14 @@ class ProjectWidget : public QWidget
     };
     Q_DECLARE_FLAGS(SaveOpt, SaveOptions);
 
-    QToolBar                *actions_toolBar {nullptr};
-    QToolBar                *saveOptions_toolBar {nullptr};
     QLabel                  *currentPath_label {nullptr};
     ProjectTreeView         *project_treeView {nullptr};
     ProjectModel            *project_model {nullptr};
 
     SaveOpt                     saveOptions{SaveOptions::SAVE_TO_PROJECT_DIRECTORIES};
     QScopedPointer<IPdfBuilder> builder;
+
+    QUndoStack *undoStack {nullptr};
 
 public:
     ProjectWidget(QWidget *parent = nullptr);
@@ -58,6 +59,9 @@ private slots:
     void slot_saveToDefenitFolderOptionChanged(bool checked);
     void slot_buildFinished();
     void slot_buildCancelled();
+
+    void slot_itemsChecked(const QModelIndexList &selected, const Qt::CheckState checkState);
+    void slot_resultHolderChecked(const QModelIndex &index);
 };
 
 #endif // PROJECTWIDGET_H
