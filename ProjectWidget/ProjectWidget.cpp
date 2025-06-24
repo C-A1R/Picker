@@ -85,9 +85,10 @@ void ProjectWidget::initUi()
         const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/undo_dark.svg")
                                        : QIcon(":/buildWidget/ico/undo.svg");
         act->setIcon(icon);
+        act->setShortcut(QKeySequence::Undo);
         act->setEnabled(undoStack->canUndo());
-        connect(act, &QAction::triggered, undoStack, &QUndoStack::undo);
         undoRedo_toolBar->addAction(act);
+        connect(act, &QAction::triggered, undoStack, &QUndoStack::undo);
         connect(undoStack, &QUndoStack::canUndoChanged, act, &QAction::setEnabled);
     }
     {
@@ -96,9 +97,10 @@ void ProjectWidget::initUi()
         const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/redo_dark.svg")
                                        : QIcon(":/buildWidget/ico/redo.svg");
         act->setIcon(icon);
+        act->setShortcut(QKeySequence::Redo);
         act->setEnabled(undoStack->canRedo());
-        connect(act, &QAction::triggered, undoStack, &QUndoStack::redo);
         undoRedo_toolBar->addAction(act);
+        connect(act, &QAction::triggered, undoStack, &QUndoStack::redo);
         connect(undoStack, &QUndoStack::canRedoChanged, act, &QAction::setEnabled);
     }
 
