@@ -98,6 +98,7 @@ void ProjectModel::loadProjectItems()
         {
             setData(index(i, Columns::col_Name), Qt::Checked, Qt::CheckStateRole);
         }
+        emit layoutChanged();
     }
 }
 
