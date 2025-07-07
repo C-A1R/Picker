@@ -15,7 +15,7 @@ class ProjectItem
     const qulonglong    id{0};
     const QDir          m_path;
     const QFileInfo     m_info;
-    double              m_orderIndex{1.0};
+    double              m_orderIndex{0.0};
 
     std::weak_ptr<ProjectItem>              m_parentItem;
     QList<std::shared_ptr<ProjectItem>>     m_childItems;

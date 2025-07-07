@@ -11,7 +11,6 @@
 #include "PdfBuilder/ToProjectAndSeparateDirectoriesPdfBuilder.h"
 
 #include <QToolBar>
-#include <QActionGroup>
 #include <QLabel>
 #include <QHeaderView>
 #include <QVBoxLayout>
@@ -172,11 +171,12 @@ void ProjectWidget::changeProject(const QString &path)
 {
     if (path.isEmpty())
         return;
-    if (!project_model->setProjectPath(path))
+
+    if (!project_model->loadProjectItems(path))
         return;
-    project_model->loadProjectItems();
     currentPath_label->setText(path);
     currentPath_label->setToolTip(path);
+    project_treeView->expand(project_model->index(0, 0));
 }
 
 QString ProjectWidget::getDefenitFolder() const
@@ -306,7 +306,7 @@ void ProjectWidget::slot_saveProject()
         qDebug("can`t start transaction");
         return;
     }
-    saveProjectTree(project_model->getRootItem(), sqlMgr);
+    saveProjectTree(project_model->projectRootItem(), sqlMgr);
     if (!sqlMgr.commit())
     {
         qDebug("can`t commit transaction");
@@ -318,13 +318,13 @@ void ProjectWidget::slot_build()
 {
     if (saveOptions == SaveOptions::SAVE_NONE)
     {
-        QMessageBox::warning(this, windowTitle(), "Не выбраны опции сохранения");
+        QMessageBox::warning(this, windowTitle(), "Не выбраны опции сборки");
         return;
     }
     const QHash<QString, QStringList> structure = project_model->makeBuildFileStructure();
     if (structure.isEmpty())
     {
-        QMessageBox::warning(this, windowTitle(), "Не выбраны файлы для сохранения");
+        QMessageBox::warning(this, windowTitle(), "Не выбраны файлы для сборки");
         return;
     }
 

@@ -61,9 +61,7 @@ void ProjectTreeView::mousePressEvent(QMouseEvent *event)
 void ProjectTreeView::mouseReleaseEvent(QMouseEvent *event)
 {
     const QModelIndex index = indexAt(event->pos());
-    if (index.isValid()
-        // && index.column() == Columns::col_Name
-        && event->button() == Qt::LeftButton)
+    if (index.isValid() && event->button() == Qt::LeftButton)
     {
         if (checkBoxClicked(index, event))
             return;
@@ -145,7 +143,7 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
     getExpandedItemIds(rootIndex(), expandedIds);
     if (event->source() == this && event->mimeData()->hasFormat("application/x-qabstractitemmodeldatalist")) // from this
     {
-        const QModelIndexList &draggedIndices = this->selectedIndexes();
+        QModelIndexList draggedIndices = this->selectedIndexes();
         if (draggedIndices.isEmpty())
         {
             return;
@@ -154,6 +152,7 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
         {
             return;
         }
+        draggedIndices.removeIf([](const QModelIndex &index) { return index.column() != Columns::col_Name; });
         emit signal_dropped(dropRootIndex, droppedIndex, draggedIndices);
     }
     else if (event->mimeData()->hasFormat("text/plain")) // from left panel

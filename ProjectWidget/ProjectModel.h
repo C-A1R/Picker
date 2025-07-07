@@ -16,13 +16,14 @@ class ProjectModel : public QAbstractItemModel
 {
     Q_OBJECT
 
-    std::shared_ptr<ProjectItem>                    rootItem;
+    QString                                         projectRootPath;
+    std::shared_ptr<ProjectItem>                    invisibleRootItem;
     QHash<qulonglong, Qt::CheckState>               checkedItems;
     QHash<qulonglong, Qt::CheckState>               resultHolders;
     QHash<qulonglong, Statuses>                     itemStatuses;
     QHash<QString, std::shared_ptr<ProjectItem>>    itemPaths;
 
-    qulonglong idMax = 0;
+    qulonglong idMax = 1;
 
     QIcon dirIcon;
     QIcon pdfIcon;
@@ -47,14 +48,12 @@ public:
     QModelIndex parent(const QModelIndex &index) const override;
     int rowCount(const QModelIndex &parent = {}) const override;
     int columnCount(const QModelIndex &parent = {}) const override;
-
     bool hasChildren(const QModelIndex &parent = QModelIndex()) const override;
 
-    bool setProjectPath(const QString &rootPath);
-    void loadProjectItems();
+    bool loadProjectItems(const QString &rootPath);
 
     QString projectDbFilePath() const;
-    std::shared_ptr<const ProjectItem> getRootItem() const;
+    std::shared_ptr<ProjectItem> projectRootItem() const;
     QStringList getResultHolderPaths(std::shared_ptr<const ProjectItem> item = nullptr) const;
     QModelIndexList getResultHolderIndices(const QModelIndex &index = QModelIndex()) const;
     QHash<QString, QStringList> makeBuildFileStructure() const;

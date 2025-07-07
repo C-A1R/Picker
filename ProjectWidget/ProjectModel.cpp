@@ -6,7 +6,7 @@
 
 ProjectModel::ProjectModel(QObject *parent)
     : QAbstractItemModel(parent)
-    , rootItem(std::make_shared<ProjectItem>(0, ""))
+    , invisibleRootItem(std::make_shared<ProjectItem>(0, ""))
 {
     QFileIconProvider provider;
     dirIcon = provider.icon(QFileIconProvider::Folder);
@@ -32,7 +32,7 @@ QModelIndex ProjectModel::index(int row, int column, const QModelIndex &parent) 
         return {};
 
     const ProjectItem *parentItem = parent.isValid() ? static_cast<ProjectItem*>(parent.internalPointer())
-                                                     : rootItem.get();
+                                                     : invisibleRootItem.get();
     if (const std::shared_ptr<const ProjectItem> &childItem = parentItem->child(row))
         return createIndex(row, column, childItem.get());
     return {};
@@ -47,8 +47,8 @@ QModelIndex ProjectModel::parent(const QModelIndex &index) const
     std::shared_ptr<const ProjectItem> parentItem = childItem->parentItem();
     if (!parentItem)
         return {};
-    return parentItem != rootItem ? createIndex(parentItem->row(), 0, parentItem.get())
-                                  : QModelIndex{};
+    return parentItem != invisibleRootItem ? createIndex(parentItem->row(), 0, parentItem.get())
+                                           : QModelIndex{};
 }
 
 int ProjectModel::rowCount(const QModelIndex &parent) const
@@ -57,7 +57,7 @@ int ProjectModel::rowCount(const QModelIndex &parent) const
         return 0;
 
     const ProjectItem *parentItem = parent.isValid() ? static_cast<const ProjectItem*>(parent.internalPointer())
-                                                     : rootItem.get();
+                                                     : invisibleRootItem.get();
     return parentItem->childCount();
 }
 
@@ -70,52 +70,51 @@ int ProjectModel::columnCount(const QModelIndex &parent) const
 bool ProjectModel::hasChildren(const QModelIndex &parent) const
 {
     auto parentItem = parent.isValid() ? static_cast<const ProjectItem*>(parent.internalPointer())
-                                       : rootItem.get();
+                                       : invisibleRootItem.get();
     return parentItem->childCount() > 0;
 }
 
-/// установить директорию проекта
-bool ProjectModel::setProjectPath(const QString &rootPath)
-{
-    auto projectRootItem = std::make_shared<ProjectItem>(0, rootPath);
-    if (!projectRootItem->exists())
-    {
-        return false;
-    }
-    rootItem = projectRootItem;
-    return true;
-}
-
 /// загружаем элементы проекта из файла или из файловой системы
-void ProjectModel::loadProjectItems()
+bool ProjectModel::loadProjectItems(const QString &rootPath)
 {
+    if (!QFile::exists(rootPath))
+        return false;
+
+    projectRootPath = rootPath;
     cleanup();
     if (!readFromDb())
     {
-        double beginOrderIndex = rootItem->getOrderIndex();
-        scanFilesystemItem(rootItem, beginOrderIndex);
-        for (int i = 0; i < rootItem->childCount(); ++i)
+        auto projectRootItem = std::make_shared<ProjectItem>(1, rootPath);
+        insertItem(projectRootItem);
+        projectRootItem->setOrderIndex(1.0);
+
+        double beginOrderIndex = projectRootItem->getOrderIndex();
+        scanFilesystemItem(projectRootItem, beginOrderIndex);
+        for (int i = 0; i < projectRootItem->childCount(); ++i)
         {
             setData(index(i, Columns::col_Name), Qt::Checked, Qt::CheckStateRole);
         }
         emit layoutChanged();
     }
+    return true;
 }
 
 QString ProjectModel::projectDbFilePath() const
 {
-    return rootItem->getPath().absolutePath() + QDir::separator() + "picker.sqlite";
+    return projectRootPath + QDir::separator() + "picker.sqlite";
 }
 
-std::shared_ptr<const ProjectItem> ProjectModel::getRootItem() const
+std::shared_ptr<ProjectItem> ProjectModel::projectRootItem() const
 {
-    return rootItem;
+    if (!invisibleRootItem->childCount())
+        return nullptr;
+    return invisibleRootItem->child(0);
 }
 
 QHash<QString, QStringList> ProjectModel::makeBuildFileStructure() const
 {
     QHash<QString, QStringList> result;
-    const QStringList resultHolderPaths = getResultHolderPaths(rootItem);
+    const QStringList resultHolderPaths = getResultHolderPaths(invisibleRootItem);
     if (resultHolderPaths.isEmpty())
         return result;
 
@@ -162,7 +161,7 @@ QStringList ProjectModel::getResultHolderPaths(std::shared_ptr<const ProjectItem
 {
     QStringList checked;
     if (!item)
-        item = rootItem;
+        item = invisibleRootItem;
     getResultHolders(item, checked);
     return checked;
 }
@@ -231,7 +230,7 @@ void ProjectModel::insertItem(const std::shared_ptr<ProjectItem> &item, std::sha
 {
     if (!parentItem)
     {
-        parentItem = rootItem;
+        parentItem = invisibleRootItem;
     }
     item->setParent(parentItem);
     parentItem->appendChild(item);
@@ -240,10 +239,10 @@ void ProjectModel::insertItem(const std::shared_ptr<ProjectItem> &item, std::sha
 
 std::shared_ptr<ProjectItem> ProjectModel::findItem(const QModelIndex &index) const
 {
-    return index.isValid() ? itemPaths.value(index.data(ProjectItem::Roles::ABS_PATH).toString(), nullptr) : rootItem;
+    return index.isValid() ? itemPaths.value(index.data(ProjectItem::Roles::ABS_PATH).toString(), nullptr) : invisibleRootItem;
 }
 
-/// читаем порядок из файла
+/// читаем проект из файла
 bool ProjectModel::readFromDb()
 {
     const QString dbFilename = projectDbFilePath();
@@ -271,8 +270,7 @@ bool ProjectModel::readFromDb()
 
     QHash<qulonglong, std::shared_ptr<ProjectItem>> itemsById;
     itemsById.reserve(recs.size());
-    itemsById.insert(rootItem->getId(), rootItem);
-    double orderIndex = rootItem->getOrderIndex();
+    double orderIndex = invisibleRootItem->getOrderIndex();
 
     QModelIndexList expanded;
     for (const QSqlRecord &rec : std::as_const(recs))
@@ -285,7 +283,7 @@ bool ProjectModel::readFromDb()
 
         const qulonglong id = rec.value(SqlMgr::ProjectFilesystemTable::Columns::id).toULongLong();
 
-        auto parentItem = itemsById.value(rec.value(SqlMgr::ProjectFilesystemTable::Columns::parentId).toULongLong(), rootItem);
+        auto parentItem = itemsById.value(rec.value(SqlMgr::ProjectFilesystemTable::Columns::parentId).toULongLong(), invisibleRootItem);
         auto item = std::make_shared<ProjectItem>(id, path, parentItem);
         if (!item->exists())
         {
@@ -313,16 +311,17 @@ bool ProjectModel::readFromDb()
         if (idMax < id)
             idMax = id;
     }
+
     emit signal_expand(expanded);
 
     // поиск файлов, отсутствующих в базе
-    scanFilesystemItem(rootItem, orderIndex);
+    scanFilesystemItem(projectRootItem(), orderIndex);
     return true;
 }
 
 /// сканирует директорию и добавляет ей потомков, если:
 /// * потомок - .pdf файл
-/// * потомок - диретория, которая содержит .pdf файлы
+/// * потомок - директория, которая содержит .pdf файлы
 bool ProjectModel::scanFilesystemItem(const std::shared_ptr<ProjectItem> &item, double &orderIndex)
 {
     if (!item)
@@ -434,7 +433,8 @@ void ProjectModel::checkItem(const QModelIndex &index)
 
 void ProjectModel::cleanup()
 {
-    idMax = 0;
+    invisibleRootItem.reset(new ProjectItem(0, ""));
+    idMax = 1;
     checkedItems.clear();
     resultHolders.clear();
     itemStatuses.clear();
