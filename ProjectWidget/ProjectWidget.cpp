@@ -200,12 +200,16 @@ QString ProjectWidget::getDefenitFolder() const
     return defenitFolder;
 }
 
-void ProjectWidget::saveProjectTree(const std::shared_ptr<const ProjectItem> &rootItem, SqlMgr &sqlMgr) const
+void ProjectWidget::saveProjectTree(SqlMgr &sqlMgr) const
 {
+    const std::shared_ptr<const ProjectItem> &rootItem = project_model->projectRootItem();
     if (!rootItem)
     {
         return;
     }
+
+    project_model->reorder();//пересчет порядковых индексов, чтобы отбросить дробные части
+
     const int rows = rootItem->childCount();
     if (!rows)
     {
@@ -215,7 +219,6 @@ void ProjectWidget::saveProjectTree(const std::shared_ptr<const ProjectItem> &ro
     for (int i = 0; i < rows; ++i)
     {
         const QModelIndex &childIndex = project_model->index(i, Columns::col_Name, QModelIndex());
-        saveItem(childIndex, sqlMgr);
         saveProjectItem(childIndex, sqlMgr);
     }
 }
@@ -226,6 +229,7 @@ void ProjectWidget::saveProjectItem(const QModelIndex &itemIndex, SqlMgr &sqlMgr
     {
         return;
     }
+    saveItemToDB(itemIndex, sqlMgr);
     const int rows = project_model->rowCount(itemIndex);
     if (!rows)
     {
@@ -235,12 +239,11 @@ void ProjectWidget::saveProjectItem(const QModelIndex &itemIndex, SqlMgr &sqlMgr
     for (int i = 0; i < rows; ++i)
     {
         const QModelIndex &childIndex = project_model->index(i, Columns::col_Name, itemIndex);
-        saveItem(childIndex, sqlMgr);
         saveProjectItem(childIndex, sqlMgr);
     }
 }
 
-void ProjectWidget::saveItem(const QModelIndex &index, SqlMgr &sqlMgr) const
+void ProjectWidget::saveItemToDB(const QModelIndex &index, SqlMgr &sqlMgr) const
 {
     auto item = static_cast<const ProjectItem*>(index.internalPointer());
     if (!item)
@@ -306,7 +309,7 @@ void ProjectWidget::slot_saveProject()
         qDebug("can`t start transaction");
         return;
     }
-    saveProjectTree(project_model->projectRootItem(), sqlMgr);
+    saveProjectTree(sqlMgr);
     if (!sqlMgr.commit())
     {
         qDebug("can`t commit transaction");

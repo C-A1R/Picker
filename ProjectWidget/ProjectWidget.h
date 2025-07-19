@@ -47,9 +47,9 @@ private:
     void changeProject(const QString &path);
     QString getDefenitFolder() const;
 
-    void saveProjectTree(const std::shared_ptr<const ProjectItem> &rootItem, SqlMgr &sqlMgr) const;
+    void saveProjectTree(SqlMgr &sqlMgr) const;
     void saveProjectItem(const QModelIndex &itemIndex, SqlMgr &sqlMgr) const;
-    void saveItem(const QModelIndex &index, SqlMgr &sqlMgr) const;
+    void saveItemToDB(const QModelIndex &index, SqlMgr &sqlMgr) const;
 
 private slots:
     void slot_changeProject();

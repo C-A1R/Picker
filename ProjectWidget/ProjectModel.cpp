@@ -134,6 +134,27 @@ QHash<QString, QStringList> ProjectModel::makeBuildFileStructure() const
     return result;
 }
 
+void ProjectModel::reorder()
+{
+    double orderIndex = invisibleRootItem->getOrderIndex();
+    for (int i = 0; i < invisibleRootItem->childCount(); ++i)
+    {
+        reorder(invisibleRootItem->child(i), orderIndex);
+    }
+}
+
+void ProjectModel::reorder(const std::shared_ptr<ProjectItem> &item, double &orderIndex)
+{
+    if (!item)
+        return;
+
+    item->setOrderIndex(++orderIndex);
+    for (int i = 0; i < item->childCount(); ++i)
+    {
+        reorder(item->child(i), orderIndex);
+    }
+}
+
 void ProjectModel::getCheckedPdf(const std::shared_ptr<const ProjectItem> &item, QStringList &result) const
 {
     for (int i = 0; i < item->childCount(); ++i)
@@ -270,7 +291,7 @@ bool ProjectModel::readFromDb()
 
     QHash<qulonglong, std::shared_ptr<ProjectItem>> itemsById;
     itemsById.reserve(recs.size());
-    double orderIndex = invisibleRootItem->getOrderIndex();
+    double orderIndexMax = invisibleRootItem->getOrderIndex();
 
     QModelIndexList expanded;
     for (const QSqlRecord &rec : std::as_const(recs))
@@ -291,9 +312,11 @@ bool ProjectModel::readFromDb()
             qDebug() << "Item was removed:" << path;
             continue;
         }
-        item->setOrderIndex(++orderIndex);//перенумерация порядка, чтобы отбросить дробную часть
+        item->setOrderIndex(rec.value(SqlMgr::ProjectFilesystemTable::Columns::order).toDouble());
         insertItem(item, parentItem);
         itemsById.insert(item->getId(), item);
+        if (orderIndexMax < item->getOrderIndex())
+            orderIndexMax = item->getOrderIndex();
 
         const int printCheckState = rec.value(SqlMgr::ProjectFilesystemTable::Columns::printCheckstate).toInt();
         const int resultHolder = rec.value(SqlMgr::ProjectFilesystemTable::Columns::resultHolder).toInt();
@@ -315,7 +338,7 @@ bool ProjectModel::readFromDb()
     emit signal_expand(expanded);
 
     // поиск файлов, отсутствующих в базе
-    scanFilesystemItem(projectRootItem(), orderIndex);
+    scanFilesystemItem(projectRootItem(), orderIndexMax);
     return true;
 }
 

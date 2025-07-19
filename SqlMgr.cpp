@@ -92,7 +92,7 @@ bool SqlMgr::createPickerDb()
 bool SqlMgr::insertProjectElement(const qulonglong id, const qulonglong parentId, const double orderIndex, const Qt::CheckState print
                                   , const Qt::CheckState resultHolder, const bool expanded, const QString &path)
 {
-    const QString sql = QStringLiteral("INSERT INTO %1 (%2,%3,%4,%5,%6,%7,%8) VALUES (%9,%10,%11,%12,%13,%14,'%15');");
+    const QString sql = QStringLiteral("INSERT INTO %1 (%2,%3,\"%4\",%5,%6,%7,%8) VALUES (%9,%10,%11,%12,%13,%14,'%15');");
     return exec(sql.arg(ProjectFilesystemTable::tableName
                         , ProjectFilesystemTable::Columns::id
                         , ProjectFilesystemTable::Columns::parentId
@@ -112,7 +112,7 @@ bool SqlMgr::insertProjectElement(const qulonglong id, const qulonglong parentId
 
 bool SqlMgr::readProjectElements(QList<QSqlRecord> &result)
 {
-    const QString sql = QStringLiteral("SELECT * FROM %1 ORDER BY %2");
+    const QString sql = QStringLiteral("SELECT * FROM %1 ORDER BY \"%2\"");
     return table(sql.arg(ProjectFilesystemTable::tableName, ProjectFilesystemTable::Columns::order), result);
 }
 
@@ -159,7 +159,7 @@ bool SqlMgr::createProjectFilesystemTable()
     const QString sql = QStringLiteral("CREATE TABLE IF NOT EXISTS %1"
                                        "(%2 INTEGER PRIMARY KEY NOT NULL"   //id
                                        ", %3 INTEGER"                       //parentId
-                                       ", %4 REAL"                          //order
+                                       ", \"%4\" REAL"                      //order
                                        ", %5 INTEGER(1) DEFAULT 0"          //printCheckstate
                                        ", %6 BOOL DEFAULT false"            //resultHolder
                                        ", %7 BOOL DEFAULT false"            //expanded

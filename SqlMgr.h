@@ -24,7 +24,7 @@ public:
         {
             static constexpr char const * const id{"id"};
             static constexpr char const * const parentId{"parent_id"};
-            static constexpr char const * const order{"\"order\""};
+            static constexpr char const * const order{"order"};
             static constexpr char const * const printCheckstate{"print_checkstate"};
             static constexpr char const * const resultHolder{"result_holder"};
             static constexpr char const * const expanded{"expanded"};

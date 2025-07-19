@@ -57,6 +57,7 @@ public:
     QStringList getResultHolderPaths(std::shared_ptr<const ProjectItem> item = nullptr) const;
     QModelIndexList getResultHolderIndices(const QModelIndex &index = QModelIndex()) const;
     QHash<QString, QStringList> makeBuildFileStructure() const;
+    void reorder();
 
     void setItemsChecked(const QModelIndexList &selected, const Qt::CheckState checkState);
     void setResultHolders(const QModelIndexList &resultHolders);
@@ -74,6 +75,7 @@ private:
 
     void insertItem(const std::shared_ptr<ProjectItem> &item, std::shared_ptr<ProjectItem> parentItem = nullptr);
     std::shared_ptr<ProjectItem> findItem(const QModelIndex &index) const;
+    void reorder(const std::shared_ptr<ProjectItem> &item, double &orderIndex);
 
     std::tuple<double, double> newOrder(const std::shared_ptr<const ProjectItem> parentItem, const QModelIndex &droppedIndex, const int draggedCount);
 
