@@ -51,16 +51,16 @@ void ProjectWidget::initUi()
     QToolBar *actions_toolBar = new QToolBar(this);
     {
         auto act = new QAction(actions_toolBar);
-        act->setToolTip("Указать путь к проекту");
-        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/suitcase_dark.svg")
-                                       : QIcon(":/buildWidget/ico/suitcase.svg");
+        act->setToolTip("Открыть проект");
+        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/open_dark.svg")
+                                       : QIcon(":/buildWidget/ico/open.svg");
         act->setIcon(icon);
         connect(act, &QAction::triggered, this, &ProjectWidget::slot_changeProject);
         actions_toolBar->addAction(act);
     }
     {
         auto act = new QAction(actions_toolBar);
-        act->setToolTip("Сохранить список");
+        act->setToolTip("Сохранить проект");
         const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/save_dark.svg")
                                        : QIcon(":/buildWidget/ico/save.svg");
         act->setIcon(icon);
