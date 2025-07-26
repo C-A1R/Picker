@@ -47,6 +47,7 @@ public:
 
     bool exists() const;
     bool isDir() const;
+    QString lastModified() const;
     void sortChildren(const Qt::SortOrder order = Qt::AscendingOrder);
 };
 

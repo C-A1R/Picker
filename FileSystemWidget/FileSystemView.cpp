@@ -93,7 +93,8 @@ void FileSystemView::mouseMoveEvent(QMouseEvent *event)
         QStringList paths;
         for (const QModelIndex &ind : std::as_const(selected))
         {
-            paths.emplace_back(fsModel->filePath(ind));
+            if (ind.column() == fs_model_type::Columns::col_Name)
+                paths.emplace_back(fsModel->filePath(ind));
         }
         if (paths.empty())
         {

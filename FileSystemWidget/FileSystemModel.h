@@ -17,7 +17,7 @@ public:
         col_Name,
         col_Size,
         col_Type,
-        col_Date,
+        col_LastModified,
 
         col_Max
     };

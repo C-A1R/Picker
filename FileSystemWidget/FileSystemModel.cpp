@@ -12,6 +12,8 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::ForegroundRole && view->getSelected().contains(index))
         return QColor(Qt::red);
+    if (index.column() == Columns::col_LastModified && role == Qt::DisplayRole)
+        return fileInfo(index).lastModified().toString("dd.MM.yyyy hh:mm");
     return QFileSystemModel::data(index, role);
 }
 

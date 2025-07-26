@@ -5,7 +5,6 @@
 
 //General
 #define SETTINGS_FILESYSTEM_PATH "filesystem_path"
-#define SETTINGS_FILESYSTEM_SECTION_NAME_WIDTH "filesystem_section_name_width"
 #define SETTINGS_FILESYSTEM_PATH "filesystem_path"
 #define SETTINGS_BUILD_PATH "build_path"
 #define SETTINGS_SAVE_OPTIONS "save_options"

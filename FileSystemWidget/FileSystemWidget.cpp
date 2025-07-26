@@ -14,10 +14,6 @@ FileSystemWidget::FileSystemWidget(QWidget *parent)
     : QWidget(parent)
 {
     initUi();
-    const auto colNameWidth{Settings::instance()->value(SETTINGS_FILESYSTEM_SECTION_NAME_WIDTH).toInt()};
-    view->setColumnWidth(FileSystemModel::Columns::col_Name, colNameWidth ? colNameWidth : 200);
-    view->hideColumn(FileSystemModel::Columns::col_Size);
-    view->hideColumn(FileSystemModel::Columns::col_Type);
 
     initDriveActions();
     connect(view, &FileSystemView::doubleClicked, this, &FileSystemWidget::slot_goIn);
@@ -29,7 +25,6 @@ FileSystemWidget::FileSystemWidget(QWidget *parent)
 FileSystemWidget::~FileSystemWidget()
 {
     Settings::instance()->setValue(SETTINGS_FILESYSTEM_PATH, currentPath_label->text());
-    Settings::instance()->setValue(SETTINGS_FILESYSTEM_SECTION_NAME_WIDTH, view->horizontalHeader()->sectionSize(FileSystemModel::Columns::col_Name));
 }
 
 void FileSystemWidget::initUi()
@@ -45,19 +40,24 @@ void FileSystemWidget::initUi()
     currentPath_label->setSizePolicy(QSizePolicy::Policy::Ignored, QSizePolicy::Policy::Fixed);
 
     view = new FileSystemView(this);
-    view->setAlternatingRowColors(true);
-    view->setDragEnabled(true);
-    view->setDefaultDropAction(Qt::IgnoreAction);
-    view->setDragDropMode(QAbstractItemView::DragOnly);
-    view->setSelectionBehavior(FileSystemView::SelectRows);
-    view->horizontalHeader()->setStretchLastSection(true);
-    view->verticalHeader()->hide();
-    view->verticalHeader()->setDefaultSectionSize(5);
     model = new FileSystemModel(view, this);
     model->setFilter(QDir::AllEntries | QDir::AllDirs | QDir::NoDot);
     model->setNameFilters(QStringList() << "*.pdf");
     model->setNameFilterDisables(false);
     view->setModel(model);
+    view->setAlternatingRowColors(true);
+    view->setDragEnabled(true);
+    view->setDefaultDropAction(Qt::IgnoreAction);
+    view->setDragDropMode(QAbstractItemView::DragOnly);
+    view->setSelectionBehavior(FileSystemView::SelectRows);
+    view->horizontalHeader()->hide();
+    view->horizontalHeader()->setStretchLastSection(false);
+    view->horizontalHeader()->setSectionResizeMode(FileSystemModel::Columns::col_Name, QHeaderView::Stretch);
+    view->horizontalHeader()->setSectionResizeMode(FileSystemModel::Columns::col_LastModified, QHeaderView::ResizeToContents);
+    view->verticalHeader()->hide();
+    view->verticalHeader()->setDefaultSectionSize(5);
+    view->hideColumn(FileSystemModel::Columns::col_Size);
+    view->hideColumn(FileSystemModel::Columns::col_Type);
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);

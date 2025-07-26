@@ -545,6 +545,19 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
             break;
         }
     }
+    else if (index.column() == Columns::col_LastModified)
+    {
+        switch (role)
+        {
+        case Qt::DisplayRole:
+        {
+            const auto item = static_cast<const ProjectItem*>(index.internalPointer());
+            return item->lastModified();
+        }
+        default:
+            break;
+        }
+    }
     else if (index.column() == Columns::col_ResultHolder)
     {
         switch (role)

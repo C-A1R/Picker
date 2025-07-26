@@ -95,6 +95,11 @@ bool ProjectItem::isDir() const
     return m_info.isDir();
 }
 
+QString ProjectItem::lastModified() const
+{
+    return m_info.lastModified().toString("dd.MM.yyyy hh:mm");
+}
+
 void ProjectItem::sortChildren(const Qt::SortOrder order)
 {
     std::sort(m_childItems.begin(), m_childItems.end(),

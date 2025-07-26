@@ -4,6 +4,7 @@
 enum Columns
 {
     col_Name,
+    col_LastModified,
     col_ResultHolder,
 
     MAX

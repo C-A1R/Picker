@@ -153,6 +153,7 @@ void ProjectWidget::initUi()
     project_treeView->viewport()->setAcceptDrops(true);
     project_treeView->setDropIndicatorShown(true);
     project_treeView->header()->setSectionResizeMode(Columns::col_Name, QHeaderView::Stretch);
+    project_treeView->header()->setSectionResizeMode(Columns::col_LastModified, QHeaderView::ResizeToContents);
     project_treeView->header()->setSectionResizeMode(Columns::col_ResultHolder, QHeaderView::Fixed);
     project_treeView->header()->setStretchLastSection(false);
     project_treeView->header()->resizeSection(Columns::col_ResultHolder, 0);
