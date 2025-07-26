@@ -21,13 +21,13 @@ VERSION = 1.4
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
 SOURCES += \
+    FileSystemWidget/FileSystemView.cpp \
     ProjectWidget/Commands/ItemsCheckedCmd.cpp \
     ProjectWidget/Commands/ResultHolderCheckedCmd.cpp \
     ProjectWidget/ProjectItem.cpp \
     ProjectWidget/ProjectModel.cpp \
     ProjectWidget/ProjectTreeView.cpp \
     ProjectWidget/ProjectWidget.cpp \
-    FileSystemWidget/FileSystemListView.cpp \
     FileSystemWidget/FileSystemModel.cpp \
     FileSystemWidget/FileSystemWidget.cpp \
     MainWindow.cpp \
@@ -40,6 +40,7 @@ SOURCES += \
     main.cpp
 
 HEADERS += \
+    FileSystemWidget/FileSystemView.h \
     ProjectWidget/Commands/ItemsCheckedCmd.h \
     ProjectWidget/Commands/ResultHolderCheckedCmd.h \
     ProjectWidget/Enums.h \
@@ -47,7 +48,6 @@ HEADERS += \
     ProjectWidget/ProjectModel.h \
     ProjectWidget/ProjectTreeView.h \
     ProjectWidget/ProjectWidget.h \
-    FileSystemWidget/FileSystemListView.h \
     FileSystemWidget/FileSystemModel.h \
     FileSystemWidget/FileSystemWidget.h \
     MainWindow.h \

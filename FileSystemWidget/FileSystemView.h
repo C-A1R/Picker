@@ -1,14 +1,14 @@
-#ifndef FILESYSTEMLISTVIEW_H
-#define FILESYSTEMLISTVIEW_H
+#ifndef FILESYSTEMVIEW_H
+#define FILESYSTEMVIEW_H
 
-#include <QListView>
+#include <QTableView>
 #include <QSet>
 
 class FileSystemModel;
 
 using fs_model_type = FileSystemModel;
 
-class FileSystemListView : public QListView
+class FileSystemView : public QTableView
 {
     Q_OBJECT
 
@@ -23,11 +23,12 @@ class FileSystemListView : public QListView
     SelectInstructions  selectInstruction = SelectInstructions::do_nothing;
 
 public:
-    FileSystemListView(QWidget *parent = nullptr);
+    FileSystemView(QWidget *parent = nullptr);
     const QSet<QModelIndex> &getSelected() const;
 
 private:
     void selectItem(const QModelIndex &index);
+    void selectItemRow(const QModelIndex &index);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -39,4 +40,4 @@ private slots:
     void slot_selectItem();
 };
 
-#endif // FILESYSTEMLISTVIEW_H
+#endif // FILESYSTEMVIEW_H

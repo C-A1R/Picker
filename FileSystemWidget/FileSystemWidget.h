@@ -5,7 +5,7 @@
 
 class QToolBar;
 class QLabel;
-class FileSystemListView;
+class FileSystemView;
 class FileSystemModel;
 
 class FileSystemWidget : public QWidget
@@ -14,8 +14,8 @@ class FileSystemWidget : public QWidget
 
     QToolBar            *drives_toolBar = nullptr;
     QLabel              *currentPath_label = nullptr;
-    FileSystemListView  *fileSystem_listView = nullptr;
-    FileSystemModel     *fileSystem_model = nullptr;
+    FileSystemView      *view = nullptr;
+    FileSystemModel     *model = nullptr;
 
 public:
     FileSystemWidget(QWidget *parent = nullptr);

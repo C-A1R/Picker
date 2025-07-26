@@ -1,4 +1,4 @@
-#include "FileSystemListView.h"
+#include "FileSystemView.h"
 
 #include "FileSystemModel.h"
 
@@ -8,18 +8,18 @@
 #include <QMimeData>
 #include <QShortcut>
 
-FileSystemListView::FileSystemListView(QWidget *parent)
-    : QListView(parent)
+FileSystemView::FileSystemView(QWidget *parent)
+    : QTableView(parent)
 {
     new QShortcut(QKeySequence(Qt::Key_Space), this, SLOT(slot_selectItem()));
 }
 
-const QSet<QModelIndex> &FileSystemListView::getSelected() const
+const QSet<QModelIndex> &FileSystemView::getSelected() const
 {
     return selected;
 }
 
-void FileSystemListView::selectItem(const QModelIndex &index)
+void FileSystemView::selectItem(const QModelIndex &index)
 {
     if (selectInstruction == SelectInstructions::do_nothing)
     {
@@ -37,7 +37,13 @@ void FileSystemListView::selectItem(const QModelIndex &index)
     update(index);
 }
 
-void FileSystemListView::mousePressEvent(QMouseEvent *event)
+void FileSystemView::selectItemRow(const QModelIndex &index)
+{
+    for(int i = 0; i < model()->columnCount(); ++i)
+        selectItem(model()->index(index.row(), i, index.parent()));
+}
+
+void FileSystemView::mousePressEvent(QMouseEvent *event)
 {
     if (!event)
     {
@@ -48,12 +54,12 @@ void FileSystemListView::mousePressEvent(QMouseEvent *event)
         const QModelIndex &curr = indexAt(event->pos());
         selectInstruction = selected.contains(curr) ? SelectInstructions::do_unselect
                                                     : SelectInstructions::do_select;
-        selectItem(curr);
+        selectItemRow(curr);
     }
-    QListView::mousePressEvent(event);
+    QTableView::mousePressEvent(event);
 }
 
-void FileSystemListView::mouseReleaseEvent(QMouseEvent *event)
+void FileSystemView::mouseReleaseEvent(QMouseEvent *event)
 {
     if (!event)
     {
@@ -63,10 +69,10 @@ void FileSystemListView::mouseReleaseEvent(QMouseEvent *event)
     {
         selectInstruction = SelectInstructions::do_nothing;
     }
-    QListView::mouseReleaseEvent(event);
+    QTableView::mouseReleaseEvent(event);
 }
 
-void FileSystemListView::mouseMoveEvent(QMouseEvent *event)
+void FileSystemView::mouseMoveEvent(QMouseEvent *event)
 {
     if (!event)
     {
@@ -74,14 +80,14 @@ void FileSystemListView::mouseMoveEvent(QMouseEvent *event)
     }
     if (event->buttons() & Qt::RightButton)
     {
-        selectItem(indexAt(event->pos()));
+        selectItemRow(indexAt(event->pos()));
         event->ignore();
         return;
     }
     if (event->buttons() & Qt::LeftButton)
     {
         selectInstruction = SelectInstructions::do_select;
-        selectItem(currentIndex());
+        selectItemRow(currentIndex());
 
         const FileSystemModel *fsModel = static_cast<fs_model_type *>(model());
         QStringList paths;
@@ -103,7 +109,7 @@ void FileSystemListView::mouseMoveEvent(QMouseEvent *event)
     selected.clear();
 }
 
-void FileSystemListView::mouseDoubleClickEvent(QMouseEvent *event)
+void FileSystemView::mouseDoubleClickEvent(QMouseEvent *event)
 {
     if (!event)
     {
@@ -117,11 +123,11 @@ void FileSystemListView::mouseDoubleClickEvent(QMouseEvent *event)
     emit doubleClicked(currentIndex());
 }
 
-void FileSystemListView::slot_selectItem()
+void FileSystemView::slot_selectItem()
 {
     const QModelIndex &currIndex = currentIndex();
     selectInstruction = selected.contains(currIndex) ? SelectInstructions::do_unselect
                                                      : SelectInstructions::do_select;
-    selectItem(currIndex);
+    selectItemRow(currIndex);
     setCurrentIndex(currIndex.sibling(currIndex.row() + 1, currIndex.column()));
 }

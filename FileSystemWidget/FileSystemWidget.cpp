@@ -1,5 +1,5 @@
 #include "FileSystemWidget.h"
-#include "FileSystemListView.h"
+#include "FileSystemView.h"
 #include "FileSystemModel.h"
 #include "Settings.h"
 
@@ -8,13 +8,19 @@
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QFileSystemModel>
+#include <QHeaderView>
 
 FileSystemWidget::FileSystemWidget(QWidget *parent)
     : QWidget(parent)
 {
     initUi();
+    const auto colNameWidth{Settings::instance()->value(SETTINGS_FILESYSTEM_SECTION_NAME_WIDTH).toInt()};
+    view->setColumnWidth(FileSystemModel::Columns::col_Name, colNameWidth ? colNameWidth : 200);
+    view->hideColumn(FileSystemModel::Columns::col_Size);
+    view->hideColumn(FileSystemModel::Columns::col_Type);
+
     initDriveActions();
-    connect(fileSystem_listView, &FileSystemListView::doubleClicked, this, &FileSystemWidget::slot_goIn);
+    connect(view, &FileSystemView::doubleClicked, this, &FileSystemWidget::slot_goIn);
     new QShortcut(QKeySequence(Qt::Key_Return), this, SLOT(slot_goIn()));
     new QShortcut(QKeySequence(Qt::Key_Enter), this, SLOT(slot_goIn()));
     new QShortcut(QKeySequence(Qt::Key_Backspace), this, SLOT(slot_goUp()));
@@ -23,6 +29,7 @@ FileSystemWidget::FileSystemWidget(QWidget *parent)
 FileSystemWidget::~FileSystemWidget()
 {
     Settings::instance()->setValue(SETTINGS_FILESYSTEM_PATH, currentPath_label->text());
+    Settings::instance()->setValue(SETTINGS_FILESYSTEM_SECTION_NAME_WIDTH, view->horizontalHeader()->sectionSize(FileSystemModel::Columns::col_Name));
 }
 
 void FileSystemWidget::initUi()
@@ -37,16 +44,20 @@ void FileSystemWidget::initUi()
     currentPath_label->setIndent(5);
     currentPath_label->setSizePolicy(QSizePolicy::Policy::Ignored, QSizePolicy::Policy::Fixed);
 
-    fileSystem_listView = new FileSystemListView(this);
-    fileSystem_listView->setAlternatingRowColors(true);
-    fileSystem_listView->setDragEnabled(true);
-    fileSystem_listView->setDefaultDropAction(Qt::IgnoreAction);
-    fileSystem_listView->setDragDropMode(QAbstractItemView::DragOnly);
-    fileSystem_model = new FileSystemModel(fileSystem_listView, this);
-    fileSystem_model->setFilter(QDir::AllEntries | QDir::AllDirs | QDir::NoDot);
-    fileSystem_model->setNameFilters(QStringList() << "*.pdf");
-    fileSystem_model->setNameFilterDisables(false);
-    fileSystem_listView->setModel(fileSystem_model);
+    view = new FileSystemView(this);
+    view->setAlternatingRowColors(true);
+    view->setDragEnabled(true);
+    view->setDefaultDropAction(Qt::IgnoreAction);
+    view->setDragDropMode(QAbstractItemView::DragOnly);
+    view->setSelectionBehavior(FileSystemView::SelectRows);
+    view->horizontalHeader()->setStretchLastSection(true);
+    view->verticalHeader()->hide();
+    view->verticalHeader()->setDefaultSectionSize(5);
+    model = new FileSystemModel(view, this);
+    model->setFilter(QDir::AllEntries | QDir::AllDirs | QDir::NoDot);
+    model->setNameFilters(QStringList() << "*.pdf");
+    model->setNameFilterDisables(false);
+    view->setModel(model);
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);
@@ -54,7 +65,7 @@ void FileSystemWidget::initUi()
     main_vLay->addWidget(drives_toolBar);
     main_vLay->addWidget(currentPath_label);
     main_vLay->addSpacing(3);
-    main_vLay->addWidget(fileSystem_listView);
+    main_vLay->addWidget(view);
     setLayout(main_vLay);
 }
 
@@ -68,7 +79,7 @@ void FileSystemWidget::initDriveActions()
     for (const QFileInfo &drive : drives)
     {
         auto act = new QAction(drive.path(), drives_toolBar);
-        act->setIcon(fileSystem_model->fileIcon(fileSystem_model->index(drive.path())));
+        act->setIcon(model->fileIcon(model->index(drive.path())));
         act->setIconText(drive.path());
         act->setCheckable(true);
         connect(act, &QAction::triggered, this, &FileSystemWidget::slot_changeDrive);
@@ -77,8 +88,8 @@ void FileSystemWidget::initDriveActions()
     auto setDefaultFileSystem = [this, &drives]()
     {
         const QString &drivePath = drives.first().path();
-        fileSystem_model->setRootPath(drivePath);
-        fileSystem_listView->setRootIndex(fileSystem_model->index(drivePath));
+        model->setRootPath(drivePath);
+        view->setRootIndex(model->index(drivePath));
         drives_toolBar->actions().at(0)->setChecked(true);
         currentPath_label->setText(drivePath);
         currentPath_label->setToolTip(drivePath);
@@ -108,8 +119,8 @@ void FileSystemWidget::initDriveActions()
     }
 
     const QString &drivePath = (*driveIter).path();
-    fileSystem_model->setRootPath(lastPath);
-    fileSystem_listView->setRootIndex(fileSystem_model->index(lastPath));
+    model->setRootPath(lastPath);
+    view->setRootIndex(model->index(lastPath));
     const auto &actions = drives_toolBar->actions();
     auto actIter = std::find_if(actions.cbegin(), actions.cend(), [&drivePath](const QAction *act) -> bool
     {
@@ -125,35 +136,35 @@ void FileSystemWidget::initDriveActions()
 
 void FileSystemWidget::slot_goIn()
 {
-    const QModelIndex &index = fileSystem_listView->currentIndex();
-    if (!fileSystem_model->isDir(index))
+    const QModelIndex &index = view->currentIndex();
+    if (!model->isDir(index))
     {
         return;
     }
-    const QString &newRootPath = fileSystem_model->fileInfo(index).filePath();
+    const QString &newRootPath = model->fileInfo(index).filePath();
     if (newRootPath.endsWith(".."))
     {
         slot_goUp();
         return;
     }
-    fileSystem_listView->setRootIndex(fileSystem_model->index(newRootPath));
-    fileSystem_model->setRootPath(newRootPath);
+    view->setRootIndex(model->index(newRootPath));
+    model->setRootPath(newRootPath);
     const QString &drivePath = index.data(QFileSystemModel::FilePathRole).toString();
     currentPath_label->setText(drivePath);
     currentPath_label->setToolTip(drivePath);
-    fileSystem_listView->setCurrentIndex(QModelIndex());
+    view->setCurrentIndex(QModelIndex());
 }
 
 void FileSystemWidget::slot_goUp()
 {
-    const QModelIndex &parentIndex = fileSystem_listView->rootIndex().parent();
-    fileSystem_listView->setRootIndex(parentIndex);
-    const QString prevRootPath = fileSystem_model->rootPath();
-    fileSystem_model->setRootPath(fileSystem_model->fileInfo(parentIndex).filePath());
+    const QModelIndex &parentIndex = view->rootIndex().parent();
+    view->setRootIndex(parentIndex);
+    const QString prevRootPath = model->rootPath();
+    model->setRootPath(model->fileInfo(parentIndex).filePath());
     const QString &drivePath = parentIndex.data(QFileSystemModel::FilePathRole).toString();
     currentPath_label->setText(drivePath);
     currentPath_label->setToolTip(drivePath);
-    fileSystem_listView->setCurrentIndex(fileSystem_model->index(prevRootPath));
+    view->setCurrentIndex(model->index(prevRootPath));
 }
 
 void FileSystemWidget::slot_changeDrive()
@@ -164,8 +175,8 @@ void FileSystemWidget::slot_changeDrive()
     }
     auto act = static_cast<QAction *>(sender());
     act->setChecked(true);
-    fileSystem_model->setRootPath(act->text());
-    fileSystem_listView->setRootIndex(fileSystem_model->index(act->text()));
-    currentPath_label->setText(fileSystem_model->rootPath());
-    currentPath_label->setToolTip(fileSystem_model->rootPath());
+    model->setRootPath(act->text());
+    view->setRootIndex(model->index(act->text()));
+    currentPath_label->setText(model->rootPath());
+    currentPath_label->setToolTip(model->rootPath());
 }

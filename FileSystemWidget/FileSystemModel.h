@@ -3,18 +3,29 @@
 
 #include <QFileSystemModel>
 
-class FileSystemListView;
+class FileSystemView;
 
 class FileSystemModel : public QFileSystemModel
 {
     Q_OBJECT
 
-    const FileSystemListView * const view;
+    const FileSystemView * const view;
 
 public:
-    FileSystemModel(const FileSystemListView * const view, QObject *parent = nullptr);
+    enum Columns
+    {
+        col_Name,
+        col_Size,
+        col_Type,
+        col_Date,
+
+        col_Max
+    };
+
+    FileSystemModel(const FileSystemView * const view, QObject *parent = nullptr);
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 };
 
 #endif // FILESYSTEMMODEL_H
