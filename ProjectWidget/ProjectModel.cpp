@@ -725,8 +725,6 @@ void ProjectModel::slot_added(const QModelIndex &dropRootIndex, const QModelInde
             continue;
         if (newItem->isDir() || !newItem->getPath().dirName().endsWith(".pdf", Qt::CaseInsensitive))
             continue;
-        if (itemPaths.contains(newItem->getPath().absolutePath()))
-            continue;
 
         newItem->setOrderIndex(newOrder);
         newOrder += orderStep;
