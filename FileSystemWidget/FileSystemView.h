@@ -25,6 +25,7 @@ class FileSystemView : public QTableView
 public:
     FileSystemView(QWidget *parent = nullptr);
     const QSet<QModelIndex> &getSelected() const;
+    void clearSelected();
 
 private:
     void selectItem(const QModelIndex &index);

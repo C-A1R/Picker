@@ -19,6 +19,11 @@ const QSet<QModelIndex> &FileSystemView::getSelected() const
     return selected;
 }
 
+void FileSystemView::clearSelected()
+{
+    selected.clear();
+}
+
 void FileSystemView::selectItem(const QModelIndex &index)
 {
     if (selectInstruction == SelectInstructions::do_nothing)

@@ -147,6 +147,7 @@ void FileSystemWidget::slot_goIn()
         slot_goUp();
         return;
     }
+    view->clearSelected();
     view->setRootIndex(model->index(newRootPath));
     model->setRootPath(newRootPath);
     const QString &drivePath = index.data(QFileSystemModel::FilePathRole).toString();
@@ -157,6 +158,7 @@ void FileSystemWidget::slot_goIn()
 
 void FileSystemWidget::slot_goUp()
 {
+    view->clearSelected();
     const QModelIndex &parentIndex = view->rootIndex().parent();
     view->setRootIndex(parentIndex);
     const QString prevRootPath = model->rootPath();
