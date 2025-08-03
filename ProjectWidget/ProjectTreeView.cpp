@@ -188,7 +188,7 @@ void ProjectTreeView::getExpandedItemIds(const QModelIndex &index, QSet<qulonglo
     if (item)
     {
         if (isExpanded(index))
-            expandedIds.insert(static_cast<const ProjectItem*>(index.internalPointer())->getId());
+            expandedIds.insert(static_cast<const ProjectItem*>(index.internalPointer())->id());
         else
             return;
     }
@@ -203,7 +203,7 @@ void ProjectTreeView::expandItems(const QModelIndex &index, const QSet<qulonglon
     const ProjectItem *item = static_cast<const ProjectItem*>(index.internalPointer());
     if (item)
     {
-        if (expandedIds.contains(item->getId()))
+        if (expandedIds.contains(item->id()))
             expand(index);
         else
             return;

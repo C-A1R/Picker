@@ -88,7 +88,7 @@ bool ProjectModel::loadProjectItems(const QString &rootPath)
         insertItem(projectRootItem);
         projectRootItem->setOrderIndex(1.0);
 
-        double beginOrderIndex = projectRootItem->getOrderIndex();
+        double beginOrderIndex = projectRootItem->orderIndex();
         scanFilesystemItem(projectRootItem, beginOrderIndex);
         for (int i = 0; i < projectRootItem->childCount(); ++i)
         {
@@ -129,14 +129,14 @@ QHash<QString, QStringList> ProjectModel::makeBuildFileStructure() const
     {
         QStringList checked;
         getCheckedPdf(holder, checked);
-        result.emplace(holder->getPath().absolutePath(), std::move(checked));
+        result.emplace(holder->path().absolutePath(), std::move(checked));
     }
     return result;
 }
 
 void ProjectModel::reorder()
 {
-    double orderIndex = invisibleRootItem->getOrderIndex();
+    double orderIndex = invisibleRootItem->orderIndex();
     for (int i = 0; i < invisibleRootItem->childCount(); ++i)
     {
         reorder(invisibleRootItem->child(i), orderIndex);
@@ -163,7 +163,7 @@ void ProjectModel::getCheckedPdf(const std::shared_ptr<const ProjectItem> &item,
         if (!child)
             continue;
 
-        const Qt::CheckState state = checkedItems.value(child->getId(), Qt::Unchecked);
+        const Qt::CheckState state = checkedItems.value(child->id(), Qt::Unchecked);
         if (state == Qt::Unchecked)
             continue;
 
@@ -174,7 +174,7 @@ void ProjectModel::getCheckedPdf(const std::shared_ptr<const ProjectItem> &item,
         }
 
         if (state == Qt::Checked)
-            result.append(child->getPath().absolutePath());
+            result.append(child->path().absolutePath());
     }
 }
 
@@ -208,10 +208,10 @@ void ProjectModel::getResultHolders(const std::shared_ptr<const ProjectItem> &it
         if (!child->isDir())
             continue;
 
-        const Qt::CheckState state = resultHolders.value(child->getId(), Qt::Unchecked);
+        const Qt::CheckState state = resultHolders.value(child->id(), Qt::Unchecked);
         if (state == Qt::Checked)
         {
-            result.append(child->getPath().absolutePath());
+            result.append(child->path().absolutePath());
             continue;
         }
         getResultHolders(child, result);
@@ -255,7 +255,7 @@ void ProjectModel::insertItem(const std::shared_ptr<ProjectItem> &item, std::sha
     }
     item->setParent(parentItem);
     parentItem->appendChild(item);
-    itemPaths.insert(item->getPath().absolutePath(), item);
+    itemPaths.insert(item->path().absolutePath(), item);
 }
 
 std::shared_ptr<ProjectItem> ProjectModel::findItem(const QModelIndex &index) const
@@ -291,7 +291,7 @@ bool ProjectModel::readFromDb()
 
     QHash<qulonglong, std::shared_ptr<ProjectItem>> itemsById;
     itemsById.reserve(recs.size());
-    double orderIndexMax = invisibleRootItem->getOrderIndex();
+    double orderIndexMax = invisibleRootItem->orderIndex();
 
     QModelIndexList expanded;
     for (const QSqlRecord &rec : std::as_const(recs))
@@ -311,19 +311,19 @@ bool ProjectModel::readFromDb()
             //файл из списка был удален
             qDebug() << "Item was removed:" << path;
             continue;
+            item->setExStatus(ExistingStatus::MISSED);
         }
         item->setOrderIndex(rec.value(SqlMgr::ProjectFilesystemTable::Columns::order).toDouble());
         insertItem(item, parentItem);
-        itemsById.insert(item->getId(), item);
-        if (orderIndexMax < item->getOrderIndex())
-            orderIndexMax = item->getOrderIndex();
+        itemsById.insert(item->id(), item);
+        if (orderIndexMax < item->orderIndex())
+            orderIndexMax = item->orderIndex();
 
         const int printCheckState = rec.value(SqlMgr::ProjectFilesystemTable::Columns::printCheckstate).toInt();
         const int resultHolder = rec.value(SqlMgr::ProjectFilesystemTable::Columns::resultHolder).toInt();
         checkedItems[id] = printCheckState == 0 ? Qt::Unchecked : (printCheckState == 1 ? Qt::PartiallyChecked : Qt::Checked);
         resultHolders[id] = resultHolder == 0 ? Qt::Unchecked : Qt::Checked;
-        if (!item->isDir())
-            itemStatuses[id] = Statuses::LISTED;
+        item->setExStatus(ExistingStatus::LISTED);
 
         if (rec.value(SqlMgr::ProjectFilesystemTable::Columns::expanded).toBool())
         {
@@ -350,7 +350,7 @@ bool ProjectModel::scanFilesystemItem(const std::shared_ptr<ProjectItem> &item, 
     if (!item)
         return false;
 
-    const QDir &itemDir = item->getPath();
+    const QDir &itemDir = item->path();
     const QFileInfoList &dirInfoList = itemDir.entryInfoList(QStringList(), QDir::NoDotAndDotDot | QDir::Dirs);
     const QFileInfoList &pdfInfoList = itemDir.entryInfoList(QStringList{"*.pdf"}, QDir::Files, QDir::NoSort);
     const bool hasPdf = !pdfInfoList.isEmpty();
@@ -385,7 +385,7 @@ bool ProjectModel::scanFilesystemItem(const std::shared_ptr<ProjectItem> &item, 
         auto child = std::make_shared<ProjectItem>(++idMax, childPath, item);
         child->setOrderIndex(++orderIndex);
         insertItem(child, item);
-        itemStatuses[child->getId()] = Statuses::NOT_LISTED;
+        child->setExStatus(ExistingStatus::NOT_LISTED);
     }
 
     return hasPdf || foundPdf;
@@ -460,7 +460,7 @@ void ProjectModel::cleanup()
     idMax = 1;
     checkedItems.clear();
     resultHolders.clear();
-    itemStatuses.clear();
+    // itemStatuses.clear();
     itemPaths.clear();
 }
 
@@ -514,13 +514,15 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
         case Qt::DisplayRole:
         {
             const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
-            return item->getPath().dirName();
+            return item->path().dirName();
         }
         case Qt::BackgroundRole:
         {
             const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
-            const Statuses status = itemStatuses.value(item->getId(), Statuses::DEFAULT);
-            if (status == Statuses::NOT_LISTED && checkedItems.value(item->getId()) != Qt::Checked)
+            if (item->isDir())
+                return QVariant{};
+            const ExistingStatus status = item->exStatus();
+            if (status == ExistingStatus::NOT_LISTED && checkedItems.value(item->id()) != Qt::Checked)
             {
                 return QVariant{};
             }
@@ -529,17 +531,17 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
         case ProjectItem::Roles::ID:
         {
             const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
-            return item->getId();
+            return item->id();
         }
         case ProjectItem::Roles::STATUS:
         {
             const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
-            return itemStatuses.value(item->getId(), Statuses::DEFAULT);
+            return item->exStatus();
         }
         case ProjectItem::Roles::ABS_PATH:
         {
             const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
-            return item->getPath().absolutePath();
+            return item->path().absolutePath();
         }
         default:
             break;
@@ -566,7 +568,7 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
         {
             const auto item = static_cast<const ProjectItem*>(index.internalPointer());
             if (item->isDir())
-                return resultHolders.value(item->getId(), Qt::Unchecked);
+                return resultHolders.value(item->id(), Qt::Unchecked);
             break;
         }
         case Qt::DisplayRole:
@@ -603,7 +605,7 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
                 resetResultHolderCheckstates_Down(index);
             }
             auto item = static_cast<const ProjectItem*>(index.internalPointer());
-            resultHolders[item->getId()] = state;
+            resultHolders[item->id()] = state;
             emit dataChanged(index, index, QList<int>{Qt::CheckStateRole});
             return true;
         }
@@ -644,7 +646,7 @@ std::tuple<double, double> ProjectModel::newOrder(const std::shared_ptr<const Pr
     if (!droppedItem && !beforeDroppedItem)
     {
         //переместили в конец
-        newOrder = parentItem->child(parentItem->childCount() - 1)->getOrderIndex();
+        newOrder = parentItem->child(parentItem->childCount() - 1)->orderIndex();
         orderStep = 1.0;
     }
     else
@@ -652,9 +654,9 @@ std::tuple<double, double> ProjectModel::newOrder(const std::shared_ptr<const Pr
         if (!droppedItem)
             return std::make_tuple(0.0, 0.0);
 
-        newOrder = beforeDroppedItem ? beforeDroppedItem->getOrderIndex()
-                                     : parentItem->getOrderIndex();
-        orderStep = (droppedItem->getOrderIndex() - newOrder) / (draggedCount + 1);
+        newOrder = beforeDroppedItem ? beforeDroppedItem->orderIndex()
+                                     : parentItem->orderIndex();
+        orderStep = (droppedItem->orderIndex() - newOrder) / (draggedCount + 1);
     }
     newOrder += orderStep;
 
@@ -688,10 +690,10 @@ void ProjectModel::slot_dropped(const QModelIndex &dropRootIndex,const QModelInd
         newOrder += orderStep;
         if (parentItem != item->parentItem())
         {
-            item->parentItem()->removeChild(item->getId());
+            item->parentItem()->removeChild(item->id());
             insertItem(item, parentItem);
         }
-        qDebug() << "dragged:" << item->getPath().dirName() << "new_order:"  << item->getOrderIndex();
+        qDebug() << "dragged:" << item->path().dirName() << "new_order:"  << item->orderIndex();
     }
 
     emit layoutAboutToBeChanged();
@@ -723,7 +725,7 @@ void ProjectModel::slot_added(const QModelIndex &dropRootIndex, const QModelInde
         auto newItem = std::make_shared<ProjectItem>(++idMax, path, parentItem);
         if (!newItem->exists())
             continue;
-        if (newItem->isDir() || !newItem->getPath().dirName().endsWith(".pdf", Qt::CaseInsensitive))
+        if (newItem->isDir() || !newItem->path().dirName().endsWith(".pdf", Qt::CaseInsensitive))
             continue;
 
         newItem->setOrderIndex(newOrder);

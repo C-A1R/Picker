@@ -2,7 +2,7 @@
 
 
 ProjectItem::ProjectItem(const qulonglong id, const QString &path, std::shared_ptr<ProjectItem> parent)
-    : id{id}
+    : m_id{id}
     , m_path{path}
     , m_info{m_path.absolutePath()}
     , m_parentItem{parent}
@@ -18,7 +18,7 @@ void ProjectItem::removeChild(const qulonglong id)
 {
     for (auto &child : m_childItems)
     {
-        if (child->getId() == id)
+        if (child->id() == id)
         {
             child->setParent(nullptr); // remove parent reference
             m_childItems.removeOne(child);
@@ -60,19 +60,24 @@ std::shared_ptr<ProjectItem> ProjectItem::parentItem() const
     return m_parentItem.lock();
 }
 
-qulonglong ProjectItem::getId() const
+qulonglong ProjectItem::id() const
 {
-    return id;
+    return m_id;
 }
 
-const QDir &ProjectItem::getPath() const
+const QDir &ProjectItem::path() const
 {
     return m_path;
 }
 
-double ProjectItem::getOrderIndex() const
+double ProjectItem::orderIndex() const
 {
     return m_orderIndex;
+}
+
+ExistingStatus ProjectItem::exStatus() const
+{
+    return m_exStatus;
 }
 
 void ProjectItem::setOrderIndex(const double index)
@@ -83,6 +88,11 @@ void ProjectItem::setOrderIndex(const double index)
 void ProjectItem::setParent(const std::shared_ptr<ProjectItem> &parent)
 {
     m_parentItem = parent;
+}
+
+void ProjectItem::setExStatus(const ExistingStatus newExStatus)
+{
+    m_exStatus = newExStatus;
 }
 
 bool ProjectItem::exists() const
@@ -105,8 +115,8 @@ void ProjectItem::sortChildren(const Qt::SortOrder order)
     std::sort(m_childItems.begin(), m_childItems.end(),
               [order](const std::shared_ptr<ProjectItem> &a, const std::shared_ptr<ProjectItem> &b) -> bool
               {
-                  return (order == Qt::AscendingOrder) ? a->getOrderIndex() < b->getOrderIndex()
-                                                       : a->getOrderIndex() > b->getOrderIndex();
+                  return (order == Qt::AscendingOrder) ? a->orderIndex() < b->orderIndex()
+                                                       : a->orderIndex() > b->orderIndex();
               });
 }
 

@@ -258,15 +258,15 @@ void ProjectWidget::saveItemToDB(const QModelIndex &index, SqlMgr &sqlMgr) const
     }
 
     const QModelIndex &index_resultHolderCol = index.siblingAtColumn(Columns::col_ResultHolder);
-    if (!sqlMgr.insertProjectElement(item->getId()
-                                     , parentItem->getId()
-                                     , item->getOrderIndex()
+    if (!sqlMgr.insertProjectElement(item->id()
+                                     , parentItem->id()
+                                     , item->orderIndex()
                                      , project_model->data(index, Qt::CheckStateRole).value<Qt::CheckState>()
                                      , project_model->data(index_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>()
                                      , project_treeView->isExpanded(index)
-                                     , item->getPath().absolutePath()))
+                                     , item->path().absolutePath()))
     {
-        qDebug() << "insertion failed: " << item->getPath().absolutePath();
+        qDebug() << "insertion failed: " << item->path().absolutePath();
     }
 }
 

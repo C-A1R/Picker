@@ -6,16 +6,26 @@
 
 #include <memory>
 
+
+enum ExistingStatus
+{
+    DEFAULT = 0,
+    LISTED,
+    NOT_LISTED,
+    MISSED
+};
+
 /**
  * @brief The ProjectItem class
  * Элемент дерева проекта
  */
 class ProjectItem
 {
-    const qulonglong    id{0};
+    const qulonglong    m_id{0};
     const QDir          m_path;
     const QFileInfo     m_info;
     double              m_orderIndex{0.0};
+    ExistingStatus      m_exStatus{ExistingStatus::DEFAULT};
 
     std::weak_ptr<ProjectItem>              m_parentItem;
     QList<std::shared_ptr<ProjectItem>>     m_childItems;
@@ -38,12 +48,14 @@ public:
     int row() const;
     std::shared_ptr<ProjectItem> parentItem() const;
 
-    qulonglong getId() const;
-    const QDir &getPath() const;
-    double getOrderIndex() const;
+    qulonglong id() const;
+    const QDir &path() const;
+    double orderIndex() const;
+    ExistingStatus exStatus() const;
 
     void setOrderIndex(const double index);
     void setParent(const std::shared_ptr<ProjectItem> &parent);
+    void setExStatus(ExistingStatus newExStatus);
 
     bool exists() const;
     bool isDir() const;

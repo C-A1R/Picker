@@ -20,7 +20,6 @@ class ProjectModel : public QAbstractItemModel
     std::shared_ptr<ProjectItem>                    invisibleRootItem;
     QHash<qulonglong, Qt::CheckState>               checkedItems;
     QHash<qulonglong, Qt::CheckState>               resultHolders;
-    QHash<qulonglong, Statuses>                     itemStatuses;
     QHash<QString, std::shared_ptr<ProjectItem>>    itemPaths;
 
     qulonglong idMax = 1;
@@ -28,11 +27,11 @@ class ProjectModel : public QAbstractItemModel
     QIcon dirIcon;
     QIcon pdfIcon;
 
-    const QHash<Statuses, QColor> statusColors =
+    const QHash<ExistingStatus, QColor> statusColors =
     {
-        {Statuses::DEFAULT,     QColor(Qt::transparent)},
-        {Statuses::LISTED,      QColor(100, 221, 23, 50)},
-        {Statuses::NOT_LISTED,  QColor(255, 237, 204, 200)}
+        {ExistingStatus::DEFAULT,     QColor(Qt::transparent)},
+        {ExistingStatus::LISTED,      QColor(100, 221, 23, 50)},
+        {ExistingStatus::NOT_LISTED,  QColor(255, 237, 204, 200)}
     };
 
 public:
