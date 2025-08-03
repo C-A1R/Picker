@@ -14,7 +14,6 @@ FileSystemWidget::FileSystemWidget(QWidget *parent)
     : QWidget(parent)
 {
     initUi();
-
     initDriveActions();
     connect(view, &FileSystemView::doubleClicked, this, &FileSystemWidget::slot_goIn);
     new QShortcut(QKeySequence(Qt::Key_Return), this, SLOT(slot_goIn()));
@@ -54,10 +53,16 @@ void FileSystemWidget::initUi()
     view->horizontalHeader()->setStretchLastSection(false);
     view->horizontalHeader()->setSectionResizeMode(FileSystemModel::Columns::col_Name, QHeaderView::Stretch);
     view->horizontalHeader()->setSectionResizeMode(FileSystemModel::Columns::col_LastModified, QHeaderView::ResizeToContents);
+    const int rowHeight = 20;
+    view->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    view->verticalHeader()->setDefaultSectionSize(rowHeight);
+    view->verticalHeader()->setMaximumSectionSize(rowHeight);
+    view->verticalHeader()->setMinimumSectionSize(rowHeight);
     view->verticalHeader()->hide();
-    view->verticalHeader()->setDefaultSectionSize(5);
     view->hideColumn(FileSystemModel::Columns::col_Size);
     view->hideColumn(FileSystemModel::Columns::col_Type);
+    view->setShowGrid(false);
+    view->resizeRowsToContents();
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);
