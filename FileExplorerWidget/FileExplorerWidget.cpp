@@ -1,4 +1,4 @@
-#include "FileSystemWidget.h"
+#include "FileExplorerWidget.h"
 #include "FileSystemView.h"
 #include "FileSystemModel.h"
 #include "Settings.h"
@@ -10,23 +10,23 @@
 #include <QFileSystemModel>
 #include <QHeaderView>
 
-FileSystemWidget::FileSystemWidget(QWidget *parent)
+FileExplorerWidget::FileExplorerWidget(QWidget *parent)
     : QWidget(parent)
 {
     initUi();
     initDriveActions();
-    connect(view, &FileSystemView::doubleClicked, this, &FileSystemWidget::slot_goIn);
+    connect(view, &FileSystemView::doubleClicked, this, &FileExplorerWidget::slot_goIn);
     new QShortcut(QKeySequence(Qt::Key_Return), this, SLOT(slot_goIn()));
     new QShortcut(QKeySequence(Qt::Key_Enter), this, SLOT(slot_goIn()));
     new QShortcut(QKeySequence(Qt::Key_Backspace), this, SLOT(slot_goUp()));
 }
 
-FileSystemWidget::~FileSystemWidget()
+FileExplorerWidget::~FileExplorerWidget()
 {
     Settings::instance()->setValue(SETTINGS_FILESYSTEM_PATH, currentPath_label->text());
 }
 
-void FileSystemWidget::initUi()
+void FileExplorerWidget::initUi()
 {
     drives_toolBar = new QToolBar(this);
     drives_toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -74,7 +74,7 @@ void FileSystemWidget::initUi()
     setLayout(main_vLay);
 }
 
-void FileSystemWidget::initDriveActions()
+void FileExplorerWidget::initDriveActions()
 {
     const QFileInfoList &drives = QDir::drives();
     if (drives.empty())
@@ -87,7 +87,7 @@ void FileSystemWidget::initDriveActions()
         act->setIcon(model->fileIcon(model->index(drive.path())));
         act->setIconText(drive.path());
         act->setCheckable(true);
-        connect(act, &QAction::triggered, this, &FileSystemWidget::slot_changeDrive);
+        connect(act, &QAction::triggered, this, &FileExplorerWidget::slot_changeDrive);
         drives_toolBar->addAction(act);
     }
     auto setDefaultFileSystem = [this, &drives]()
@@ -139,7 +139,7 @@ void FileSystemWidget::initDriveActions()
     currentPath_label->setToolTip(lastPath);
 }
 
-void FileSystemWidget::slot_goIn()
+void FileExplorerWidget::slot_goIn()
 {
     const QModelIndex &index = view->currentIndex();
     if (!model->isDir(index))
@@ -161,7 +161,7 @@ void FileSystemWidget::slot_goIn()
     view->setCurrentIndex(QModelIndex());
 }
 
-void FileSystemWidget::slot_goUp()
+void FileExplorerWidget::slot_goUp()
 {
     view->clearSelected();
     const QModelIndex &parentIndex = view->rootIndex().parent();
@@ -174,7 +174,7 @@ void FileSystemWidget::slot_goUp()
     view->setCurrentIndex(model->index(prevRootPath));
 }
 
-void FileSystemWidget::slot_changeDrive()
+void FileExplorerWidget::slot_changeDrive()
 {
     for (QAction *act : drives_toolBar->actions())
     {

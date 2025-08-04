@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 
-class FileSystemWidget;
+class FileExplorerWidget;
 class ProjectWidget;
 class QSplitter;
 class QPushButton;
@@ -12,10 +12,10 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-    FileSystemWidget    *FSBrowserWidget{nullptr};
+    FileExplorerWidget  *fileExplorerWidget{nullptr};
     ProjectWidget       *projectWidget{nullptr};
     QSplitter           *splitter{nullptr};
-    QPushButton         *hide_btn{nullptr};
+    QPushButton         *hideFileExplorer_btn{nullptr};
 
 public:
     MainWindow(QWidget *parent = nullptr);

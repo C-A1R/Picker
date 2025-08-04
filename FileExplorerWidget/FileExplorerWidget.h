@@ -1,5 +1,5 @@
-#ifndef FILESYSTEMWIDGET_H
-#define FILESYSTEMWIDGET_H
+#ifndef FILEEXPLORERWIDGET_H
+#define FILEEXPLORERWIDGET_H
 
 #include <QWidget>
 
@@ -8,7 +8,7 @@ class QLabel;
 class FileSystemView;
 class FileSystemModel;
 
-class FileSystemWidget : public QWidget
+class FileExplorerWidget : public QWidget
 {
     Q_OBJECT
 
@@ -18,8 +18,8 @@ class FileSystemWidget : public QWidget
     FileSystemModel     *model = nullptr;
 
 public:
-    FileSystemWidget(QWidget *parent = nullptr);
-    ~FileSystemWidget();
+    FileExplorerWidget(QWidget *parent = nullptr);
+    ~FileExplorerWidget();
 
 private:
     void initUi();
@@ -31,4 +31,4 @@ private slots:
     void slot_changeDrive();
 };
 
-#endif // FILESYSTEMWIDGET_H
+#endif // FILEEXPLORERWIDGET_H

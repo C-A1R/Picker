@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/buildWidget">
+    <qresource prefix="/project">
         <file>ico/save.svg</file>
         <file>ico/build.svg</file>
         <file>ico/folder.svg</file>
@@ -14,5 +14,7 @@
         <file>ico/open.svg</file>
         <file>ico/open_dark.svg</file>
         <file>ico/save_dark.svg</file>
+        <file>ico/dock-left.svg</file>
+        <file>ico/dock-left_dark.svg</file>
     </qresource>
 </RCC>

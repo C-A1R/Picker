@@ -52,8 +52,8 @@ void ProjectWidget::initUi()
     {
         auto act = new QAction(actions_toolBar);
         act->setToolTip("Открыть проект");
-        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/open_dark.svg")
-                                       : QIcon(":/buildWidget/ico/open.svg");
+        const QIcon icon = isDarkTheme ? QIcon(":/project/ico/open_dark.svg")
+                                       : QIcon(":/project/ico/open.svg");
         act->setIcon(icon);
         connect(act, &QAction::triggered, this, &ProjectWidget::slot_changeProject);
         actions_toolBar->addAction(act);
@@ -61,8 +61,8 @@ void ProjectWidget::initUi()
     {
         auto act = new QAction(actions_toolBar);
         act->setToolTip("Сохранить проект");
-        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/save_dark.svg")
-                                       : QIcon(":/buildWidget/ico/save.svg");
+        const QIcon icon = isDarkTheme ? QIcon(":/project/ico/save_dark.svg")
+                                       : QIcon(":/project/ico/save.svg");
         act->setIcon(icon);
         connect(act, &QAction::triggered, this, &ProjectWidget::slot_saveProject);
         actions_toolBar->addAction(act);
@@ -70,8 +70,8 @@ void ProjectWidget::initUi()
     {
         auto act = new QAction(actions_toolBar);
         act->setToolTip("Собрать");
-        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/build_dark.svg")
-                                       : QIcon(":/buildWidget/ico/build.svg");
+        const QIcon icon = isDarkTheme ? QIcon(":/project/ico/build_dark.svg")
+                                       : QIcon(":/project/ico/build.svg");
         act->setIcon(icon);
         connect(act, &QAction::triggered, this, &ProjectWidget::slot_build);
         actions_toolBar->addAction(act);
@@ -81,8 +81,8 @@ void ProjectWidget::initUi()
     {
         auto act = new QAction(undoRedo_toolBar);
         act->setToolTip("Отмена");
-        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/undo_dark.svg")
-                                       : QIcon(":/buildWidget/ico/undo.svg");
+        const QIcon icon = isDarkTheme ? QIcon(":/project/ico/undo_dark.svg")
+                                       : QIcon(":/project/ico/undo.svg");
         act->setIcon(icon);
         act->setShortcut(QKeySequence::Undo);
         act->setEnabled(undoStack->canUndo());
@@ -93,8 +93,8 @@ void ProjectWidget::initUi()
     {
         auto act = new QAction(undoRedo_toolBar);
         act->setToolTip("Повтор");
-        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/redo_dark.svg")
-                                       : QIcon(":/buildWidget/ico/redo.svg");
+        const QIcon icon = isDarkTheme ? QIcon(":/project/ico/redo_dark.svg")
+                                       : QIcon(":/project/ico/redo.svg");
         act->setIcon(icon);
         act->setShortcut(QKeySequence::Redo);
         act->setEnabled(undoStack->canRedo());
@@ -107,8 +107,8 @@ void ProjectWidget::initUi()
     {
         auto act = new QAction(saveOptions_toolBar);
         act->setToolTip("Сохранить в каталогах");
-        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/folders_dark.svg")
-                                       : QIcon(":/buildWidget/ico/folders.svg");
+        const QIcon icon = isDarkTheme ? QIcon(":/project/ico/folders_dark.svg")
+                                       : QIcon(":/project/ico/folders.svg");
         act->setIcon(icon);
         act->setCheckable(true);
         act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_PROJECT_DIRECTORIES));
@@ -118,8 +118,8 @@ void ProjectWidget::initUi()
     {
         auto act = new QAction(saveOptions_toolBar);
         act->setToolTip("Сохранить в указанный каталог");
-        const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/folder_dark.svg")
-                                       : QIcon(":/buildWidget/ico/folder.svg");
+        const QIcon icon = isDarkTheme ? QIcon(":/project/ico/folder_dark.svg")
+                                       : QIcon(":/project/ico/folder.svg");
         act->setIcon(icon);
         act->setCheckable(true);
         act->setChecked(saveOptions.testFlag(SaveOptions::SAVE_TO_SEPARATE_DIRECTORY));

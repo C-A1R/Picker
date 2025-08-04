@@ -1,5 +1,5 @@
 #include "MainWindow.h"
-#include "FileSystemWidget/FileSystemWidget.h"
+#include "FileExplorerWidget/FileExplorerWidget.h"
 #include "ProjectWidget/ProjectWidget.h"
 #include "Settings.h"
 
@@ -28,9 +28,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     const bool fs_hidden = Settings::instance()->value(SETTINGS_FS_HIDDEN).toBool();
     if (fs_hidden)
-        FSBrowserWidget->hide();
+        fileExplorerWidget->hide();
 
-    connect(hide_btn, &QPushButton::pressed, this, &MainWindow::slot_hideFSBrowser);
+    connect(hideFileExplorer_btn, &QPushButton::pressed, this, &MainWindow::slot_hideFSBrowser);
     connect(splitter, &QSplitter::splitterMoved, this, &MainWindow::slot_saveSplitterSizes);
 }
 
@@ -42,31 +42,25 @@ MainWindow::~MainWindow()
         Settings::instance()->setValue(SETTINGS_WIDTH, width());
         Settings::instance()->setValue(SETTINGS_HEIGHT, height());
     }
-    Settings::instance()->setValue(SETTINGS_FS_HIDDEN, FSBrowserWidget->isHidden());
+    Settings::instance()->setValue(SETTINGS_FS_HIDDEN, fileExplorerWidget->isHidden());
 }
 
 void MainWindow::initUi()
 {
     auto centralWidget = new QWidget(this);
 
+    hideFileExplorer_btn = new QPushButton(splitter);
+    hideFileExplorer_btn->setFlat(true);
+    hideFileExplorer_btn->setFixedSize(QSize(5, 100));
+
     splitter = new QSplitter(centralWidget);
     splitter->setOrientation(Qt::Horizontal);
 
-    FSBrowserWidget = new FileSystemWidget(splitter);
-    splitter->addWidget(FSBrowserWidget);
+    fileExplorerWidget = new FileExplorerWidget(splitter);
+    splitter->addWidget(fileExplorerWidget);
 
-    auto rightWidget = new QWidget(splitter);
-    {
-        hide_btn = new QPushButton(rightWidget);
-        hide_btn->setFlat(true);
-        hide_btn->setFixedSize(QSize(5, 100));
-        projectWidget = new ProjectWidget(rightWidget);
-        auto rightWidget_hLay = new QHBoxLayout(rightWidget);
-        rightWidget_hLay->addWidget(hide_btn);
-        rightWidget_hLay->addWidget(projectWidget);
-        rightWidget_hLay->setContentsMargins(0, 0, 0, 0);
-    }
-    splitter->addWidget(rightWidget);
+    projectWidget = new ProjectWidget(splitter);
+    splitter->addWidget(projectWidget);
 
     if (const QStringList split_sizes = Settings::instance()->value(SETTINGS_SPLIT_SIZES).toStringList();
         split_sizes.count() == splitter->count())
@@ -78,31 +72,32 @@ void MainWindow::initUi()
         splitter->setSizes(QList<int>{INT_MAX, INT_MAX});
     }
 
-    auto main_vLay = new QVBoxLayout();
-    main_vLay->addWidget(splitter);
-    centralWidget->setLayout(main_vLay);
+    auto main_hLay = new QHBoxLayout();
+    main_hLay->addWidget(hideFileExplorer_btn);
+    main_hLay->addWidget(splitter);
+    centralWidget->setLayout(main_hLay);
 
     setCentralWidget(centralWidget);
 }
 
 void MainWindow::initMenuBar()
 {
+    const bool isDarkTheme = QApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
     QMenuBar *menuBar = this->menuBar();
     {
-        const bool isDarkTheme = QApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
         QMenu *menu = menuBar->addMenu("Файл");
         {
             auto act = new QAction("Открыть проект", this);
-            const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/open_dark.svg")
-                                           : QIcon(":/buildWidget/ico/open.svg");
+            const QIcon icon = isDarkTheme ? QIcon(":/project/ico/open_dark.svg")
+                                           : QIcon(":/project/ico/open.svg");
             act->setIcon(icon);
             connect(act, &QAction::triggered, projectWidget, &ProjectWidget::slot_changeProject);
             menu->addAction(act);
         }
         {
             auto act = new QAction("Сохранить проект", this);
-            const QIcon icon = isDarkTheme ? QIcon(":/buildWidget/ico/save_dark.svg")
-                                           : QIcon(":/buildWidget/ico/save.svg");
+            const QIcon icon = isDarkTheme ? QIcon(":/project/ico/save_dark.svg")
+                                           : QIcon(":/project/ico/save.svg");
             act->setIcon(icon);
             connect(act, &QAction::triggered, projectWidget, &ProjectWidget::slot_saveProject);
             menu->addAction(act);
@@ -111,8 +106,14 @@ void MainWindow::initMenuBar()
     {
         QMenu *menu = menuBar->addMenu("Вид");
         {
-            auto act = new QAction("Показать/скрыть проводник", this);
+            auto act = new QAction("Показать проводник", this);
+            const QIcon icon = isDarkTheme ? QIcon(":/project/ico/dock-left_dark.svg")
+                                           : QIcon(":/project/ico/dock-left.svg");
+            act->setIcon(icon);
+            act->setCheckable(true);
+            act->setChecked(!Settings::instance()->value(SETTINGS_FS_HIDDEN).toBool());
             connect(act, &QAction::triggered, this, &MainWindow::slot_hideFSBrowser);
+            connect(hideFileExplorer_btn, &QPushButton::clicked, this, [act, this](){ act->setChecked(!fileExplorerWidget->isHidden()); });
             menu->addAction(act);
         }
     }
@@ -120,10 +121,8 @@ void MainWindow::initMenuBar()
 
 void MainWindow::slot_hideFSBrowser()
 {
-    if (FSBrowserWidget->isHidden())
-        FSBrowserWidget->show();
-    else
-        FSBrowserWidget->hide();
+    fileExplorerWidget->isHidden() ? fileExplorerWidget->show()
+                                   : fileExplorerWidget->hide();
 }
 
 void MainWindow::slot_saveSplitterSizes()
