@@ -51,9 +51,11 @@ private:
     void saveProjectItem(const QModelIndex &itemIndex, SqlMgr &sqlMgr) const;
     void saveItemToDB(const QModelIndex &index, SqlMgr &sqlMgr) const;
 
-private slots:
+public slots:
     void slot_changeProject();
     void slot_saveProject();
+
+private slots:
     void slot_build();
     void slot_saveToFoldersOptionChanged(bool checked);
     void slot_saveToDefenitFolderOptionChanged(bool checked);

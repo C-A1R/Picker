@@ -460,7 +460,6 @@ void ProjectModel::cleanup()
     idMax = 1;
     checkedItems.clear();
     resultHolders.clear();
-    // itemStatuses.clear();
     itemPaths.clear();
 }
 
