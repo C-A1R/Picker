@@ -26,8 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
         this->setWindowState(Qt::WindowMaximized);
     }
 
-    const bool fs_hidden = Settings::instance()->value(SETTINGS_FS_HIDDEN).toBool();
-    if (fs_hidden)
+    if (Settings::instance()->value(SETTINGS_FILE_EXP_HIDDEN).toBool())
         fileExplorerWidget->hide();
 
     connect(hideFileExplorer_btn, &QPushButton::pressed, this, &MainWindow::slot_hideFSBrowser);
@@ -42,7 +41,7 @@ MainWindow::~MainWindow()
         Settings::instance()->setValue(SETTINGS_WIDTH, width());
         Settings::instance()->setValue(SETTINGS_HEIGHT, height());
     }
-    Settings::instance()->setValue(SETTINGS_FS_HIDDEN, fileExplorerWidget->isHidden());
+    Settings::instance()->setValue(SETTINGS_FILE_EXP_HIDDEN, fileExplorerWidget->isHidden());
 }
 
 void MainWindow::initUi()
@@ -87,33 +86,50 @@ void MainWindow::initMenuBar()
     {
         QMenu *menu = menuBar->addMenu("Файл");
         {
-            auto act = new QAction("Открыть проект", this);
-            const QIcon icon = isDarkTheme ? QIcon(":/project/ico/open_dark.svg")
-                                           : QIcon(":/project/ico/open.svg");
-            act->setIcon(icon);
+            auto act = ProjectWidget::createOpenAction(isDarkTheme, this);
             connect(act, &QAction::triggered, projectWidget, &ProjectWidget::slot_changeProject);
             menu->addAction(act);
         }
         {
-            auto act = new QAction("Сохранить проект", this);
-            const QIcon icon = isDarkTheme ? QIcon(":/project/ico/save_dark.svg")
-                                           : QIcon(":/project/ico/save.svg");
-            act->setIcon(icon);
+            auto act = ProjectWidget::createSaveAction(isDarkTheme, this);
             connect(act, &QAction::triggered, projectWidget, &ProjectWidget::slot_saveProject);
+            menu->addAction(act);
+        }
+    }
+    {
+        QMenu *menu = menuBar->addMenu("Правка");
+        {
+            auto act = ProjectWidget::createUndoAction(isDarkTheme, this);
+            connect(act, &QAction::triggered, projectWidget, &ProjectWidget::slot_undo);
+            connect(projectWidget, &ProjectWidget::signal_canUndoChanged, act, &QAction::setEnabled);
+            menu->addAction(act);
+        }
+        {
+            auto act = ProjectWidget::createRedoAction(isDarkTheme, this);
+            connect(act, &QAction::triggered, projectWidget, &ProjectWidget::slot_redo);
+            connect(projectWidget, &ProjectWidget::signal_canRedoChanged, act, &QAction::setEnabled);
             menu->addAction(act);
         }
     }
     {
         QMenu *menu = menuBar->addMenu("Вид");
         {
-            auto act = new QAction("Показать проводник", this);
+            auto act = new QAction("Проводник", this);
             const QIcon icon = isDarkTheme ? QIcon(":/project/ico/dock-left_dark.svg")
                                            : QIcon(":/project/ico/dock-left.svg");
             act->setIcon(icon);
             act->setCheckable(true);
-            act->setChecked(!Settings::instance()->value(SETTINGS_FS_HIDDEN).toBool());
+            act->setChecked(!Settings::instance()->value(SETTINGS_FILE_EXP_HIDDEN).toBool());
             connect(act, &QAction::triggered, this, &MainWindow::slot_hideFSBrowser);
             connect(hideFileExplorer_btn, &QPushButton::clicked, this, [act, this](){ act->setChecked(!fileExplorerWidget->isHidden()); });
+            menu->addAction(act);
+        }
+    }
+    {
+        QMenu *menu = menuBar->addMenu("Проект");
+        {
+            auto act = ProjectWidget::createBuildAction(isDarkTheme, this);
+            connect(act, &QAction::triggered, projectWidget, &ProjectWidget::slot_build);
             menu->addAction(act);
         }
     }

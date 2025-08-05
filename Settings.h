@@ -9,7 +9,7 @@
 #define SETTINGS_BUILD_PATH "build_path"
 #define SETTINGS_SAVE_OPTIONS "save_options"
 #define SETTINGS_DEFENIT_PATH "defenit_path"
-#define SETTINGS_FS_HIDDEN "fs_hidden"
+#define SETTINGS_FILE_EXP_HIDDEN "file_explorer_hidden"
 //Size
 #define SETTINGS_MAXIMAZED "Size/maximized"
 #define SETTINGS_WIDTH "Size/width"

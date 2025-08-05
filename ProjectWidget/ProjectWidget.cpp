@@ -36,6 +36,9 @@ ProjectWidget::ProjectWidget(QWidget *parent)
     connect(project_treeView, &ProjectTreeView::signal_dropped,     project_model,      &ProjectModel::slot_dropped);
     connect(project_treeView, &ProjectTreeView::signal_added,       project_model,      &ProjectModel::slot_added);
 
+    connect(undoStack, &QUndoStack::canUndoChanged, this, &ProjectWidget::signal_canUndoChanged);
+    connect(undoStack, &QUndoStack::canRedoChanged, this, &ProjectWidget::signal_canRedoChanged);
+
     changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
 }
 
@@ -45,45 +48,84 @@ ProjectWidget::~ProjectWidget()
     Settings::instance()->setValue(SETTINGS_SAVE_OPTIONS, saveOptions.toInt());
 }
 
+QAction *ProjectWidget::createOpenAction(const bool isDarkTheme, QObject *parent)
+{
+    auto act = new QAction(parent);
+    act->setText("Открыть проект");
+    act->setToolTip("Открыть проект");
+    const QIcon icon = isDarkTheme ? QIcon(":/project/ico/open_dark.svg")
+                                   : QIcon(":/project/ico/open.svg");
+    act->setIcon(icon);
+    return act;
+}
+
+QAction *ProjectWidget::createSaveAction(const bool isDarkTheme, QObject *parent)
+{
+    auto act = new QAction(parent);
+    act->setText("Сохранить проект");
+    act->setToolTip("Сохранить проект");
+    const QIcon icon = isDarkTheme ? QIcon(":/project/ico/save_dark.svg")
+                                   : QIcon(":/project/ico/save.svg");
+    act->setIcon(icon);
+    return act;
+}
+
+QAction *ProjectWidget::createBuildAction(const bool isDarkTheme, QObject *parent)
+{
+    auto act = new QAction(parent);
+    act->setText("Собрать проект");
+    act->setToolTip("Собрать проект");
+    const QIcon icon = isDarkTheme ? QIcon(":/project/ico/build_dark.svg")
+                                   : QIcon(":/project/ico/build.svg");
+    act->setIcon(icon);
+    return act;
+}
+
+QAction *ProjectWidget::createUndoAction(const bool isDarkTheme, QObject *parent)
+{
+    auto act = new QAction(parent);
+    act->setText("Отмена");
+    act->setToolTip("Отмена");
+    const QIcon icon = isDarkTheme ? QIcon(":/project/ico/undo_dark.svg")
+                                   : QIcon(":/project/ico/undo.svg");
+    act->setIcon(icon);
+    return act;
+}
+
+QAction *ProjectWidget::createRedoAction(const bool isDarkTheme, QObject *parent)
+{
+    auto act = new QAction(parent);
+    act->setText("Повтор");
+    act->setToolTip("Повтор");
+    const QIcon icon = isDarkTheme ? QIcon(":/project/ico/redo_dark.svg")
+                                   : QIcon(":/project/ico/redo.svg");
+    act->setIcon(icon);
+    return act;
+}
+
 void ProjectWidget::initUi()
 {
     const bool isDarkTheme = QApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
     QToolBar *actions_toolBar = new QToolBar(this);
     {
-        auto act = new QAction(actions_toolBar);
-        act->setToolTip("Открыть проект");
-        const QIcon icon = isDarkTheme ? QIcon(":/project/ico/open_dark.svg")
-                                       : QIcon(":/project/ico/open.svg");
-        act->setIcon(icon);
+        auto act = ProjectWidget::createOpenAction(isDarkTheme, actions_toolBar);
         connect(act, &QAction::triggered, this, &ProjectWidget::slot_changeProject);
         actions_toolBar->addAction(act);
     }
     {
-        auto act = new QAction(actions_toolBar);
-        act->setToolTip("Сохранить проект");
-        const QIcon icon = isDarkTheme ? QIcon(":/project/ico/save_dark.svg")
-                                       : QIcon(":/project/ico/save.svg");
-        act->setIcon(icon);
+        auto act = ProjectWidget::createSaveAction(isDarkTheme, actions_toolBar);
         connect(act, &QAction::triggered, this, &ProjectWidget::slot_saveProject);
         actions_toolBar->addAction(act);
     }
     {
-        auto act = new QAction(actions_toolBar);
-        act->setToolTip("Собрать");
-        const QIcon icon = isDarkTheme ? QIcon(":/project/ico/build_dark.svg")
-                                       : QIcon(":/project/ico/build.svg");
-        act->setIcon(icon);
+        auto act = ProjectWidget::createBuildAction(isDarkTheme, actions_toolBar);
         connect(act, &QAction::triggered, this, &ProjectWidget::slot_build);
         actions_toolBar->addAction(act);
     }
 
     QToolBar *undoRedo_toolBar = new QToolBar(this);
     {
-        auto act = new QAction(undoRedo_toolBar);
-        act->setToolTip("Отмена");
-        const QIcon icon = isDarkTheme ? QIcon(":/project/ico/undo_dark.svg")
-                                       : QIcon(":/project/ico/undo.svg");
-        act->setIcon(icon);
+        auto act = ProjectWidget::createUndoAction(isDarkTheme, undoRedo_toolBar);
         act->setShortcut(QKeySequence::Undo);
         act->setEnabled(undoStack->canUndo());
         undoRedo_toolBar->addAction(act);
@@ -91,11 +133,7 @@ void ProjectWidget::initUi()
         connect(undoStack, &QUndoStack::canUndoChanged, act, &QAction::setEnabled);
     }
     {
-        auto act = new QAction(undoRedo_toolBar);
-        act->setToolTip("Повтор");
-        const QIcon icon = isDarkTheme ? QIcon(":/project/ico/redo_dark.svg")
-                                       : QIcon(":/project/ico/redo.svg");
-        act->setIcon(icon);
+        auto act = ProjectWidget::createRedoAction(isDarkTheme, undoRedo_toolBar);
         act->setShortcut(QKeySequence::Redo);
         act->setEnabled(undoStack->canRedo());
         undoRedo_toolBar->addAction(act);
@@ -367,6 +405,16 @@ void ProjectWidget::slot_build()
     connect(builder.get(), &IPdfBuilder::signal_finished, this, &ProjectWidget::slot_buildFinished);
     connect(builder.get(), &IPdfBuilder::signal_cancelled, this, &ProjectWidget::slot_buildCancelled);
     builder->exec(structure);
+}
+
+void ProjectWidget::slot_undo()
+{
+    undoStack->undo();
+}
+
+void ProjectWidget::slot_redo()
+{
+    undoStack->redo();
 }
 
 void ProjectWidget::slot_saveToFoldersOptionChanged(bool checked)

@@ -42,6 +42,12 @@ public:
     ProjectWidget(QWidget *parent = nullptr);
     ~ProjectWidget();
 
+    static QAction *createOpenAction(const bool isDarkTheme, QObject *parent = nullptr);
+    static QAction *createSaveAction(const bool isDarkTheme, QObject *parent = nullptr);
+    static QAction *createBuildAction(const bool isDarkTheme, QObject *parent = nullptr);
+    static QAction *createUndoAction(const bool isDarkTheme, QObject *parent = nullptr);
+    static QAction *createRedoAction(const bool isDarkTheme, QObject *parent = nullptr);
+
 private:
     void initUi();
     void changeProject(const QString &path);
@@ -51,12 +57,18 @@ private:
     void saveProjectItem(const QModelIndex &itemIndex, SqlMgr &sqlMgr) const;
     void saveItemToDB(const QModelIndex &index, SqlMgr &sqlMgr) const;
 
+signals:
+    void signal_canUndoChanged(bool canUndo);
+    void signal_canRedoChanged(bool canRedo);
+
 public slots:
     void slot_changeProject();
     void slot_saveProject();
+    void slot_build();
+    void slot_undo();
+    void slot_redo();
 
 private slots:
-    void slot_build();
     void slot_saveToFoldersOptionChanged(bool checked);
     void slot_saveToDefenitFolderOptionChanged(bool checked);
     void slot_buildFinished();
