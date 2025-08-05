@@ -50,7 +50,7 @@ public:
 
 private:
     void initUi();
-    void changeProject(const QString &path);
+    void openProject(const QString &path);
     QString getDefenitFolder() const;
 
     void saveProjectTree(SqlMgr &sqlMgr) const;
@@ -62,7 +62,7 @@ signals:
     void signal_canRedoChanged(bool canRedo);
 
 public slots:
-    void slot_changeProject();
+    void slot_openProject();
     void slot_saveProject();
     void slot_build();
     void slot_undo();

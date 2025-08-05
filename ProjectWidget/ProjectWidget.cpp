@@ -39,7 +39,7 @@ ProjectWidget::ProjectWidget(QWidget *parent)
     connect(undoStack, &QUndoStack::canUndoChanged, this, &ProjectWidget::signal_canUndoChanged);
     connect(undoStack, &QUndoStack::canRedoChanged, this, &ProjectWidget::signal_canRedoChanged);
 
-    changeProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
+    openProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
 }
 
 ProjectWidget::~ProjectWidget()
@@ -109,7 +109,7 @@ void ProjectWidget::initUi()
     QToolBar *actions_toolBar = new QToolBar(this);
     {
         auto act = ProjectWidget::createOpenAction(isDarkTheme, actions_toolBar);
-        connect(act, &QAction::triggered, this, &ProjectWidget::slot_changeProject);
+        connect(act, &QAction::triggered, this, &ProjectWidget::slot_openProject);
         actions_toolBar->addAction(act);
     }
     {
@@ -127,7 +127,7 @@ void ProjectWidget::initUi()
     {
         auto act = ProjectWidget::createUndoAction(isDarkTheme, undoRedo_toolBar);
         act->setShortcut(QKeySequence::Undo);
-        act->setEnabled(undoStack->canUndo());
+        act->setEnabled(false);
         undoRedo_toolBar->addAction(act);
         connect(act, &QAction::triggered, undoStack, &QUndoStack::undo);
         connect(undoStack, &QUndoStack::canUndoChanged, act, &QAction::setEnabled);
@@ -135,7 +135,7 @@ void ProjectWidget::initUi()
     {
         auto act = ProjectWidget::createRedoAction(isDarkTheme, undoRedo_toolBar);
         act->setShortcut(QKeySequence::Redo);
-        act->setEnabled(undoStack->canRedo());
+        act->setEnabled(false);
         undoRedo_toolBar->addAction(act);
         connect(act, &QAction::triggered, undoStack, &QUndoStack::redo);
         connect(undoStack, &QUndoStack::canRedoChanged, act, &QAction::setEnabled);
@@ -206,7 +206,7 @@ void ProjectWidget::initUi()
     setLayout(main_vLay);
 }
 
-void ProjectWidget::changeProject(const QString &path)
+void ProjectWidget::openProject(const QString &path)
 {
     if (path.isEmpty())
         return;
@@ -295,20 +295,33 @@ void ProjectWidget::saveItemToDB(const QModelIndex &index, SqlMgr &sqlMgr) const
         return;
     }
 
-    const QModelIndex &index_resultHolderCol = index.siblingAtColumn(Columns::col_ResultHolder);
-    if (!sqlMgr.insertProjectElement(item->id()
-                                     , parentItem->id()
-                                     , item->orderIndex()
-                                     , project_model->data(index, Qt::CheckStateRole).value<Qt::CheckState>()
-                                     , project_model->data(index_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>()
-                                     , project_treeView->isExpanded(index)
-                                     , item->path().absolutePath()))
+    const QString &absPath = item->path().absolutePath();
+    const bool isLink = !absPath.startsWith(currentPath_label->text());
+    QString localPath;
+    if (!isLink)
     {
-        qDebug() << "insertion failed: " << item->path().absolutePath();
+        localPath = absPath.last(absPath.length() - currentPath_label->text().length());
+    }
+    const QModelIndex &index_resultHolderCol = index.siblingAtColumn(Columns::col_ResultHolder);
+    if (!sqlMgr.insertItem(item->id()
+                           , parentItem->id()
+                           , item->orderIndex()
+                           , project_model->data(index, Qt::CheckStateRole).value<Qt::CheckState>()
+                           , project_model->data(index_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>()
+                           , project_treeView->isExpanded(index)
+                           , localPath))
+    {
+        qDebug() << "item insertion failed: " << item->path().absolutePath();
+        return;
+    }
+    if (isLink)
+    {
+        if (!sqlMgr.insertLink(item->id(), absPath))
+            qDebug() << "link insertion failed: " << item->path().absolutePath();
     }
 }
 
-void ProjectWidget::slot_changeProject()
+void ProjectWidget::slot_openProject()
 {
     auto currentPath = currentPath_label->text();
     if (currentPath.isEmpty())
@@ -320,7 +333,7 @@ void ProjectWidget::slot_changeProject()
     {
         return;
     }
-    changeProject(folderPath);
+    openProject(folderPath);
 }
 
 void ProjectWidget::slot_saveProject()

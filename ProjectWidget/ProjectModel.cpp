@@ -94,8 +94,8 @@ bool ProjectModel::loadProjectItems(const QString &rootPath)
         {
             setData(index(i, Columns::col_Name), Qt::Checked, Qt::CheckStateRole);
         }
-        emit layoutChanged();
     }
+    emit layoutChanged();
     return true;
 }
 
@@ -279,32 +279,44 @@ bool ProjectModel::readFromDb()
         return false;
     }
 
-    QList<QSqlRecord> recs;
-    if (!sqlMgr.readProjectElements(recs))
+    QList<QSqlRecord> itemRecs;
+    if (!sqlMgr.readItems(itemRecs))
     {
         qDebug("Can`t read primary order");
     }
-    if (recs.empty())
+    if (itemRecs.empty())
     {
         return true;
     }
 
+    QList<QSqlRecord> linkRecs;
+    if (!sqlMgr.readLinks(linkRecs))
+    {
+        qDebug("Can`t read links");
+    }
+    QHash<qlonglong, QString> links;
+    for (const QSqlRecord &lrec : std::as_const(linkRecs))
+    {
+        links.insert(lrec.value(SqlMgr::LinksTable::Fields::itemId).toULongLong(), lrec.value(SqlMgr::LinksTable::Fields::srcPath).toString());
+    }
+
     QHash<qulonglong, std::shared_ptr<ProjectItem>> itemsById;
-    itemsById.reserve(recs.size());
+    itemsById.reserve(itemRecs.size());
     double orderIndexMax = invisibleRootItem->orderIndex();
 
     QModelIndexList expanded;
-    for (const QSqlRecord &rec : std::as_const(recs))
+    for (const QSqlRecord &rec : std::as_const(itemRecs))
     {
-        const QString path = rec.value(SqlMgr::ProjectFilesystemTable::Columns::path).toString();
-        if (path.isEmpty())
-        {
-            continue;
-        }
+        const qulonglong id = rec.value(SqlMgr::ItemsTable::Fields::id).toULongLong();
+        const QString localPath = rec.value(SqlMgr::ItemsTable::Fields::localPath).toString();
 
-        const qulonglong id = rec.value(SqlMgr::ProjectFilesystemTable::Columns::id).toULongLong();
+        QString path;
+        if (localPath.isEmpty())
+            path = links.value(id);
+        else
+            path = projectRootPath + rec.value(SqlMgr::ItemsTable::Fields::localPath).toString();
 
-        auto parentItem = itemsById.value(rec.value(SqlMgr::ProjectFilesystemTable::Columns::parentId).toULongLong(), invisibleRootItem);
+        auto parentItem = itemsById.value(rec.value(SqlMgr::ItemsTable::Fields::parentId).toULongLong(), invisibleRootItem);
         auto item = std::make_shared<ProjectItem>(id, path, parentItem);
         if (!item->exists())
         {
@@ -313,19 +325,19 @@ bool ProjectModel::readFromDb()
             continue;
             item->setExStatus(ExistingStatus::MISSED);
         }
-        item->setOrderIndex(rec.value(SqlMgr::ProjectFilesystemTable::Columns::order).toDouble());
+        item->setOrderIndex(rec.value(SqlMgr::ItemsTable::Fields::order).toDouble());
         insertItem(item, parentItem);
         itemsById.insert(item->id(), item);
         if (orderIndexMax < item->orderIndex())
             orderIndexMax = item->orderIndex();
 
-        const int printCheckState = rec.value(SqlMgr::ProjectFilesystemTable::Columns::printCheckstate).toInt();
-        const int resultHolder = rec.value(SqlMgr::ProjectFilesystemTable::Columns::resultHolder).toInt();
+        const int printCheckState = rec.value(SqlMgr::ItemsTable::Fields::printCheckstate).toInt();
+        const int resultHolder = rec.value(SqlMgr::ItemsTable::Fields::resultHolder).toInt();
         checkedItems[id] = printCheckState == 0 ? Qt::Unchecked : (printCheckState == 1 ? Qt::PartiallyChecked : Qt::Checked);
         resultHolders[id] = resultHolder == 0 ? Qt::Unchecked : Qt::Checked;
         item->setExStatus(ExistingStatus::LISTED);
 
-        if (rec.value(SqlMgr::ProjectFilesystemTable::Columns::expanded).toBool())
+        if (rec.value(SqlMgr::ItemsTable::Fields::expanded).toBool())
         {
             QModelIndex index = createIndex(parentItem->childCount() - 1, Columns::col_Name, item.get());
             expanded.emplaceBack(std::move(index));

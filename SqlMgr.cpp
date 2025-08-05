@@ -84,36 +84,57 @@ bool SqlMgr::createPickerDb()
 {
     if (!createInfoTable())
         return false;
-    if (!createProjectFilesystemTable())
+    if (!createItemsTable())
+        return false;
+    if (!createLinksTable())
         return false;
     return true;
 }
 
-bool SqlMgr::insertProjectElement(const qulonglong id, const qulonglong parentId, const double orderIndex, const Qt::CheckState print
-                                  , const Qt::CheckState resultHolder, const bool expanded, const QString &path)
+bool SqlMgr::insertItem(const qulonglong id, const qulonglong parentId, const double orderIndex, const Qt::CheckState print
+                                  , const Qt::CheckState resultHolder, const bool expanded, const QString &localPath)
 {
-    const QString sql = QStringLiteral("INSERT INTO %1 (%2,%3,\"%4\",%5,%6,%7,%8) VALUES (%9,%10,%11,%12,%13,%14,'%15');");
-    return exec(sql.arg(ProjectFilesystemTable::tableName
-                        , ProjectFilesystemTable::Columns::id
-                        , ProjectFilesystemTable::Columns::parentId
-                        , ProjectFilesystemTable::Columns::order
-                        , ProjectFilesystemTable::Columns::printCheckstate
-                        , ProjectFilesystemTable::Columns::resultHolder
-                        , ProjectFilesystemTable::Columns::expanded
-                        , ProjectFilesystemTable::Columns::path)
-                    .arg(id)
-                    .arg(parentId)
-                    .arg(orderIndex)
-                    .arg(print == Qt::Unchecked ? 0 : (print == Qt::PartiallyChecked ? 1 : 2))
-                    .arg(resultHolder == Qt::Unchecked ? 0 : 1)
-                    .arg(expanded)
-                    .arg(path));
+    const QString fields = QStringLiteral("%1,%2,\"%3\",%4,%5,%6,%7")
+                                .arg(ItemsTable::Fields::id                  // 1
+                                    , ItemsTable::Fields::parentId           // 2
+                                    , ItemsTable::Fields::order              // 3
+                                    , ItemsTable::Fields::printCheckstate    // 4
+                                    , ItemsTable::Fields::resultHolder       // 5
+                                    , ItemsTable::Fields::expanded           // 6
+                                    , ItemsTable::Fields::localPath);        // 7
+
+    const QString values = QStringLiteral("%1,%2,%3,%4,%5,%6,'%7'")
+                    .arg(id)                                                                    // 1
+                    .arg(parentId)                                                              // 2
+                    .arg(orderIndex)                                                            // 3
+                    .arg(print == Qt::Unchecked ? 0 : (print == Qt::PartiallyChecked ? 1 : 2))  // 4
+                    .arg(resultHolder == Qt::Unchecked ? 0 : 1)                                 // 5
+                    .arg(expanded)                                                              // 6
+                    .arg(localPath);                                                            // 7
+
+    return exec(QStringLiteral("INSERT INTO %1 (%2) VALUES (%3);").arg(ItemsTable::tableName, fields, values));
 }
 
-bool SqlMgr::readProjectElements(QList<QSqlRecord> &result)
+bool SqlMgr::insertLink(const qulonglong itemId, const QString &srcPath)
+{
+    const QString sql = QStringLiteral("INSERT INTO %1 (%2,%3) VALUES (%4,'%5');");
+    return exec(sql.arg(LinksTable::tableName
+                        , LinksTable::Fields::itemId
+                        , LinksTable::Fields::srcPath)
+                   .arg(itemId)
+                   .arg(srcPath));
+}
+
+bool SqlMgr::readItems(QList<QSqlRecord> &result)
 {
     const QString sql = QStringLiteral("SELECT * FROM %1 ORDER BY \"%2\"");
-    return table(sql.arg(ProjectFilesystemTable::tableName, ProjectFilesystemTable::Columns::order), result);
+    return table(sql.arg(ItemsTable::tableName, ItemsTable::Fields::order), result);
+}
+
+bool SqlMgr::readLinks(QList<QSqlRecord> &result)
+{
+    const QString sql = QStringLiteral("SELECT * FROM %1");
+    return table(sql.arg(LinksTable::tableName), result);
 }
 
 bool SqlMgr::table(const QString &sql, QList<QSqlRecord> &result)
@@ -148,13 +169,13 @@ bool SqlMgr::table(const QString &sql, QList<QSqlRecord> &result)
 bool SqlMgr::createInfoTable()
 {
     QString sql = QStringLiteral("CREATE TABLE IF NOT EXISTS %1 (%2 VARCHAR);");
-    if (!exec(sql.arg(InfoTable::tableName, InfoTable::Columns::version)))
+    if (!exec(sql.arg(InfoTable::tableName, InfoTable::Fields::version)))
         return false;
     sql = QStringLiteral("INSERT INTO %1 (%2) VALUES (%3);");
-    return exec(sql.arg(InfoTable::tableName, InfoTable::Columns::version, QStringLiteral("'%1'").arg(APP_VERSION)));
+    return exec(sql.arg(InfoTable::tableName, InfoTable::Fields::version, QStringLiteral("'%1'").arg(APP_VERSION)));
 }
 
-bool SqlMgr::createProjectFilesystemTable()
+bool SqlMgr::createItemsTable()
 {
     const QString sql = QStringLiteral("CREATE TABLE IF NOT EXISTS %1"
                                        "(%2 INTEGER PRIMARY KEY NOT NULL"   //id
@@ -163,13 +184,25 @@ bool SqlMgr::createProjectFilesystemTable()
                                        ", %5 INTEGER(1) DEFAULT 0"          //printCheckstate
                                        ", %6 BOOL DEFAULT false"            //resultHolder
                                        ", %7 BOOL DEFAULT false"            //expanded
-                                       ", %8 TEXT);");                      //path
-    return exec(sql.arg(ProjectFilesystemTable::tableName
-                        , ProjectFilesystemTable::Columns::id
-                        , ProjectFilesystemTable::Columns::parentId
-                        , ProjectFilesystemTable::Columns::order
-                        , ProjectFilesystemTable::Columns::printCheckstate
-                        , ProjectFilesystemTable::Columns::resultHolder
-                        , ProjectFilesystemTable::Columns::expanded
-                        , ProjectFilesystemTable::Columns::path));
+                                       ", %8 TEXT);");                      //localPath
+    return exec(sql.arg(ItemsTable::tableName                    // 1
+                        , ItemsTable::Fields::id                 // 2
+                        , ItemsTable::Fields::parentId           // 3
+                        , ItemsTable::Fields::order              // 4
+                        , ItemsTable::Fields::printCheckstate    // 5
+                        , ItemsTable::Fields::resultHolder       // 6
+                        , ItemsTable::Fields::expanded           // 7
+                        , ItemsTable::Fields::localPath));       // 8
+}
+
+bool SqlMgr::createLinksTable()
+{
+    QString sql = QStringLiteral("CREATE TABLE IF NOT EXISTS %1 "
+                                 "(%2 INTEGER PRIMARY KEY AUTOINCREMENT"    //id
+                                 ", %3 INTEGER"                             //itemId
+                                 ", %4 TEXT);");                            //srcPath
+    return exec(sql.arg(LinksTable::tableName
+                        , LinksTable::Fields::id
+                        , LinksTable::Fields::itemId
+                        , LinksTable::Fields::srcPath));
 }

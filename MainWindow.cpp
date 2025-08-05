@@ -87,7 +87,7 @@ void MainWindow::initMenuBar()
         QMenu *menu = menuBar->addMenu("Файл");
         {
             auto act = ProjectWidget::createOpenAction(isDarkTheme, this);
-            connect(act, &QAction::triggered, projectWidget, &ProjectWidget::slot_changeProject);
+            connect(act, &QAction::triggered, projectWidget, &ProjectWidget::slot_openProject);
             menu->addAction(act);
         }
         {
@@ -100,12 +100,14 @@ void MainWindow::initMenuBar()
         QMenu *menu = menuBar->addMenu("Правка");
         {
             auto act = ProjectWidget::createUndoAction(isDarkTheme, this);
+            act->setEnabled(false);
             connect(act, &QAction::triggered, projectWidget, &ProjectWidget::slot_undo);
             connect(projectWidget, &ProjectWidget::signal_canUndoChanged, act, &QAction::setEnabled);
             menu->addAction(act);
         }
         {
             auto act = ProjectWidget::createRedoAction(isDarkTheme, this);
+            act->setEnabled(false);
             connect(act, &QAction::triggered, projectWidget, &ProjectWidget::slot_redo);
             connect(projectWidget, &ProjectWidget::signal_canRedoChanged, act, &QAction::setEnabled);
             menu->addAction(act);
