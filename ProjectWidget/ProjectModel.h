@@ -2,7 +2,6 @@
 #define PROJECTMODEL_H
 
 #include "ProjectItem.h"
-#include "Enums.h"
 
 #include <QAbstractItemModel>
 #include <QIcon>

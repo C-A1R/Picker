@@ -2,6 +2,7 @@
 #include "ProjectTreeView.h"
 #include "Settings.h"
 #include "SqlMgr.h"
+#include "Enums.h"
 
 #include "Commands/ItemsCheckedCmd.h"
 #include "Commands/ResultHolderCheckedCmd.h"

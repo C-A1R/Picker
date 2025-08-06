@@ -1,5 +1,6 @@
 #include "ProjectModel.h"
 #include "SqlMgr.h"
+#include "Enums.h"
 
 #include <QSqlRecord>
 #include <QFileIconProvider>
@@ -312,7 +313,7 @@ bool ProjectModel::readFromDb()
 
         QString path;
         if (localPath.isEmpty())
-            path = links.value(id);
+            path = links.value(id, projectRootPath);
         else
             path = projectRootPath + rec.value(SqlMgr::ItemsTable::Fields::localPath).toString();
 

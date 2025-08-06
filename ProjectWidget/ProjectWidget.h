@@ -29,9 +29,9 @@ class ProjectWidget : public QWidget
     };
     Q_DECLARE_FLAGS(SaveOpt, SaveOptions);
 
-    QLabel                  *currentPath_label {nullptr};
-    ProjectTreeView         *project_view {nullptr};
-    ProjectModel            *project_model {nullptr};
+    QLabel              *currentPath_label {nullptr};
+    ProjectTreeView     *project_view {nullptr};
+    ProjectModel        *project_model {nullptr};
 
     SaveOpt                     saveOptions{SaveOptions::SAVE_TO_PROJECT_DIRECTORIES};
     QScopedPointer<IPdfBuilder> builder;
