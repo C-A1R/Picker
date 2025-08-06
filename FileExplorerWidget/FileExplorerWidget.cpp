@@ -9,13 +9,15 @@
 #include <QVBoxLayout>
 #include <QFileSystemModel>
 #include <QHeaderView>
+#include <QDesktopServices>
+
 
 FileExplorerWidget::FileExplorerWidget(QWidget *parent)
     : QWidget(parent)
 {
     initUi();
     initDriveActions();
-    connect(view, &FileSystemView::doubleClicked, this, &FileExplorerWidget::slot_goIn);
+    connect(view, &FileSystemView::doubleClicked, this, &FileExplorerWidget::slot_doubleClicked);
     new QShortcut(QKeySequence(Qt::Key_Return), this, SLOT(slot_goIn()));
     new QShortcut(QKeySequence(Qt::Key_Enter), this, SLOT(slot_goIn()));
     new QShortcut(QKeySequence(Qt::Key_Backspace), this, SLOT(slot_goUp()));
@@ -23,7 +25,7 @@ FileExplorerWidget::FileExplorerWidget(QWidget *parent)
 
 FileExplorerWidget::~FileExplorerWidget()
 {
-    Settings::instance()->setValue(SETTINGS_FILESYSTEM_PATH, currentPath_label->text());
+    Settings::instance()->setValue(SETTINGS_FILE_EXP_PATH, currentPath_label->text());
 }
 
 void FileExplorerWidget::initUi()
@@ -100,7 +102,7 @@ void FileExplorerWidget::initDriveActions()
         currentPath_label->setToolTip(drivePath);
     };
 
-    const auto lastPath{Settings::instance()->value(SETTINGS_FILESYSTEM_PATH).toString()};
+    const auto lastPath{Settings::instance()->value(SETTINGS_FILE_EXP_PATH).toString()};
     if (lastPath.isEmpty())
     {
         setDefaultFileSystem();
@@ -137,6 +139,21 @@ void FileExplorerWidget::initDriveActions()
     }
     currentPath_label->setText(lastPath);
     currentPath_label->setToolTip(lastPath);
+}
+
+void FileExplorerWidget::slot_doubleClicked()
+{
+    QModelIndex index = view->currentIndex();
+    if (model->isDir(index))
+    {
+        slot_goIn();
+        return;
+    }
+
+    if (index.column() != FileSystemModel::Columns::col_Name)
+        index = index.siblingAtColumn(FileSystemModel::Columns::col_Name);
+
+    QDesktopServices::openUrl(QUrl::fromLocalFile(model->filePath(index)));
 }
 
 void FileExplorerWidget::slot_goIn()

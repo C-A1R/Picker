@@ -15,7 +15,6 @@ class MainWindow : public QMainWindow
     FileExplorerWidget  *fileExplorerWidget{nullptr};
     ProjectWidget       *projectWidget{nullptr};
     QSplitter           *splitter{nullptr};
-    QPushButton         *hideFileExplorer_btn{nullptr};
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -24,10 +23,6 @@ public:
 private:
     void initUi();
     void initMenuBar();
-
-private slots:
-    void slot_hideFSBrowser();
-    void slot_saveSplitterSizes();
 };
 
 #endif // MAINWINDOW_H

@@ -26,6 +26,7 @@ private:
     void initDriveActions();
 
 private slots:
+    void slot_doubleClicked();
     void slot_goIn();
     void slot_goUp();
     void slot_changeDrive();

@@ -30,7 +30,7 @@ class ProjectWidget : public QWidget
     Q_DECLARE_FLAGS(SaveOpt, SaveOptions);
 
     QLabel                  *currentPath_label {nullptr};
-    ProjectTreeView         *project_treeView {nullptr};
+    ProjectTreeView         *project_view {nullptr};
     ProjectModel            *project_model {nullptr};
 
     SaveOpt                     saveOptions{SaveOptions::SAVE_TO_PROJECT_DIRECTORIES};

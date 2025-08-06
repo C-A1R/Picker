@@ -29,8 +29,11 @@ MainWindow::MainWindow(QWidget *parent)
     if (Settings::instance()->value(SETTINGS_FILE_EXP_HIDDEN).toBool())
         fileExplorerWidget->hide();
 
-    connect(hideFileExplorer_btn, &QPushButton::pressed, this, &MainWindow::slot_hideFSBrowser);
-    connect(splitter, &QSplitter::splitterMoved, this, &MainWindow::slot_saveSplitterSizes);
+    connect(splitter, &QSplitter::splitterMoved, this, [this]()
+            {
+                const QStringList split_sizes{QString::number(splitter->sizes().at(0)), QString::number(splitter->sizes().at(1))};
+                Settings::instance()->setValue(SETTINGS_SPLIT_SIZES, split_sizes);
+            });
 }
 
 MainWindow::~MainWindow()
@@ -47,10 +50,6 @@ MainWindow::~MainWindow()
 void MainWindow::initUi()
 {
     auto centralWidget = new QWidget(this);
-
-    hideFileExplorer_btn = new QPushButton(splitter);
-    hideFileExplorer_btn->setFlat(true);
-    hideFileExplorer_btn->setFixedSize(QSize(5, 100));
 
     splitter = new QSplitter(centralWidget);
     splitter->setOrientation(Qt::Horizontal);
@@ -72,7 +71,6 @@ void MainWindow::initUi()
     }
 
     auto main_hLay = new QHBoxLayout();
-    main_hLay->addWidget(hideFileExplorer_btn);
     main_hLay->addWidget(splitter);
     centralWidget->setLayout(main_hLay);
 
@@ -122,8 +120,11 @@ void MainWindow::initMenuBar()
             act->setIcon(icon);
             act->setCheckable(true);
             act->setChecked(!Settings::instance()->value(SETTINGS_FILE_EXP_HIDDEN).toBool());
-            connect(act, &QAction::triggered, this, &MainWindow::slot_hideFSBrowser);
-            connect(hideFileExplorer_btn, &QPushButton::clicked, this, [act, this](){ act->setChecked(!fileExplorerWidget->isHidden()); });
+            connect(act, &QAction::triggered, this, [this]()
+                    {
+                        fileExplorerWidget->isHidden() ? fileExplorerWidget->show()
+                                                       : fileExplorerWidget->hide();
+                    });
             menu->addAction(act);
         }
     }
@@ -135,16 +136,4 @@ void MainWindow::initMenuBar()
             menu->addAction(act);
         }
     }
-}
-
-void MainWindow::slot_hideFSBrowser()
-{
-    fileExplorerWidget->isHidden() ? fileExplorerWidget->show()
-                                   : fileExplorerWidget->hide();
-}
-
-void MainWindow::slot_saveSplitterSizes()
-{
-    const QStringList split_sizes{QString::number(splitter->sizes().at(0)), QString::number(splitter->sizes().at(1))};
-    Settings::instance()->setValue(SETTINGS_SPLIT_SIZES, split_sizes);
 }

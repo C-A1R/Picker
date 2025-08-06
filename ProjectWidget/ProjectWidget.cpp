@@ -20,6 +20,7 @@
 #include <QStyleHints>
 #include <QApplication>
 #include <QUndoStack>
+#include <QDesktopServices>
 
 
 ProjectWidget::ProjectWidget(QWidget *parent)
@@ -29,22 +30,32 @@ ProjectWidget::ProjectWidget(QWidget *parent)
 {
     initUi();
 
-    connect(project_treeView, &ProjectTreeView::signal_itemsChecked,            this,   &ProjectWidget::slot_itemsChecked);
-    connect(project_treeView, &ProjectTreeView::signal_resultHolderChecked,     this,   &ProjectWidget::slot_resultHolderChecked);
+    connect(project_view, &ProjectTreeView::signal_itemsChecked,            this,   &ProjectWidget::slot_itemsChecked);
+    connect(project_view, &ProjectTreeView::signal_resultHolderChecked,     this,   &ProjectWidget::slot_resultHolderChecked);
 
-    connect(project_model,    &ProjectModel::signal_expand,         project_treeView,   &ProjectTreeView::slot_expand);
-    connect(project_treeView, &ProjectTreeView::signal_dropped,     project_model,      &ProjectModel::slot_dropped);
-    connect(project_treeView, &ProjectTreeView::signal_added,       project_model,      &ProjectModel::slot_added);
+    connect(project_model,  &ProjectModel::signal_expand,         project_view,     &ProjectTreeView::slot_expand);
+    connect(project_view,   &ProjectTreeView::signal_dropped,     project_model,    &ProjectModel::slot_dropped);
+    connect(project_view,   &ProjectTreeView::signal_added,       project_model,    &ProjectModel::slot_added);
 
     connect(undoStack, &QUndoStack::canUndoChanged, this, &ProjectWidget::signal_canUndoChanged);
     connect(undoStack, &QUndoStack::canRedoChanged, this, &ProjectWidget::signal_canRedoChanged);
 
-    openProject(Settings::instance()->value(SETTINGS_BUILD_PATH).toString());
+    connect(project_view, &ProjectTreeView::doubleClicked, this, [](const QModelIndex &index)
+            {
+                auto item = static_cast<const ProjectItem*>(index.internalPointer());
+                if (!item)
+                    return;
+                if (item->isDir())
+                    return;
+                QDesktopServices::openUrl(QUrl::fromLocalFile(item->path().absolutePath()));
+            });
+
+    openProject(Settings::instance()->value(SETTINGS_PROJECT_PATH).toString());
 }
 
 ProjectWidget::~ProjectWidget()
 {
-    Settings::instance()->setValue(SETTINGS_BUILD_PATH, currentPath_label->text());
+    Settings::instance()->setValue(SETTINGS_PROJECT_PATH, currentPath_label->text());
     Settings::instance()->setValue(SETTINGS_SAVE_OPTIONS, saveOptions.toInt());
 }
 
@@ -179,22 +190,22 @@ void ProjectWidget::initUi()
     currentPath_label->setIndent(5);
     currentPath_label->setSizePolicy(QSizePolicy::Policy::Ignored, QSizePolicy::Policy::Fixed);
 
-    project_treeView = new ProjectTreeView(this);
-    project_treeView->header()->hide();
+    project_view = new ProjectTreeView(this);
+    project_view->header()->hide();
     project_model = new ProjectModel(this);
-    project_treeView->setModel(project_model);
-    project_treeView->setSortingEnabled(true);
-    project_treeView->sortByColumn(Columns::col_Name, Qt::AscendingOrder);
-    project_treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    project_treeView->setDragDropMode(QAbstractItemView::DragDrop);
-    project_treeView->setDragEnabled(true);
-    project_treeView->viewport()->setAcceptDrops(true);
-    project_treeView->setDropIndicatorShown(true);
-    project_treeView->header()->setSectionResizeMode(Columns::col_Name, QHeaderView::Stretch);
-    project_treeView->header()->setSectionResizeMode(Columns::col_LastModified, QHeaderView::ResizeToContents);
-    project_treeView->header()->setSectionResizeMode(Columns::col_ResultHolder, QHeaderView::Fixed);
-    project_treeView->header()->setStretchLastSection(false);
-    project_treeView->header()->resizeSection(Columns::col_ResultHolder, 0);
+    project_view->setModel(project_model);
+    project_view->setSortingEnabled(true);
+    project_view->sortByColumn(Columns::col_Name, Qt::AscendingOrder);
+    project_view->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    project_view->setDragDropMode(QAbstractItemView::DragDrop);
+    project_view->setDragEnabled(true);
+    project_view->viewport()->setAcceptDrops(true);
+    project_view->setDropIndicatorShown(true);
+    project_view->header()->setSectionResizeMode(Columns::col_Name, QHeaderView::Stretch);
+    project_view->header()->setSectionResizeMode(Columns::col_LastModified, QHeaderView::ResizeToContents);
+    project_view->header()->setSectionResizeMode(Columns::col_ResultHolder, QHeaderView::Fixed);
+    project_view->header()->setStretchLastSection(false);
+    project_view->header()->resizeSection(Columns::col_ResultHolder, 0);
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);
@@ -202,7 +213,7 @@ void ProjectWidget::initUi()
     main_vLay->addLayout(tools_hLay);
     main_vLay->addWidget(currentPath_label);
     main_vLay->addSpacing(3);
-    main_vLay->addWidget(project_treeView);
+    main_vLay->addWidget(project_view);
     setLayout(main_vLay);
 }
 
@@ -215,7 +226,7 @@ void ProjectWidget::openProject(const QString &path)
         return;
     currentPath_label->setText(path);
     currentPath_label->setToolTip(path);
-    project_treeView->expand(project_model->index(0, 0));
+    project_view->expand(project_model->index(0, 0));
 }
 
 QString ProjectWidget::getDefenitFolder() const
@@ -308,7 +319,7 @@ void ProjectWidget::saveItemToDB(const QModelIndex &index, SqlMgr &sqlMgr) const
                            , item->orderIndex()
                            , project_model->data(index, Qt::CheckStateRole).value<Qt::CheckState>()
                            , project_model->data(index_resultHolderCol, Qt::CheckStateRole).value<Qt::CheckState>()
-                           , project_treeView->isExpanded(index)
+                           , project_view->isExpanded(index)
                            , localPath))
     {
         qDebug() << "item insertion failed: " << item->path().absolutePath();
