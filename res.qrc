@@ -16,5 +16,6 @@
         <file>ico/save_dark.svg</file>
         <file>ico/dock-left.svg</file>
         <file>ico/dock-left_dark.svg</file>
+        <file>ico/crossmark.svg</file>
     </qresource>
 </RCC>

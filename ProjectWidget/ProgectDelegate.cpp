@@ -26,14 +26,21 @@ void ProgectDelegate::paint(QPainter *painter, const QStyleOptionViewItem &optio
         return;
     }
 
-    QStyleOptionButton buttonOption;
-    buttonOption.state = QStyle::State_Enabled;
-    buttonOption.rect = removeBtnRect(option);
-    buttonOption.text = "X";
-    style->drawControl(QStyle::CE_PushButton, &buttonOption, painter);
-    buttonOption.rect = browseBtnRect(option);
-    buttonOption.text = "...";
-    style->drawControl(QStyle::CE_PushButton, &buttonOption, painter);
+    {
+        QStyleOptionButton removeBtnOpt;
+        removeBtnOpt.state = QStyle::State_Enabled;
+        removeBtnOpt.rect = removeBtnRect(option);
+        removeBtnOpt.icon = QIcon(":/project/ico/crossmark.svg");
+        removeBtnOpt.iconSize = {8,8};
+        style->drawControl(QStyle::CE_PushButton, &removeBtnOpt, painter);
+    }
+    {
+        QStyleOptionButton browseBtnOpt;
+        browseBtnOpt.state = QStyle::State_Enabled;
+        browseBtnOpt.rect = browseBtnRect(option);
+        browseBtnOpt.text = "...";
+        style->drawControl(QStyle::CE_PushButton, &browseBtnOpt, painter);
+    }
 
     painter->restore();
 }
@@ -45,32 +52,31 @@ bool ProgectDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, cons
     if (event->type() == QEvent::MouseButtonDblClick)
     {
         QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
-        if (removeBtnRect(option).contains(mouseEvent->pos())
-            || browseBtnRect(option).contains(mouseEvent->pos()))
+        if (ProgectDelegate::removeBtnRect(option).contains(mouseEvent->pos())
+            || ProgectDelegate::browseBtnRect(option).contains(mouseEvent->pos()))
         return false;
         emit signal_doubleClicked(index);
         return true;
     }
-
     if (event->type() == QEvent::MouseButtonRelease)
     {
         QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
-        if (removeBtnRect(option).contains(mouseEvent->pos()))
+        if (ProgectDelegate::removeBtnRect(option).contains(mouseEvent->pos()))
             emit signal_removeBtnClicked(index);
-        else if (browseBtnRect(option).contains(mouseEvent->pos()))
+        else if (ProgectDelegate::browseBtnRect(option).contains(mouseEvent->pos()))
             emit signal_browseBtnClicked(index);
         return true;
     }
     return false;
 }
 
-QRect ProgectDelegate::removeBtnRect(const QStyleOptionViewItem &option) const
+QRect ProgectDelegate::removeBtnRect(const QStyleOptionViewItem &option)
 {
     const int btnTop = option.rect.center().y() + 1 - btnHeight / 2;
     return {option.rect.right() - btnWidth + padding, btnTop, btnWidth, btnHeight};
 }
 
-QRect ProgectDelegate::browseBtnRect(const QStyleOptionViewItem &option) const
+QRect ProgectDelegate::browseBtnRect(const QStyleOptionViewItem &option)
 {
     const int btnTop = option.rect.center().y() + 1 - btnHeight / 2;
     return {option.rect.right() - btnWidth * 2 + padding + 1, btnTop, btnWidth, btnHeight};

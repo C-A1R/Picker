@@ -42,7 +42,7 @@ ProjectWidget::ProjectWidget(QWidget *parent)
     connect(undoStack, &QUndoStack::canUndoChanged, this, &ProjectWidget::signal_canUndoChanged);
     connect(undoStack, &QUndoStack::canRedoChanged, this, &ProjectWidget::signal_canRedoChanged);
 
-    connect(project_delegate, &ProgectDelegate::signal_doubleClicked, this, [](const QModelIndex &index)
+    connect(project_view, &ProjectTreeView::signal_doubleClicked, this, [](const QModelIndex &index)
             {
                 auto item = static_cast<const ProjectItem*>(index.internalPointer());
                 if (!item)
@@ -50,15 +50,6 @@ ProjectWidget::ProjectWidget(QWidget *parent)
                 if (item->isDir())
                     return;
                 QDesktopServices::openUrl(QUrl::fromLocalFile(item->path().absolutePath()));
-            });
-
-    connect(project_delegate, &ProgectDelegate::signal_removeBtnClicked, this, [](const QModelIndex &index)
-            {
-                qDebug() << "remove item";
-            });
-    connect(project_delegate, &ProgectDelegate::signal_browseBtnClicked, this, [](const QModelIndex &index)
-            {
-                qDebug() << "browse item";
             });
 
     openProject(Settings::instance()->value(SETTINGS_PROJECT_PATH).toString());
@@ -217,8 +208,6 @@ void ProjectWidget::initUi()
     project_view->header()->setSectionResizeMode(ProlectColumns::col_ResultHolder, QHeaderView::Fixed);
     project_view->header()->setStretchLastSection(false);
     project_view->header()->resizeSection(ProlectColumns::col_ResultHolder, 0);
-    project_delegate = new ProgectDelegate(project_view);
-    project_view->setItemDelegateForColumn(ProlectColumns::col_Name, project_delegate);
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);

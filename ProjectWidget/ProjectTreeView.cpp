@@ -1,15 +1,29 @@
 #include "ProjectTreeView.h"
 #include "Enums.h"
 #include "ProjectItem.h"
+#include "ProgectDelegate.h"
 
 #include <QDropEvent>
 #include <QMenu>
 #include <QPainter>
 #include <QMimeData>
+#include <QToolTip>
 
 ProjectTreeView::ProjectTreeView(QWidget *parent) : QTreeView(parent)
 {
     setStyle(new ProjectTreeViewStyle(style()));
+
+    auto projectDelegate = new ProgectDelegate(this);
+    setItemDelegateForColumn(ProlectColumns::col_Name, projectDelegate);
+    connect(projectDelegate, &ProgectDelegate::signal_removeBtnClicked, this, [](const QModelIndex &index)
+            {
+                qDebug() << "remove item";
+            });
+    connect(projectDelegate, &ProgectDelegate::signal_browseBtnClicked, this, [](const QModelIndex &index)
+            {
+                qDebug() << "browse item";
+            });
+    connect(projectDelegate, &ProgectDelegate::signal_doubleClicked, this, &ProjectTreeView::signal_doubleClicked);
 }
 
 void ProjectTreeView::mousePressEvent(QMouseEvent *event)
@@ -237,6 +251,35 @@ void ProjectTreeView::selectRow(const QModelIndex &index)
     {
         selectionModel()->select(model()->index(index.row(), col, index.parent()), QItemSelectionModel::Select);
     }
+}
+
+bool ProjectTreeView::viewportEvent(QEvent *event)
+{
+    if (event->type() == QEvent::ToolTip) {
+        QHelpEvent *helpEvent = static_cast<QHelpEvent *>(event);
+
+        QModelIndex index = indexAt(helpEvent->pos());
+        if (!index.isValid())
+            return QTreeView::viewportEvent(event);
+        if (index.data(ProjectRoles::STATUS) != ExistingStatus::MISSED)
+            return QTreeView::viewportEvent(event);
+
+        QStyleOptionViewItem option;
+        option.initFrom(this);
+        option.rect = visualRect(index);
+        if (ProgectDelegate::removeBtnRect(option).contains(helpEvent->pos()))
+        {
+            QToolTip::showText(helpEvent->globalPos(), "Удалить элемент");
+            return true;
+        }
+        else if (ProgectDelegate::browseBtnRect(option).contains(helpEvent->pos()))
+        {
+            QToolTip::showText(helpEvent->globalPos(), "Найти элемент");
+            return true;
+        }
+    }
+
+    return QTreeView::viewportEvent(event);
 }
 
 void ProjectTreeView::slot_expand(const QModelIndexList &indices)

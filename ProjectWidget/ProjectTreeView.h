@@ -38,11 +38,14 @@ private:
     bool checkBoxClicked(const QModelIndex &index, QMouseEvent *event) const;
     void selectRow(const QModelIndex &index);
 
+    bool viewportEvent(QEvent *event) override;
+
 signals:
     void signal_dropped(const QModelIndex &, const QModelIndex &, const QModelIndexList &);
     void signal_added(const QModelIndex &, const QModelIndex &, const QString &);
     void signal_itemsChecked(const QModelIndexList &, const Qt::CheckState);
     void signal_resultHolderChecked(const QModelIndex &);
+    void signal_doubleClicked(const QModelIndex &);
 
 public slots:
     void slot_expand(const QModelIndexList &indices);
