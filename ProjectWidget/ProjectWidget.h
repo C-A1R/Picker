@@ -12,6 +12,7 @@ class ProjectSortProxyModel;
 class IPdfBuilder;
 class SqlMgr;
 class QUndoStack;
+class ProgectDelegate;
 
 /**
  * @brief The ProjectWidget class
@@ -32,6 +33,7 @@ class ProjectWidget : public QWidget
     QLabel              *currentPath_label {nullptr};
     ProjectTreeView     *project_view {nullptr};
     ProjectModel        *project_model {nullptr};
+    ProgectDelegate     *project_delegate {nullptr};
 
     SaveOpt                     saveOptions{SaveOptions::SAVE_TO_PROJECT_DIRECTORIES};
     QScopedPointer<IPdfBuilder> builder;

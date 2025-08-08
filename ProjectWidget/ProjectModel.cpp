@@ -65,7 +65,7 @@ int ProjectModel::rowCount(const QModelIndex &parent) const
 int ProjectModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
-    return Columns::MAX;
+    return ProlectColumns::MAX;
 }
 
 bool ProjectModel::hasChildren(const QModelIndex &parent) const
@@ -93,7 +93,7 @@ bool ProjectModel::loadProjectItems(const QString &rootPath)
         scanFilesystemItem(projectRootItem, beginOrderIndex);
         for (int i = 0; i < projectRootItem->childCount(); ++i)
         {
-            setData(index(i, Columns::col_Name), Qt::Checked, Qt::CheckStateRole);
+            setData(index(i, ProlectColumns::col_Name), Qt::Checked, Qt::CheckStateRole);
         }
     }
     emit layoutChanged();
@@ -234,7 +234,7 @@ void ProjectModel::getResultHolders(const QModelIndex &index, QModelIndexList &r
         const QModelIndex &siblingChild = this->index(i, 0, sibling);
         if (!siblingChild.isValid())
             continue;
-        const QModelIndex &child = siblingChild.siblingAtColumn(Columns::col_ResultHolder);
+        const QModelIndex &child = siblingChild.siblingAtColumn(ProlectColumns::col_ResultHolder);
         if (!child.isValid())
             continue;
 
@@ -261,7 +261,7 @@ void ProjectModel::insertItem(const std::shared_ptr<ProjectItem> &item, std::sha
 
 std::shared_ptr<ProjectItem> ProjectModel::findItem(const QModelIndex &index) const
 {
-    return index.isValid() ? itemPaths.value(index.data(ProjectItem::Roles::ABS_PATH).toString(), nullptr) : invisibleRootItem;
+    return index.isValid() ? itemPaths.value(index.data(ProjectRoles::ABS_PATH).toString(), nullptr) : invisibleRootItem;
 }
 
 /// читаем проект из файла
@@ -323,9 +323,12 @@ bool ProjectModel::readFromDb()
         {
             //файл из списка был удален
             qDebug() << "Item was removed:" << path;
-            continue;
+            // continue;
             item->setExStatus(ExistingStatus::MISSED);
         }
+        else
+            item->setExStatus(ExistingStatus::LISTED);
+
         item->setOrderIndex(rec.value(SqlMgr::ItemsTable::Fields::order).toDouble());
         insertItem(item, parentItem);
         itemsById.insert(item->id(), item);
@@ -336,11 +339,11 @@ bool ProjectModel::readFromDb()
         const int resultHolder = rec.value(SqlMgr::ItemsTable::Fields::resultHolder).toInt();
         checkedItems[id] = printCheckState == 0 ? Qt::Unchecked : (printCheckState == 1 ? Qt::PartiallyChecked : Qt::Checked);
         resultHolders[id] = resultHolder == 0 ? Qt::Unchecked : Qt::Checked;
-        item->setExStatus(ExistingStatus::LISTED);
+        // item->setExStatus(ExistingStatus::LISTED);
 
         if (rec.value(SqlMgr::ItemsTable::Fields::expanded).toBool())
         {
-            QModelIndex index = createIndex(parentItem->childCount() - 1, Columns::col_Name, item.get());
+            QModelIndex index = createIndex(parentItem->childCount() - 1, ProlectColumns::col_Name, item.get());
             expanded.emplaceBack(std::move(index));
         }
 
@@ -408,7 +411,7 @@ void ProjectModel::checkItem(const QModelIndex &index)
 {
     auto itemId = [this](const QModelIndex &index) -> qulonglong
     {
-        return data(index, ProjectItem::Roles::ID).toULongLong();
+        return data(index, ProjectRoles::ID).toULongLong();
     };
 
     Qt::CheckState state = checkedItems.value(itemId(index), Qt::Unchecked);
@@ -416,7 +419,7 @@ void ProjectModel::checkItem(const QModelIndex &index)
     {
         for (int i = 0; i < rowCount(index); ++i)
         {
-            const QModelIndex &child = this->index(i, Columns::col_Name, index);
+            const QModelIndex &child = this->index(i, ProlectColumns::col_Name, index);
             if (checkedItems.value(itemId(child), Qt::Unchecked) != state)
             {
                 setData(child, state, Qt::CheckStateRole);
@@ -434,7 +437,7 @@ void ProjectModel::checkItem(const QModelIndex &index)
     }
     for (int i = 0; i < rowCount(parent); i++)
     {
-        const QModelIndex &child = this->index(i, Columns::col_Name, parent);
+        const QModelIndex &child = this->index(i, ProlectColumns::col_Name, parent);
         ++visible;
         if (checkedItems.value(itemId(child), Qt::Unchecked) != Qt::Unchecked)
         {
@@ -491,11 +494,11 @@ void ProjectModel::resetResultHolderCheckstates_Up(const QModelIndex &index)
 
 void ProjectModel::resetResultHolderCheckstates_Down(const QModelIndex &index)
 {
-    auto name_ind = index.siblingAtColumn(Columns::col_Name);
+    auto name_ind = index.siblingAtColumn(ProlectColumns::col_Name);
     for (int i = 0; i < rowCount(name_ind); ++i)
     {
-        const QModelIndex &name_child = this->index(i, Columns::col_Name, name_ind);
-        const QModelIndex &ch = name_child.siblingAtColumn(Columns::col_ResultHolder);
+        const QModelIndex &name_child = this->index(i, ProlectColumns::col_Name, name_ind);
+        const QModelIndex &ch = name_child.siblingAtColumn(ProlectColumns::col_ResultHolder);
         setData(ch, Qt::Unchecked, Qt::CheckStateRole);
         emit dataChanged(ch, ch, QList<int>{Qt::CheckStateRole});
         resetResultHolderCheckstates_Down(ch);
@@ -507,13 +510,13 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
     if (!index.isValid())
         return {};
 
-    if (index.column() == Columns::col_Name)
+    if (index.column() == ProlectColumns::col_Name)
     {
         switch (role)
         {
         case Qt::CheckStateRole:
         {
-            return checkedItems.value(data(index, ProjectItem::Roles::ID).toULongLong(), Qt::Unchecked);
+            return checkedItems.value(data(index, ProjectRoles::ID).toULongLong(), Qt::Unchecked);
         }
         case Qt::DecorationRole:
         {
@@ -540,17 +543,17 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
             }
             return statusColors[status];
         }
-        case ProjectItem::Roles::ID:
+        case ProjectRoles::ID:
         {
             const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
             return item->id();
         }
-        case ProjectItem::Roles::STATUS:
+        case ProjectRoles::STATUS:
         {
             const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
             return item->exStatus();
         }
-        case ProjectItem::Roles::ABS_PATH:
+        case ProjectRoles::ABS_PATH:
         {
             const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
             return item->path().absolutePath();
@@ -559,7 +562,7 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
             break;
         }
     }
-    else if (index.column() == Columns::col_LastModified)
+    else if (index.column() == ProlectColumns::col_LastModified)
     {
         switch (role)
         {
@@ -572,7 +575,7 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
             break;
         }
     }
-    else if (index.column() == Columns::col_ResultHolder)
+    else if (index.column() == ProlectColumns::col_ResultHolder)
     {
         switch (role)
         {
@@ -597,16 +600,16 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
 
 bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if (index.column() == Columns::col_Name)
+    if (index.column() == ProlectColumns::col_Name)
     {
         if (role == Qt::CheckStateRole)
         {
-            checkedItems[data(index, ProjectItem::Roles::ID).toULongLong()] = static_cast<Qt::CheckState>(value.toInt());
+            checkedItems[data(index, ProjectRoles::ID).toULongLong()] = static_cast<Qt::CheckState>(value.toInt());
             checkItem(index);
             return true;
         }
     }
-    else if (index.column() == Columns::col_ResultHolder)
+    else if (index.column() == ProlectColumns::col_ResultHolder)
     {
         if (role == Qt::CheckStateRole)
         {
@@ -632,7 +635,7 @@ void ProjectModel::setItemsChecked(const QModelIndexList &selected, const Qt::Ch
 
     for (const QModelIndex &index : selected)
     {
-        if (index.column() != Columns::col_Name)
+        if (index.column() != ProlectColumns::col_Name)
             continue;
         setData(index, checkState, Qt::CheckStateRole);
     }
@@ -693,7 +696,7 @@ void ProjectModel::slot_dropped(const QModelIndex &dropRootIndex,const QModelInd
 
     for (const QModelIndex &index : draggedIndices)
     {
-        if (index.column() != Columns::col_Name)
+        if (index.column() != ProlectColumns::col_Name)
             continue;
         const std::shared_ptr<ProjectItem> item = findItem(index);
         if (!item)

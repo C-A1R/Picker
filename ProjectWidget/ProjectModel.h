@@ -30,7 +30,8 @@ class ProjectModel : public QAbstractItemModel
     {
         {ExistingStatus::DEFAULT,     QColor(Qt::transparent)},
         {ExistingStatus::LISTED,      QColor(100, 221, 23, 50)},
-        {ExistingStatus::NOT_LISTED,  QColor(255, 237, 204, 200)}
+        {ExistingStatus::NOT_LISTED,  QColor(255, 237, 204, 200)},
+        {ExistingStatus::MISSED,      QColor(204, 76, 76, 200)}
     };
 
 public:

@@ -1,19 +1,12 @@
 #ifndef PROJECTITEM_H
 #define PROJECTITEM_H
 
+#include "Enums.h"
+
 #include <QVariant>
 #include <QDir>
 
 #include <memory>
-
-
-enum ExistingStatus
-{
-    DEFAULT = 0,
-    LISTED,
-    NOT_LISTED,
-    MISSED
-};
 
 /**
  * @brief The ProjectItem class
@@ -31,13 +24,6 @@ class ProjectItem
     QList<std::shared_ptr<ProjectItem>>     m_childItems;
 
 public:
-    enum Roles
-    {
-        ID = Qt::UserRole,
-        STATUS,
-        ABS_PATH
-    };
-
     explicit ProjectItem(const qulonglong id, const QString &path, std::shared_ptr<ProjectItem> parentItem = nullptr);
 
     void appendChild(const std::shared_ptr<ProjectItem> &child);

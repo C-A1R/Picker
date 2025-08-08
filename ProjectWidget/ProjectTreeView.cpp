@@ -22,7 +22,7 @@ void ProjectTreeView::mousePressEvent(QMouseEvent *event)
             QTreeView::mousePressEvent(event);
             return;
         }
-        if (index.column() == Columns::col_ResultHolder)
+        if (index.column() == ProlectColumns::col_ResultHolder)
         {
             emit signal_resultHolderChecked(index);
             return;
@@ -152,7 +152,7 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
         {
             return;
         }
-        draggedIndices.removeIf([](const QModelIndex &index) { return index.column() != Columns::col_Name; });
+        draggedIndices.removeIf([](const QModelIndex &index) { return index.column() != ProlectColumns::col_Name; });
         emit signal_dropped(dropRootIndex, droppedIndex, draggedIndices);
     }
     else if (event->mimeData()->hasFormat("text/plain")) // from left panel
@@ -233,7 +233,7 @@ void ProjectTreeView::selectRow(const QModelIndex &index)
     if (!index.isValid())
         return;
 
-    for (int col = 0; col < Columns::MAX; ++col)
+    for (int col = 0; col < ProlectColumns::MAX; ++col)
     {
         selectionModel()->select(model()->index(index.row(), col, index.parent()), QItemSelectionModel::Select);
     }

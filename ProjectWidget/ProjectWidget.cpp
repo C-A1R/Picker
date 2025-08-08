@@ -3,6 +3,7 @@
 #include "Settings.h"
 #include "SqlMgr.h"
 #include "Enums.h"
+#include "ProgectDelegate.h"
 
 #include "Commands/ItemsCheckedCmd.h"
 #include "Commands/ResultHolderCheckedCmd.h"
@@ -41,7 +42,7 @@ ProjectWidget::ProjectWidget(QWidget *parent)
     connect(undoStack, &QUndoStack::canUndoChanged, this, &ProjectWidget::signal_canUndoChanged);
     connect(undoStack, &QUndoStack::canRedoChanged, this, &ProjectWidget::signal_canRedoChanged);
 
-    connect(project_view, &ProjectTreeView::doubleClicked, this, [](const QModelIndex &index)
+    connect(project_delegate, &ProgectDelegate::signal_doubleClicked, this, [](const QModelIndex &index)
             {
                 auto item = static_cast<const ProjectItem*>(index.internalPointer());
                 if (!item)
@@ -49,6 +50,15 @@ ProjectWidget::ProjectWidget(QWidget *parent)
                 if (item->isDir())
                     return;
                 QDesktopServices::openUrl(QUrl::fromLocalFile(item->path().absolutePath()));
+            });
+
+    connect(project_delegate, &ProgectDelegate::signal_removeBtnClicked, this, [](const QModelIndex &index)
+            {
+                qDebug() << "remove item";
+            });
+    connect(project_delegate, &ProgectDelegate::signal_browseBtnClicked, this, [](const QModelIndex &index)
+            {
+                qDebug() << "browse item";
             });
 
     openProject(Settings::instance()->value(SETTINGS_PROJECT_PATH).toString());
@@ -196,17 +206,19 @@ void ProjectWidget::initUi()
     project_model = new ProjectModel(this);
     project_view->setModel(project_model);
     project_view->setSortingEnabled(true);
-    project_view->sortByColumn(Columns::col_Name, Qt::AscendingOrder);
+    project_view->sortByColumn(ProlectColumns::col_Name, Qt::AscendingOrder);
     project_view->setSelectionMode(QAbstractItemView::ExtendedSelection);
     project_view->setDragDropMode(QAbstractItemView::DragDrop);
     project_view->setDragEnabled(true);
     project_view->viewport()->setAcceptDrops(true);
     project_view->setDropIndicatorShown(true);
-    project_view->header()->setSectionResizeMode(Columns::col_Name, QHeaderView::Stretch);
-    project_view->header()->setSectionResizeMode(Columns::col_LastModified, QHeaderView::ResizeToContents);
-    project_view->header()->setSectionResizeMode(Columns::col_ResultHolder, QHeaderView::Fixed);
+    project_view->header()->setSectionResizeMode(ProlectColumns::col_Name, QHeaderView::Stretch);
+    project_view->header()->setSectionResizeMode(ProlectColumns::col_LastModified, QHeaderView::ResizeToContents);
+    project_view->header()->setSectionResizeMode(ProlectColumns::col_ResultHolder, QHeaderView::Fixed);
     project_view->header()->setStretchLastSection(false);
-    project_view->header()->resizeSection(Columns::col_ResultHolder, 0);
+    project_view->header()->resizeSection(ProlectColumns::col_ResultHolder, 0);
+    project_delegate = new ProgectDelegate(project_view);
+    project_view->setItemDelegateForColumn(ProlectColumns::col_Name, project_delegate);
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);
@@ -269,7 +281,7 @@ void ProjectWidget::saveProjectTree(SqlMgr &sqlMgr) const
 
     for (int i = 0; i < rows; ++i)
     {
-        const QModelIndex &childIndex = project_model->index(i, Columns::col_Name, QModelIndex());
+        const QModelIndex &childIndex = project_model->index(i, ProlectColumns::col_Name, QModelIndex());
         saveProjectItem(childIndex, sqlMgr);
     }
 }
@@ -289,7 +301,7 @@ void ProjectWidget::saveProjectItem(const QModelIndex &itemIndex, SqlMgr &sqlMgr
 
     for (int i = 0; i < rows; ++i)
     {
-        const QModelIndex &childIndex = project_model->index(i, Columns::col_Name, itemIndex);
+        const QModelIndex &childIndex = project_model->index(i, ProlectColumns::col_Name, itemIndex);
         saveProjectItem(childIndex, sqlMgr);
     }
 }
@@ -314,7 +326,7 @@ void ProjectWidget::saveItemToDB(const QModelIndex &index, SqlMgr &sqlMgr) const
     {
         localPath = absPath.last(absPath.length() - currentPath_label->text().length());
     }
-    const QModelIndex &index_resultHolderCol = index.siblingAtColumn(Columns::col_ResultHolder);
+    const QModelIndex &index_resultHolderCol = index.siblingAtColumn(ProlectColumns::col_ResultHolder);
     if (!sqlMgr.insertItem(item->id()
                            , parentItem->id()
                            , item->orderIndex()

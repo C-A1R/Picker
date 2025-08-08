@@ -26,6 +26,7 @@ SOURCES += \
     FileExplorerWidget/FileSystemModel.cpp \
     ProjectWidget/Commands/ItemsCheckedCmd.cpp \
     ProjectWidget/Commands/ResultHolderCheckedCmd.cpp \
+    ProjectWidget/ProgectDelegate.cpp \
     ProjectWidget/ProjectItem.cpp \
     ProjectWidget/ProjectModel.cpp \
     ProjectWidget/ProjectTreeView.cpp \
@@ -46,6 +47,7 @@ HEADERS += \
     ProjectWidget/Commands/ItemsCheckedCmd.h \
     ProjectWidget/Commands/ResultHolderCheckedCmd.h \
     ProjectWidget/Enums.h \
+    ProjectWidget/ProgectDelegate.h \
     ProjectWidget/ProjectItem.h \
     ProjectWidget/ProjectModel.h \
     ProjectWidget/ProjectTreeView.h \
