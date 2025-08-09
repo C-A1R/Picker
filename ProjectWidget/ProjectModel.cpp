@@ -43,8 +43,9 @@ QModelIndex ProjectModel::parent(const QModelIndex &index) const
 {
     if (!index.isValid())
         return {};
-
     auto *childItem = static_cast<const ProjectItem*>(index.internalPointer());
+    if (!childItem)
+        return {};
     std::shared_ptr<const ProjectItem> parentItem = childItem->parentItem();
     if (!parentItem)
         return {};
@@ -156,6 +157,34 @@ void ProjectModel::reorder(const std::shared_ptr<ProjectItem> &item, double &ord
     }
 }
 
+void ProjectModel::setCheckState(const QModelIndex &index, const Qt::CheckState state)
+{
+    checkedItems[data(index, Project::ItemRole::ID).toULongLong()] = state;
+    checkItem(index);
+}
+
+void ProjectModel::verifyCheckState(const QModelIndex &index)
+{
+    const int childCount = rowCount(index);
+    if(!childCount)
+        return;
+
+    int uncheckedCount = 0;
+    for (int i = 0; i < childCount; ++i)
+    {
+        const QModelIndex &child = this->index(i, Project::Column::col_Name, index);
+        if (child.data(Qt::CheckStateRole).value<Qt::CheckState>() == Qt::Unchecked)
+            ++uncheckedCount;
+    }
+
+    if (uncheckedCount == childCount)
+        setCheckState(index, Qt::Unchecked);
+    else if (uncheckedCount == 0)
+        setCheckState(index, Qt::Checked);
+    else
+        setCheckState(index, Qt::PartiallyChecked);
+}
+
 void ProjectModel::getCheckedPdf(const std::shared_ptr<const ProjectItem> &item, QStringList &result) const
 {
     for (int i = 0; i < item->childCount(); ++i)
@@ -259,9 +288,34 @@ void ProjectModel::insertItem(const std::shared_ptr<ProjectItem> &item, std::sha
     itemPaths.insert(item->path().absolutePath(), item);
 }
 
+void ProjectModel::removeItem(const std::shared_ptr<ProjectItem> &item)
+{
+    const auto removedCount = itemPaths.remove(item->path().absolutePath(), item);
+    qDebug() << "itemPaths removed:" << removedCount;
+    checkedItems.remove(item->id());
+    resultHolders.remove(item->id());
+    auto parent = item->parentItem();
+    parent->removeChild(item->id());
+}
+
 std::shared_ptr<ProjectItem> ProjectModel::findItem(const QModelIndex &index) const
 {
-    return index.isValid() ? itemPaths.value(index.data(Project::ItemRole::ABS_PATH).toString(), nullptr) : invisibleRootItem;
+    if (!index.isValid())
+        return invisibleRootItem;
+
+    const auto items = itemPaths.values(index.data(Project::ItemRole::ABS_PATH).toString());
+    if (!items.size())
+        return nullptr;
+    if (items.size() == 1)
+        return items.first();
+
+    const auto targetId = index.data(Project::ItemRole::ID).toULongLong();
+    auto iter = std::find_if(items.cbegin(), items.cend(), [targetId](const std::shared_ptr<ProjectItem> &item) -> bool
+                             {
+                                 return item->id() == targetId;
+                             });
+
+    return iter == items.cend() ? nullptr : *iter;
 }
 
 /// читаем проект из файла
@@ -322,8 +376,7 @@ bool ProjectModel::readFromDb()
         if (!item->exists())
         {
             //файл из списка был удален
-            qDebug() << "Item was removed:" << path;
-            // continue;
+            qDebug() << "missed item:" << path;
             item->setExStatus(Project::ExStatus::MISSED);
         }
         else
@@ -604,8 +657,7 @@ bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int 
     {
         if (role == Qt::CheckStateRole)
         {
-            checkedItems[data(index, Project::ItemRole::ID).toULongLong()] = static_cast<Qt::CheckState>(value.toInt());
-            checkItem(index);
+            setCheckState(index, static_cast<Qt::CheckState>(value.toInt()));
             return true;
         }
     }
@@ -694,6 +746,7 @@ void ProjectModel::slot_dropped(const QModelIndex &dropRootIndex,const QModelInd
     if (newOrder == 0.0 && orderStep == 0.0)
         return;
 
+    QModelIndex draggedParent = draggedIndices.first().parent();
     for (const QModelIndex &index : draggedIndices)
     {
         if (index.column() != Project::Column::col_Name)
@@ -714,6 +767,8 @@ void ProjectModel::slot_dropped(const QModelIndex &dropRootIndex,const QModelInd
     emit layoutAboutToBeChanged();
     parentItem->sortChildren(); // sort parent item children by order index;
     emit layoutChanged();
+    verifyCheckState(dropRootIndex);
+    verifyCheckState(draggedParent);
 }
 
 void ProjectModel::slot_added(const QModelIndex &dropRootIndex, const QModelIndex droppedIndex, const QString &fullPaths)
@@ -751,4 +806,25 @@ void ProjectModel::slot_added(const QModelIndex &dropRootIndex, const QModelInde
     emit layoutAboutToBeChanged();
     parentItem->sortChildren(); // sort parent item children by order index;
     emit layoutChanged();
+    verifyCheckState(dropRootIndex);
+}
+
+void ProjectModel::slot_removed(const QModelIndex &index)
+{
+    auto item = findItem(index);
+    if (!item || item == invisibleRootItem)
+        return;
+
+    emit layoutAboutToBeChanged();
+    const QModelIndex &parent = index.parent();
+    beginRemoveRows(parent, index.row(), index.row());
+    removeItem(item);
+    endRemoveRows();
+    emit layoutChanged();
+    verifyCheckState(parent);
+}
+
+void ProjectModel::slot_updatePath(const QModelIndex &index)
+{
+    qDebug() << "browse item";
 }

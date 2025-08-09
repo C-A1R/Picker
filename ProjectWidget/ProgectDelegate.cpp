@@ -67,7 +67,7 @@ bool ProgectDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, cons
             emit signal_browseBtnClicked(index);
         return true;
     }
-    return false;
+    return QStyledItemDelegate::editorEvent(event, model, option, index);
 }
 
 QRect ProgectDelegate::removeBtnRect(const QStyleOptionViewItem &option)

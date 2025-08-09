@@ -34,17 +34,15 @@ ProjectWidget::ProjectWidget(QWidget *parent)
     connect(project_view, &ProjectTreeView::signal_itemsChecked,            this,   &ProjectWidget::slot_itemsChecked);
     connect(project_view, &ProjectTreeView::signal_resultHolderChecked,     this,   &ProjectWidget::slot_resultHolderChecked);
     connect(project_view, &ProjectTreeView::signal_itemDoubleClicked,       this,   &ProjectWidget::slot_openFile);
-    connect(project_view, &ProjectTreeView::signal_itemRemoveBtnClicked,    this,   &ProjectWidget::slot_removeFile);
-    connect(project_view, &ProjectTreeView::signal_itemBrowseBtnClicked,    this,   &ProjectWidget::slot_searchForFile);
 
-    connect(project_model,  &ProjectModel::signal_expand,         project_view,     &ProjectTreeView::slot_expand);
-    connect(project_view,   &ProjectTreeView::signal_dropped,     project_model,    &ProjectModel::slot_dropped);
-    connect(project_view,   &ProjectTreeView::signal_added,       project_model,    &ProjectModel::slot_added);
+    connect(project_model,  &ProjectModel::signal_expand,                   project_view,       &ProjectTreeView::slot_expand);
+    connect(project_view,   &ProjectTreeView::signal_dropped,               project_model,      &ProjectModel::slot_dropped);
+    connect(project_view,   &ProjectTreeView::signal_added,                 project_model,      &ProjectModel::slot_added);
+    connect(project_view,   &ProjectTreeView::signal_itemRemoveBtnClicked,  project_model,      &ProjectModel::slot_removed);
+    connect(project_view,   &ProjectTreeView::signal_itemBrowseBtnClicked,  project_model,      &ProjectModel::slot_updatePath);
 
     connect(undoStack, &QUndoStack::canUndoChanged, this, &ProjectWidget::signal_canUndoChanged);
     connect(undoStack, &QUndoStack::canRedoChanged, this, &ProjectWidget::signal_canRedoChanged);
-
-
 
     openProject(Settings::instance()->value(SETTINGS_PROJECT_PATH).toString());
 }
@@ -477,14 +475,4 @@ void ProjectWidget::slot_openFile(const QModelIndex &index) const
     if (item->isDir())
         return;
     QDesktopServices::openUrl(QUrl::fromLocalFile(item->path().absolutePath()));
-}
-
-void ProjectWidget::slot_removeFile(const QModelIndex &index)
-{
-    qDebug() << "remove item";
-}
-
-void ProjectWidget::slot_searchForFile(const QModelIndex &index)
-{
-    qDebug() << "browse item";
 }

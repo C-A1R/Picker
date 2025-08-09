@@ -19,7 +19,7 @@ class ProjectModel : public QAbstractItemModel
     std::shared_ptr<ProjectItem>                    invisibleRootItem;
     QHash<qulonglong, Qt::CheckState>               checkedItems;
     QHash<qulonglong, Qt::CheckState>               resultHolders;
-    QHash<QString, std::shared_ptr<ProjectItem>>    itemPaths;
+    QMultiHash<QString, std::shared_ptr<ProjectItem>> itemPaths;
 
     qulonglong idMax = 1;
 
@@ -73,8 +73,11 @@ private:
     void getResultHolders(const QModelIndex &index, QModelIndexList &result) const;
 
     void insertItem(const std::shared_ptr<ProjectItem> &item, std::shared_ptr<ProjectItem> parentItem = nullptr);
+    void removeItem(const std::shared_ptr<ProjectItem> &item);
     std::shared_ptr<ProjectItem> findItem(const QModelIndex &index) const;
     void reorder(const std::shared_ptr<ProjectItem> &item, double &orderIndex);
+    void setCheckState(const QModelIndex &index, const Qt::CheckState state);
+    void verifyCheckState(const QModelIndex &index);
 
     std::tuple<double, double> newOrder(const std::shared_ptr<const ProjectItem> parentItem, const QModelIndex &droppedIndex, const int draggedCount);
 
@@ -84,6 +87,8 @@ signals:
 public slots:
     void slot_dropped(const QModelIndex &dropRootIndex, const QModelIndex &droppedIndex, const QModelIndexList &draggedIndices);
     void slot_added(const QModelIndex &dropRootIndex, const QModelIndex droppedIndex, const QString &fullPaths);
+    void slot_removed(const QModelIndex &index);
+    void slot_updatePath(const QModelIndex &index);
 };
 
 #endif // PROJECTMODEL_H

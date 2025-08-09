@@ -74,7 +74,6 @@ void ProjectTreeView::mouseReleaseEvent(QMouseEvent *event)
         if (checkBoxClicked(index, event))
             return;
     }
-
     QTreeView::mouseReleaseEvent(event);
 }
 
@@ -249,7 +248,8 @@ void ProjectTreeView::selectRow(const QModelIndex &index)
 
 bool ProjectTreeView::viewportEvent(QEvent *event)
 {
-    if (event->type() == QEvent::ToolTip) {
+    if (event->type() == QEvent::ToolTip)
+    {
         QHelpEvent *helpEvent = static_cast<QHelpEvent *>(event);
 
         QModelIndex index = indexAt(helpEvent->pos());
