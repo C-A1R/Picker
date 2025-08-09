@@ -169,17 +169,16 @@ void ProjectModel::verifyCheckState(const QModelIndex &index)
     if(!childCount)
         return;
 
-    int uncheckedCount = 0;
+    std::array<int, 3> states {0, 0, 0};
     for (int i = 0; i < childCount; ++i)
     {
         const QModelIndex &child = this->index(i, Project::Column::col_Name, index);
-        if (child.data(Qt::CheckStateRole).value<Qt::CheckState>() == Qt::Unchecked)
-            ++uncheckedCount;
+        states[child.data(Qt::CheckStateRole).value<Qt::CheckState>()] += 1;
     }
 
-    if (uncheckedCount == childCount)
+    if (!states[Qt::Checked] && !states[Qt::PartiallyChecked])
         setCheckState(index, Qt::Unchecked);
-    else if (uncheckedCount == 0)
+    else if (!states[Qt::Unchecked] && !states[Qt::PartiallyChecked])
         setCheckState(index, Qt::Checked);
     else
         setCheckState(index, Qt::PartiallyChecked);
@@ -746,7 +745,7 @@ void ProjectModel::slot_dropped(const QModelIndex &dropRootIndex,const QModelInd
     if (newOrder == 0.0 && orderStep == 0.0)
         return;
 
-    QModelIndex draggedParent = draggedIndices.first().parent();
+    QSet<QModelIndex> draggedParents;
     for (const QModelIndex &index : draggedIndices)
     {
         if (index.column() != Project::Column::col_Name)
@@ -754,11 +753,12 @@ void ProjectModel::slot_dropped(const QModelIndex &dropRootIndex,const QModelInd
         const std::shared_ptr<ProjectItem> item = findItem(index);
         if (!item)
             continue;
+        draggedParents.insert(index.parent());
         item->setOrderIndex(newOrder);
         newOrder += orderStep;
         if (parentItem != item->parentItem())
         {
-            item->parentItem()->removeChild(item->id());
+            removeItem(item);
             insertItem(item, parentItem);
         }
         qDebug() << "dragged:" << item->path().dirName() << "new_order:"  << item->orderIndex();
@@ -768,7 +768,8 @@ void ProjectModel::slot_dropped(const QModelIndex &dropRootIndex,const QModelInd
     parentItem->sortChildren(); // sort parent item children by order index;
     emit layoutChanged();
     verifyCheckState(dropRootIndex);
-    verifyCheckState(draggedParent);
+    for (const QModelIndex &dp : draggedParents)
+        verifyCheckState(dp);
 }
 
 void ProjectModel::slot_added(const QModelIndex &dropRootIndex, const QModelIndex droppedIndex, const QString &fullPaths)
