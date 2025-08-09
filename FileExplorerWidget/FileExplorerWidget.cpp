@@ -2,6 +2,7 @@
 #include "FileSystemView.h"
 #include "FileSystemModel.h"
 #include "Settings.h"
+#include "FileExplorerEnums.h"
 
 #include <QToolBar>
 #include <QLabel>
@@ -53,16 +54,16 @@ void FileExplorerWidget::initUi()
     view->setSelectionBehavior(FileSystemView::SelectRows);
     view->horizontalHeader()->hide();
     view->horizontalHeader()->setStretchLastSection(false);
-    view->horizontalHeader()->setSectionResizeMode(FileSystemModel::Columns::col_Name, QHeaderView::Stretch);
-    view->horizontalHeader()->setSectionResizeMode(FileSystemModel::Columns::col_LastModified, QHeaderView::ResizeToContents);
+    view->horizontalHeader()->setSectionResizeMode(FileExplorer::Column::col_Name, QHeaderView::Stretch);
+    view->horizontalHeader()->setSectionResizeMode(FileExplorer::Column::col_LastModified, QHeaderView::ResizeToContents);
     const int rowHeight = 20;
     view->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     view->verticalHeader()->setDefaultSectionSize(rowHeight);
     view->verticalHeader()->setMaximumSectionSize(rowHeight);
     view->verticalHeader()->setMinimumSectionSize(rowHeight);
     view->verticalHeader()->hide();
-    view->hideColumn(FileSystemModel::Columns::col_Size);
-    view->hideColumn(FileSystemModel::Columns::col_Type);
+    view->hideColumn(FileExplorer::Column::col_Size);
+    view->hideColumn(FileExplorer::Column::col_Type);
     view->setShowGrid(false);
     view->resizeRowsToContents();
 
@@ -150,8 +151,8 @@ void FileExplorerWidget::slot_doubleClicked()
         return;
     }
 
-    if (index.column() != FileSystemModel::Columns::col_Name)
-        index = index.siblingAtColumn(FileSystemModel::Columns::col_Name);
+    if (index.column() != FileExplorer::Column::col_Name)
+        index = index.siblingAtColumn(FileExplorer::Column::col_Name);
 
     QDesktopServices::openUrl(QUrl::fromLocalFile(model->filePath(index)));
 }

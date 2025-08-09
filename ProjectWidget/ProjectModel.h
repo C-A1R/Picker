@@ -26,12 +26,12 @@ class ProjectModel : public QAbstractItemModel
     QIcon dirIcon;
     QIcon pdfIcon;
 
-    const QHash<ExistingStatus, QColor> statusColors =
+    const QHash<Project::ExStatus, QColor> statusColors =
     {
-        {ExistingStatus::DEFAULT,     QColor(Qt::transparent)},
-        {ExistingStatus::LISTED,      QColor(100, 221, 23, 50)},
-        {ExistingStatus::NOT_LISTED,  QColor(255, 237, 204, 200)},
-        {ExistingStatus::MISSED,      QColor(204, 76, 76, 200)}
+        {Project::ExStatus::DEFAULT,     QColor(Qt::transparent)},
+        {Project::ExStatus::LISTED,      QColor(100, 221, 23, 50)},
+        {Project::ExStatus::NOT_LISTED,  QColor(255, 237, 204, 200)},
+        {Project::ExStatus::MISSED,      QColor(204, 76, 76, 200)}
     };
 
 public:

@@ -41,13 +41,14 @@ SOURCES += \
     main.cpp
 
 HEADERS += \
+    FileExplorerWidget/FileExplorerEnums.h \
     FileExplorerWidget/FileExplorerWidget.h \
     FileExplorerWidget/FileSystemView.h \
     FileExplorerWidget/FileSystemModel.h \
     ProjectWidget/Commands/ItemsCheckedCmd.h \
     ProjectWidget/Commands/ResultHolderCheckedCmd.h \
-    ProjectWidget/Enums.h \
     ProjectWidget/ProgectDelegate.h \
+    ProjectWidget/ProjectEnums.h \
     ProjectWidget/ProjectItem.h \
     ProjectWidget/ProjectModel.h \
     ProjectWidget/ProjectTreeView.h \

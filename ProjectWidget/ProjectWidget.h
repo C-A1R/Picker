@@ -77,6 +77,9 @@ private slots:
 
     void slot_itemsChecked(const QModelIndexList &selected, const Qt::CheckState checkState);
     void slot_resultHolderChecked(const QModelIndex &index);
+    void slot_openFile(const QModelIndex &index) const;
+    void slot_removeFile(const QModelIndex &index);
+    void slot_searchForFile(const QModelIndex &index);
 };
 
 #endif // PROJECTWIDGET_H

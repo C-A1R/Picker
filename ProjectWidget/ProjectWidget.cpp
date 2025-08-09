@@ -2,8 +2,7 @@
 #include "ProjectTreeView.h"
 #include "Settings.h"
 #include "SqlMgr.h"
-#include "Enums.h"
-#include "ProgectDelegate.h"
+#include "ProjectEnums.h"
 
 #include "Commands/ItemsCheckedCmd.h"
 #include "Commands/ResultHolderCheckedCmd.h"
@@ -34,6 +33,9 @@ ProjectWidget::ProjectWidget(QWidget *parent)
 
     connect(project_view, &ProjectTreeView::signal_itemsChecked,            this,   &ProjectWidget::slot_itemsChecked);
     connect(project_view, &ProjectTreeView::signal_resultHolderChecked,     this,   &ProjectWidget::slot_resultHolderChecked);
+    connect(project_view, &ProjectTreeView::signal_itemDoubleClicked,       this,   &ProjectWidget::slot_openFile);
+    connect(project_view, &ProjectTreeView::signal_itemRemoveBtnClicked,    this,   &ProjectWidget::slot_removeFile);
+    connect(project_view, &ProjectTreeView::signal_itemBrowseBtnClicked,    this,   &ProjectWidget::slot_searchForFile);
 
     connect(project_model,  &ProjectModel::signal_expand,         project_view,     &ProjectTreeView::slot_expand);
     connect(project_view,   &ProjectTreeView::signal_dropped,     project_model,    &ProjectModel::slot_dropped);
@@ -42,15 +44,7 @@ ProjectWidget::ProjectWidget(QWidget *parent)
     connect(undoStack, &QUndoStack::canUndoChanged, this, &ProjectWidget::signal_canUndoChanged);
     connect(undoStack, &QUndoStack::canRedoChanged, this, &ProjectWidget::signal_canRedoChanged);
 
-    connect(project_view, &ProjectTreeView::signal_doubleClicked, this, [](const QModelIndex &index)
-            {
-                auto item = static_cast<const ProjectItem*>(index.internalPointer());
-                if (!item)
-                    return;
-                if (item->isDir())
-                    return;
-                QDesktopServices::openUrl(QUrl::fromLocalFile(item->path().absolutePath()));
-            });
+
 
     openProject(Settings::instance()->value(SETTINGS_PROJECT_PATH).toString());
 }
@@ -197,17 +191,17 @@ void ProjectWidget::initUi()
     project_model = new ProjectModel(this);
     project_view->setModel(project_model);
     project_view->setSortingEnabled(true);
-    project_view->sortByColumn(ProlectColumns::col_Name, Qt::AscendingOrder);
+    project_view->sortByColumn(Project::Column::col_Name, Qt::AscendingOrder);
     project_view->setSelectionMode(QAbstractItemView::ExtendedSelection);
     project_view->setDragDropMode(QAbstractItemView::DragDrop);
     project_view->setDragEnabled(true);
     project_view->viewport()->setAcceptDrops(true);
     project_view->setDropIndicatorShown(true);
-    project_view->header()->setSectionResizeMode(ProlectColumns::col_Name, QHeaderView::Stretch);
-    project_view->header()->setSectionResizeMode(ProlectColumns::col_LastModified, QHeaderView::ResizeToContents);
-    project_view->header()->setSectionResizeMode(ProlectColumns::col_ResultHolder, QHeaderView::Fixed);
+    project_view->header()->setSectionResizeMode(Project::Column::col_Name, QHeaderView::Stretch);
+    project_view->header()->setSectionResizeMode(Project::Column::col_LastModified, QHeaderView::ResizeToContents);
+    project_view->header()->setSectionResizeMode(Project::Column::col_ResultHolder, QHeaderView::Fixed);
     project_view->header()->setStretchLastSection(false);
-    project_view->header()->resizeSection(ProlectColumns::col_ResultHolder, 0);
+    project_view->header()->resizeSection(Project::Column::col_ResultHolder, 0);
 
     auto main_vLay = new QVBoxLayout();
     main_vLay->setContentsMargins(0, 0, 0, 0);
@@ -270,7 +264,7 @@ void ProjectWidget::saveProjectTree(SqlMgr &sqlMgr) const
 
     for (int i = 0; i < rows; ++i)
     {
-        const QModelIndex &childIndex = project_model->index(i, ProlectColumns::col_Name, QModelIndex());
+        const QModelIndex &childIndex = project_model->index(i, Project::Column::col_Name, QModelIndex());
         saveProjectItem(childIndex, sqlMgr);
     }
 }
@@ -290,7 +284,7 @@ void ProjectWidget::saveProjectItem(const QModelIndex &itemIndex, SqlMgr &sqlMgr
 
     for (int i = 0; i < rows; ++i)
     {
-        const QModelIndex &childIndex = project_model->index(i, ProlectColumns::col_Name, itemIndex);
+        const QModelIndex &childIndex = project_model->index(i, Project::Column::col_Name, itemIndex);
         saveProjectItem(childIndex, sqlMgr);
     }
 }
@@ -315,7 +309,7 @@ void ProjectWidget::saveItemToDB(const QModelIndex &index, SqlMgr &sqlMgr) const
     {
         localPath = absPath.last(absPath.length() - currentPath_label->text().length());
     }
-    const QModelIndex &index_resultHolderCol = index.siblingAtColumn(ProlectColumns::col_ResultHolder);
+    const QModelIndex &index_resultHolderCol = index.siblingAtColumn(Project::Column::col_ResultHolder);
     if (!sqlMgr.insertItem(item->id()
                            , parentItem->id()
                            , item->orderIndex()
@@ -473,4 +467,24 @@ void ProjectWidget::slot_itemsChecked(const QModelIndexList &selected, const Qt:
 void ProjectWidget::slot_resultHolderChecked(const QModelIndex &index)
 {
     undoStack->push(new ResultHolderCheckedCmd(index, project_model));
+}
+
+void ProjectWidget::slot_openFile(const QModelIndex &index) const
+{
+    auto item = static_cast<const ProjectItem*>(index.internalPointer());
+    if (!item)
+        return;
+    if (item->isDir())
+        return;
+    QDesktopServices::openUrl(QUrl::fromLocalFile(item->path().absolutePath()));
+}
+
+void ProjectWidget::slot_removeFile(const QModelIndex &index)
+{
+    qDebug() << "remove item";
+}
+
+void ProjectWidget::slot_searchForFile(const QModelIndex &index)
+{
+    qDebug() << "browse item";
 }

@@ -4,10 +4,6 @@
 #include <QTableView>
 #include <QSet>
 
-class FileSystemModel;
-
-using fs_model_type = FileSystemModel;
-
 class FileSystemView : public QTableView
 {
     Q_OBJECT

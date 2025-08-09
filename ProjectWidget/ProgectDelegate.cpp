@@ -1,6 +1,6 @@
 #include "ProgectDelegate.h"
 
-#include "Enums.h"
+#include "ProjectEnums.h"
 
 #include <QPainter>
 #include <QApplication>
@@ -20,7 +20,7 @@ void ProgectDelegate::paint(QPainter *painter, const QStyleOptionViewItem &optio
     QStyle *style = opt.widget ? opt.widget->style() : QApplication::style();
     style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, opt.widget);
 
-    if (index.data(ProjectRoles::STATUS) != ExistingStatus::MISSED)
+    if (index.data(Project::ItemRole::STATUS) != Project::ExStatus::MISSED)
     {
         painter->restore();
         return;

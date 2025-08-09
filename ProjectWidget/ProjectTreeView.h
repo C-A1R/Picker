@@ -45,7 +45,9 @@ signals:
     void signal_added(const QModelIndex &, const QModelIndex &, const QString &);
     void signal_itemsChecked(const QModelIndexList &, const Qt::CheckState);
     void signal_resultHolderChecked(const QModelIndex &);
-    void signal_doubleClicked(const QModelIndex &);
+    void signal_itemDoubleClicked(const QModelIndex &);
+    void signal_itemRemoveBtnClicked(const QModelIndex &index);
+    void signal_itemBrowseBtnClicked(const QModelIndex &index);
 
 public slots:
     void slot_expand(const QModelIndexList &indices);

@@ -1,6 +1,6 @@
 #include "FileSystemView.h"
 
-#include "FileSystemModel.h"
+#include "FileExplorerEnums.h"
 
 #include <QApplication>
 #include <QMouseEvent>
@@ -94,12 +94,11 @@ void FileSystemView::mouseMoveEvent(QMouseEvent *event)
         selectInstruction = SelectInstructions::do_select;
         selectItemRow(currentIndex());
 
-        const FileSystemModel *fsModel = static_cast<fs_model_type *>(model());
         QStringList paths;
-        for (const QModelIndex &ind : std::as_const(selected))
+        for (const QModelIndex &index : std::as_const(selected))
         {
-            if (ind.column() == fs_model_type::Columns::col_Name)
-                paths.emplace_back(fsModel->filePath(ind));
+            if (index.column() == FileExplorer::Column::col_Name)
+                paths.emplace_back(index.data(FileExplorer::ItemRole::ABS_PATH).toString());
         }
         if (paths.empty())
         {

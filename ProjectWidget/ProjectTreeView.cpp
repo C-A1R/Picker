@@ -1,5 +1,5 @@
 #include "ProjectTreeView.h"
-#include "Enums.h"
+#include "ProjectEnums.h"
 #include "ProjectItem.h"
 #include "ProgectDelegate.h"
 
@@ -14,16 +14,10 @@ ProjectTreeView::ProjectTreeView(QWidget *parent) : QTreeView(parent)
     setStyle(new ProjectTreeViewStyle(style()));
 
     auto projectDelegate = new ProgectDelegate(this);
-    setItemDelegateForColumn(ProlectColumns::col_Name, projectDelegate);
-    connect(projectDelegate, &ProgectDelegate::signal_removeBtnClicked, this, [](const QModelIndex &index)
-            {
-                qDebug() << "remove item";
-            });
-    connect(projectDelegate, &ProgectDelegate::signal_browseBtnClicked, this, [](const QModelIndex &index)
-            {
-                qDebug() << "browse item";
-            });
-    connect(projectDelegate, &ProgectDelegate::signal_doubleClicked, this, &ProjectTreeView::signal_doubleClicked);
+    setItemDelegateForColumn(Project::Column::col_Name, projectDelegate);
+    connect(projectDelegate, &ProgectDelegate::signal_removeBtnClicked, this, &ProjectTreeView::signal_itemRemoveBtnClicked);
+    connect(projectDelegate, &ProgectDelegate::signal_browseBtnClicked, this, &ProjectTreeView::signal_itemBrowseBtnClicked);
+    connect(projectDelegate, &ProgectDelegate::signal_doubleClicked,    this, &ProjectTreeView::signal_itemDoubleClicked);
 }
 
 void ProjectTreeView::mousePressEvent(QMouseEvent *event)
@@ -36,7 +30,7 @@ void ProjectTreeView::mousePressEvent(QMouseEvent *event)
             QTreeView::mousePressEvent(event);
             return;
         }
-        if (index.column() == ProlectColumns::col_ResultHolder)
+        if (index.column() == Project::Column::col_ResultHolder)
         {
             emit signal_resultHolderChecked(index);
             return;
@@ -166,7 +160,7 @@ void ProjectTreeView::dropEvent(QDropEvent *event)
         {
             return;
         }
-        draggedIndices.removeIf([](const QModelIndex &index) { return index.column() != ProlectColumns::col_Name; });
+        draggedIndices.removeIf([](const QModelIndex &index) { return index.column() != Project::Column::col_Name; });
         emit signal_dropped(dropRootIndex, droppedIndex, draggedIndices);
     }
     else if (event->mimeData()->hasFormat("text/plain")) // from left panel
@@ -247,7 +241,7 @@ void ProjectTreeView::selectRow(const QModelIndex &index)
     if (!index.isValid())
         return;
 
-    for (int col = 0; col < ProlectColumns::MAX; ++col)
+    for (int col = 0; col < Project::Column::MAX; ++col)
     {
         selectionModel()->select(model()->index(index.row(), col, index.parent()), QItemSelectionModel::Select);
     }
@@ -261,7 +255,7 @@ bool ProjectTreeView::viewportEvent(QEvent *event)
         QModelIndex index = indexAt(helpEvent->pos());
         if (!index.isValid())
             return QTreeView::viewportEvent(event);
-        if (index.data(ProjectRoles::STATUS) != ExistingStatus::MISSED)
+        if (index.data(Project::ItemRole::STATUS) != Project::ExStatus::MISSED)
             return QTreeView::viewportEvent(event);
 
         QStyleOptionViewItem option;

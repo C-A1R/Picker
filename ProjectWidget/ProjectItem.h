@@ -1,7 +1,7 @@
 #ifndef PROJECTITEM_H
 #define PROJECTITEM_H
 
-#include "Enums.h"
+#include "ProjectEnums.h"
 
 #include <QVariant>
 #include <QDir>
@@ -18,7 +18,7 @@ class ProjectItem
     const QDir          m_path;
     const QFileInfo     m_info;
     double              m_orderIndex{0.0};
-    ExistingStatus      m_exStatus{ExistingStatus::DEFAULT};
+    Project::ExStatus   m_exStatus{Project::ExStatus::DEFAULT};
 
     std::weak_ptr<ProjectItem>              m_parentItem;
     QList<std::shared_ptr<ProjectItem>>     m_childItems;
@@ -37,11 +37,11 @@ public:
     qulonglong id() const;
     const QDir &path() const;
     double orderIndex() const;
-    ExistingStatus exStatus() const;
+    Project::ExStatus exStatus() const;
 
     void setOrderIndex(const double index);
     void setParent(const std::shared_ptr<ProjectItem> &parent);
-    void setExStatus(ExistingStatus newExStatus);
+    void setExStatus(const Project::ExStatus newExStatus);
 
     bool exists() const;
     bool isDir() const;

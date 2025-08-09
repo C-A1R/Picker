@@ -1,9 +1,12 @@
-#ifndef ENUMS_H
-#define ENUMS_H
+#ifndef PROJECTENUMS_H
+#define PROJECTENUMS_H
 
 #include <qnamespace.h>
 
-enum ProlectColumns
+namespace Project
+{
+
+enum Column
 {
     col_Name,
     col_LastModified,
@@ -12,14 +15,14 @@ enum ProlectColumns
     MAX
 };
 
-enum ProjectRoles
+enum ItemRole
 {
     ID = Qt::UserRole,
     STATUS,
     ABS_PATH
 };
 
-enum ExistingStatus
+enum ExStatus //status of existing
 {
     DEFAULT = 0,
     LISTED,
@@ -27,4 +30,6 @@ enum ExistingStatus
     MISSED
 };
 
-#endif // ENUMS_H
+} // namespace Project
+
+#endif // PROJECTENUMS_H

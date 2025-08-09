@@ -75,7 +75,7 @@ double ProjectItem::orderIndex() const
     return m_orderIndex;
 }
 
-ExistingStatus ProjectItem::exStatus() const
+Project::ExStatus ProjectItem::exStatus() const
 {
     return m_exStatus;
 }
@@ -90,7 +90,7 @@ void ProjectItem::setParent(const std::shared_ptr<ProjectItem> &parent)
     m_parentItem = parent;
 }
 
-void ProjectItem::setExStatus(const ExistingStatus newExStatus)
+void ProjectItem::setExStatus(const Project::ExStatus newExStatus)
 {
     m_exStatus = newExStatus;
 }
