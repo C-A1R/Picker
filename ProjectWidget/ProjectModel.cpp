@@ -4,6 +4,8 @@
 
 #include <QSqlRecord>
 #include <QFileIconProvider>
+#include <QFileDialog>
+#include <QMessageBox>
 
 ProjectModel::ProjectModel(QObject *parent)
     : QAbstractItemModel(parent)
@@ -290,7 +292,8 @@ void ProjectModel::insertItem(const std::shared_ptr<ProjectItem> &item, std::sha
 void ProjectModel::removeItem(const std::shared_ptr<ProjectItem> &item)
 {
     const auto removedCount = itemPaths.remove(item->path().absolutePath(), item);
-    qDebug() << "itemPaths removed:" << removedCount;
+    if (!removedCount)
+        qDebug() << "item was not removed";
     checkedItems.remove(item->id());
     resultHolders.remove(item->id());
     auto parent = item->parentItem();
@@ -391,7 +394,6 @@ bool ProjectModel::readFromDb()
         const int resultHolder = rec.value(SqlMgr::ItemsTable::Fields::resultHolder).toInt();
         checkedItems[id] = printCheckState == 0 ? Qt::Unchecked : (printCheckState == 1 ? Qt::PartiallyChecked : Qt::Checked);
         resultHolders[id] = resultHolder == 0 ? Qt::Unchecked : Qt::Checked;
-        // item->setExStatus(Project::ExStatus::LISTED);
 
         if (rec.value(SqlMgr::ItemsTable::Fields::expanded).toBool())
         {
@@ -758,8 +760,10 @@ void ProjectModel::slot_dropped(const QModelIndex &dropRootIndex,const QModelInd
         newOrder += orderStep;
         if (parentItem != item->parentItem())
         {
+            const Qt::CheckState state = checkedItems.value(item->id(), Qt::Unchecked);
             removeItem(item);
             insertItem(item, parentItem);
+            checkedItems[item->id()] = state;
         }
         qDebug() << "dragged:" << item->path().dirName() << "new_order:"  << item->orderIndex();
     }
@@ -827,5 +831,44 @@ void ProjectModel::slot_removed(const QModelIndex &index)
 
 void ProjectModel::slot_updatePath(const QModelIndex &index)
 {
-    qDebug() << "browse item";
+    QString currentPath = projectRootPath;
+    if (currentPath.isEmpty())
+        currentPath = QDir::homePath();
+
+    const QString newPath = QFileDialog::getOpenFileName(0, QStringLiteral("Новый путь к элементу"), currentPath, "*.pdf");
+    if (newPath.isEmpty())
+        return;
+
+    if (!newPath.startsWith(projectRootPath))
+        qDebug() << "link";
+
+    std::shared_ptr<ProjectItem> oldItem = findItem(index);
+    if (!oldItem)
+        return;
+
+    auto parentItem = oldItem->parentItem();
+    auto newItem = std::make_shared<ProjectItem>(oldItem->id(), newPath, parentItem);
+    if (!newItem->exists())
+        return;
+    newItem->setOrderIndex(oldItem->orderIndex());
+    Qt::CheckState state = checkedItems.value(oldItem->id(), Qt::Unchecked);
+
+    if (auto identicalItems = itemPaths.values(newPath); identicalItems.size() > 0)
+    {
+        auto answer = QMessageBox::question(0, "", QStringLiteral("В директории уже есть элемент %1\nИспользовать его взамен отсутствующего?").arg(newPath));
+        if (answer == QMessageBox::No)
+            return;
+
+        auto existingItem = identicalItems.first();
+        beginRemoveRows(index.parent(), index.row(), index.row());
+        removeItem(existingItem);
+        endRemoveRows();
+    }
+
+    beginRemoveRows(index.parent(), index.row(), index.row());
+    removeItem(oldItem);
+    endRemoveRows();
+    insertItem(newItem, parentItem);
+    parentItem->sortChildren();
+    checkedItems[newItem->id()] = state;
 }

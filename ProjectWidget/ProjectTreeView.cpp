@@ -262,15 +262,12 @@ bool ProjectTreeView::viewportEvent(QEvent *event)
         option.initFrom(this);
         option.rect = visualRect(index);
         if (ProgectDelegate::removeBtnRect(option).contains(helpEvent->pos()))
-        {
             QToolTip::showText(helpEvent->globalPos(), "Удалить элемент");
-            return true;
-        }
         else if (ProgectDelegate::browseBtnRect(option).contains(helpEvent->pos()))
-        {
             QToolTip::showText(helpEvent->globalPos(), "Найти элемент");
-            return true;
-        }
+        else
+            QToolTip::showText(helpEvent->globalPos(), index.data(Project::ItemRole::ABS_PATH).toString());
+        return true;
     }
 
     return QTreeView::viewportEvent(event);
