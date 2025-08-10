@@ -17,7 +17,7 @@ unix {
     LIBS += -L$$LIBDIR/ -lLibJpeg
 }
 
-VERSION = 1.4
+VERSION = 1.5
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
 SOURCES += \
