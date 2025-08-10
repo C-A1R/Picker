@@ -25,8 +25,16 @@ class ProjectModel : public QAbstractItemModel
 
     QIcon dirIcon;
     QIcon pdfIcon;
+    const bool isDarkTheme;
 
     const QHash<Project::ExStatus, QColor> statusColors =
+    {
+        {Project::ExStatus::DEFAULT,     QColor(Qt::transparent)},
+        {Project::ExStatus::LISTED,      QColor(204, 247, 179)},
+        {Project::ExStatus::NOT_LISTED,  QColor(255, 237, 204)},
+        {Project::ExStatus::MISSED,      QColor(235, 153, 153)}
+    };
+    const QHash<Project::ExStatus, QColor> statusColorsDark =
     {
         {Project::ExStatus::DEFAULT,     QColor(Qt::transparent)},
         {Project::ExStatus::LISTED,      QColor(100, 221, 23, 50)},

@@ -6,10 +6,13 @@
 #include <QFileIconProvider>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QApplication>
+#include <QStyleHints>
 
 ProjectModel::ProjectModel(QObject *parent)
     : QAbstractItemModel(parent)
     , invisibleRootItem(std::make_shared<ProjectItem>(0, ""))
+    , isDarkTheme(QApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark)
 {
     QFileIconProvider provider;
     dirIcon = provider.icon(QFileIconProvider::Folder);
@@ -133,6 +136,8 @@ QHash<QString, QStringList> ProjectModel::makeBuildFileStructure() const
     {
         QStringList checked;
         getCheckedPdf(holder, checked);
+        if (checked.empty())
+            continue;
         result.emplace(holder->path().absolutePath(), std::move(checked));
     }
     return result;
@@ -597,7 +602,7 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
             {
                 return QVariant{};
             }
-            return statusColors[status];
+            return isDarkTheme ? statusColorsDark[status] : statusColors[status];
         }
         case Project::ItemRole::ID:
         {
@@ -863,13 +868,14 @@ void ProjectModel::slot_updatePath(const QModelIndex &index)
     if (auto identicalItems = itemPaths.values(newPath); identicalItems.size() > 0)
     {
         auto answer = QMessageBox::question(0, "", QStringLiteral("В директории уже есть элемент %1\nИспользовать его взамен отсутствующего?").arg(newPath));
-        if (answer == QMessageBox::No)
-            return;
-
-        auto existingItem = identicalItems.first();
-        beginRemoveRows(index.parent(), index.row(), index.row());
-        removeItem(existingItem);
-        endRemoveRows();
+        if (answer == QMessageBox::Yes)
+        {
+            ///@todo нужно выбрать existingItem если несколько идентичных
+            auto existingItem = identicalItems.first();
+            beginRemoveRows(index.parent(), index.row(), index.row());
+            removeItem(existingItem);
+            endRemoveRows();
+        }
     }
 
     beginRemoveRows(index.parent(), index.row(), index.row());
