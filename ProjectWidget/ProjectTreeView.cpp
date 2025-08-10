@@ -255,8 +255,14 @@ bool ProjectTreeView::viewportEvent(QEvent *event)
         QModelIndex index = indexAt(helpEvent->pos());
         if (!index.isValid())
             return QTreeView::viewportEvent(event);
+
+        const bool link = index.data(Project::ItemRole::TYPE).value<Project::Type>() == Project::Type::LINK;
         if (index.data(Project::ItemRole::STATUS) != Project::ExStatus::MISSED)
+        {
+            if (link)
+                QToolTip::showText(helpEvent->globalPos(), index.data(Project::ItemRole::ABS_PATH).toString());
             return QTreeView::viewportEvent(event);
+        }
 
         QStyleOptionViewItem option;
         option.initFrom(this);

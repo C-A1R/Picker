@@ -384,6 +384,8 @@ bool ProjectModel::readFromDb()
         else
             item->setExStatus(Project::ExStatus::LISTED);
 
+        if (localPath.isEmpty() && path != projectRootPath)
+            item->setType(Project::Type::LINK);
         item->setOrderIndex(rec.value(SqlMgr::ItemsTable::Fields::order).toDouble());
         insertItem(item, parentItem);
         itemsById.insert(item->id(), item);
@@ -612,6 +614,11 @@ QVariant ProjectModel::data(const QModelIndex &index, const int role) const
             const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
             return item->path().absolutePath();
         }
+        case Project::ItemRole::TYPE:
+        {
+            const auto *item = static_cast<const ProjectItem*>(index.internalPointer());
+            return item->type();
+        }
         default:
             break;
         }
@@ -803,6 +810,7 @@ void ProjectModel::slot_added(const QModelIndex &dropRootIndex, const QModelInde
         if (newItem->isDir() || !newItem->path().dirName().endsWith(".pdf", Qt::CaseInsensitive))
             continue;
 
+        newItem->setType(Project::Type::LINK);
         newItem->setOrderIndex(newOrder);
         newOrder += orderStep;
         insertItem(newItem, parentItem);
@@ -839,9 +847,6 @@ void ProjectModel::slot_updatePath(const QModelIndex &index)
     if (newPath.isEmpty())
         return;
 
-    if (!newPath.startsWith(projectRootPath))
-        qDebug() << "link";
-
     std::shared_ptr<ProjectItem> oldItem = findItem(index);
     if (!oldItem)
         return;
@@ -851,6 +856,8 @@ void ProjectModel::slot_updatePath(const QModelIndex &index)
     if (!newItem->exists())
         return;
     newItem->setOrderIndex(oldItem->orderIndex());
+    if (const bool link = !newPath.startsWith(projectRootPath); link)
+        newItem->setType(Project::Type::LINK);
     Qt::CheckState state = checkedItems.value(oldItem->id(), Qt::Unchecked);
 
     if (auto identicalItems = itemPaths.values(newPath); identicalItems.size() > 0)

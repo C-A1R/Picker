@@ -120,3 +120,13 @@ void ProjectItem::sortChildren(const Qt::SortOrder order)
               });
 }
 
+Project::Type ProjectItem::type() const
+{
+    return m_type;
+}
+
+void ProjectItem::setType(Project::Type newType)
+{
+    m_type = newType;
+}
+

@@ -19,6 +19,7 @@ class ProjectItem
     const QFileInfo     m_info;
     double              m_orderIndex{0.0};
     Project::ExStatus   m_exStatus{Project::ExStatus::DEFAULT};
+    Project::Type       m_type{Project::Type::LOCAL_ELEMENT};
 
     std::weak_ptr<ProjectItem>              m_parentItem;
     QList<std::shared_ptr<ProjectItem>>     m_childItems;
@@ -38,10 +39,12 @@ public:
     const QDir &path() const;
     double orderIndex() const;
     Project::ExStatus exStatus() const;
+    Project::Type type() const;
 
     void setOrderIndex(const double index);
     void setParent(const std::shared_ptr<ProjectItem> &parent);
     void setExStatus(const Project::ExStatus newExStatus);
+    void setType(Project::Type newType);
 
     bool exists() const;
     bool isDir() const;

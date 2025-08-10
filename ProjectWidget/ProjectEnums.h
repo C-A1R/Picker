@@ -18,8 +18,9 @@ enum Column
 enum ItemRole
 {
     ID = Qt::UserRole,
-    STATUS,
-    ABS_PATH
+    STATUS,     ///<ExStatus
+    ABS_PATH,
+    TYPE        ///<Type
 };
 
 enum ExStatus //status of existing
@@ -28,6 +29,12 @@ enum ExStatus //status of existing
     LISTED,
     NOT_LISTED,
     MISSED
+};
+
+enum Type
+{
+    LOCAL_ELEMENT,
+    LINK
 };
 
 } // namespace Project

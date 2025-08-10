@@ -20,6 +20,15 @@ void ProgectDelegate::paint(QPainter *painter, const QStyleOptionViewItem &optio
     QStyle *style = opt.widget ? opt.widget->style() : QApplication::style();
     style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, opt.widget);
 
+    if (index.data(Project::ItemRole::TYPE).value<Project::Type>() == Project::Type::LINK)
+    {
+        painter->setRenderHint(QPainter::Antialiasing, true);
+        painter->setBrush(Qt::green);
+        painter->setPen(Qt::NoPen);
+        const QPoint circleCenter = option.rect.bottomLeft() + QPoint(29, -5);
+        painter->drawEllipse(circleCenter, 3, 3);
+    }
+
     if (index.data(Project::ItemRole::STATUS) != Project::ExStatus::MISSED)
     {
         painter->restore();
